@@ -1,0 +1,47 @@
+.page .btn,
+.action-btn {
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+    transition: box-shadow 0.15s, transform 0.15s, background 0.15s;
+}
+.page .btn:hover,
+.action-btn:hover {
+    box-shadow: 0 5px 12px rgba(0, 0, 0, 0.4);
+    transform: translateY(-1px);
+}
+.page .btn:active,
+.action-btn:active {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    transform: translateY(1px);
+}
+
+.pill-Unscheduled { background: #d9d9d9; }
+
+.dashboard-list .card-actions { width: 230px; gap: 8px; }
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: 2px solid;
+    border-radius: 6px;
+    background: #fff;
+    font-family: inherit;
+    font-size: 14px;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+}
+.action-btn svg { width: 16px; height: 16px; }
+.action-edit { border-color: #6f6f6f; color: #333; }
+.action-edit:hover { background: #f1f1f1; }
+.action-complete { border-color: #2e7d32; background: #2e7d32; color: #fff; }
+.action-complete:hover { background: #256628; }
+.action-cancel { border-color: #c62828; color: #c62828; }
+.action-cancel:hover { background: #fdecec; }
+
+.schedule-list .card-actions { width: auto; }
+.schedule-list .card-actions .btn { white-space: nowrap; }
+
+@media (max-width: 760px) {
+    .dashboard-list .card-actions { width: auto; }
+}

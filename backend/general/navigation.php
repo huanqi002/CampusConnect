@@ -15,7 +15,7 @@ $activeItem = [
     'session_management/session_details.php'    => 'dashboard',
     'session_management/schedule_list.php'      => 'schedule',
     'session_management/schedule.php'           => 'schedule',
-    'request_management/volunteer_requests.php' => 'volunteer_requests',
+    'session_management/volunteer_requests.php' => 'volunteer_requests',
     'history_management/history.php'            => 'history',
     'history_management/feedback.php'           => 'history',
     'history_management/history_details.php'    => 'history',
@@ -61,7 +61,7 @@ $navLink = function (string $href, string $label, string $key, string $class) us
                             <li><?php echo $navLink('../session_management/index.php', 'Dashboard', 'dashboard', 'nav-sub-link'); ?></li>
                             <li><?php echo $navLink('../session_management/schedule_list.php', 'Schedule', 'schedule', 'nav-sub-link'); ?></li>
                             <?php if ($currentRole === 'volunteer'): ?>
-                            <li><?php echo $navLink('../request_management/volunteer_requests.php', 'Request', 'volunteer_requests', 'nav-sub-link'); ?></li>
+                            <li><?php echo $navLink('../session_management/volunteer_requests.php', 'Request', 'volunteer_requests', 'nav-sub-link'); ?></li>
                             <?php endif; ?>
                         </ul>
                     </details>

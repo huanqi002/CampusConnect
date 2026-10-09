@@ -124,8 +124,8 @@ a.nav-box.active { background: var(--active-bg); font-weight: bold; }
 }
 .nav-group > summary:hover { background: #f4f4f4; }
 .nav-group > summary::-webkit-details-marker { display: none; }
-.nav-group > summary::after { content: "\25B8"; float: right; color: var(--muted); }
-.nav-group[open] > summary::after { content: "\25BE"; }
+.nav-group > summary::after { content: "\25BE"; float: right; color: var(--muted); }
+.nav-group[open] > summary::after { content: "\25B4"; }
 .nav-sub-link {
     display: block;
     padding: 6px 12px 6px 28px;
