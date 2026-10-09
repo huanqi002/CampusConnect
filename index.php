@@ -1,5 +1,8 @@
 <?php
-$landingPage = 'backend/user_management/select_user.php';
+require_once __DIR__ . '/includes/functions.php';
 
-header('Location: ' . $landingPage);
-exit;
+if (!empty($_SESSION['user_id'])) {
+    redirect('profile.php');
+}
+redirect('login.php');
+?>

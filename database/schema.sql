@@ -16,8 +16,11 @@ CREATE TABLE users (
     email           VARCHAR(150) NOT NULL,
     full_name       VARCHAR(100) NOT NULL,
     university_name VARCHAR(100) NOT NULL,
-    password_hash   VARCHAR(255) NOT NULL, 
-    picture_url     VARCHAR(255) NULL,
+      password_hash   VARCHAR(255) NOT NULL,
+      picture_url     VARCHAR(255) NULL,
+      cover_photo_url VARCHAR(255) NULL,
+      volunteer_picture_url VARCHAR(255) NULL,
+      volunteer_cover_photo_url VARCHAR(255) NULL,
     tfa_code        VARCHAR(255) NULL,     
     tfa_expiry      DATETIME     NULL,     
     is_volunteer    CHAR(1)      NOT NULL DEFAULT 'N',
@@ -131,3 +134,38 @@ CREATE TABLE notifications (
     CONSTRAINT chk_notifications_read CHECK (is_read IN ('Y', 'N')),
     CONSTRAINT fk_notifications_user  FOREIGN KEY (user_id) REFERENCES users (id)
 );
+
+USE support_system;
+
+ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS student_id VARCHAR(30) NULL AFTER id,
+    ADD COLUMN IF NOT EXISTS cover_photo_url VARCHAR(255) NULL,
+    ADD COLUMN IF NOT EXISTS education VARCHAR(500) NULL,
+    ADD COLUMN IF NOT EXISTS skills VARCHAR(500) NULL,
+    ADD COLUMN IF NOT EXISTS support_experience VARCHAR(1000) NULL,
+    ADD COLUMN IF NOT EXISTS failed_attempts INT NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS locked_until DATETIME NULL,
+    ADD COLUMN IF NOT EXISTS remember_token_hash CHAR(64) NULL,
+    ADD COLUMN IF NOT EXISTS remember_expires DATETIME NULL,
+    ADD COLUMN IF NOT EXISTS reset_code VARCHAR(6) NULL,
+    ADD COLUMN IF NOT EXISTS reset_expiry DATETIME NULL;
+
+UPDATE users
+SET student_id = CONCAT('USER', id)
+WHERE student_id IS NULL OR student_id = '';
+
+ALTER TABLE users
+    MODIFY student_id VARCHAR(30) NOT NULL;
+
+SET @index_exists := (
+    SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'users'
+      AND INDEX_NAME = 'uq_users_student_id'
+);
+SET @sql := IF(@index_exists = 0,
+    'ALTER TABLE users ADD CONSTRAINT uq_users_student_id UNIQUE (student_id)',
+    'SELECT 1');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
