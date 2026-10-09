@@ -17,12 +17,12 @@ INSERT INTO users (id, email, full_name, university_name, password_hash, is_volu
 (6, 'elena@help.edu.com.my',   'Elena Wong',    'Help University',             '$2y$10$ilRV9CW9s.7DbKu7c6lwTOcsUNW70NiCn3qzyp5A8fAUlstcrX9ei', 'N', 'N', '2026-09-03 10:00:00');
 
 INSERT INTO requests (id, user_id, volunteer_id, category, description, preferred_day, preferred_time, support_mode, status, created_at, notified_at, responded_at) VALUES
-(1, 1, 3,    'Academic',        'Help with Maths - Algebra basics',                     'Monday',    'Morning',   'Online',       'Completed', '2026-09-23 10:00:00', '2026-09-23 10:00:00', '2026-09-24 10:00:00'),
+(1, 1, 3,    'Academic',        'Help with Maths - Algebra basics',                     'Monday',    'Morning',   'Online',       'Accepted', '2026-09-23 10:00:00', '2026-09-23 10:00:00', '2026-09-24 10:00:00'),
 (2, 2, NULL, 'Technology',      'Debugging my first PHP project',                       'Tuesday',   'Afternoon', 'Face-to-face', 'Pending',   '2026-10-02 10:00:00', '2026-10-02 10:00:00', NULL),
-(3, 2, 4,    'Academic',        'Understanding Newton''s laws of motion',               'Wednesday', 'Afternoon', 'Face-to-face', 'Completed', '2026-09-28 10:00:00', '2026-09-28 10:00:00', '2026-09-29 10:00:00'),
-(4, 1, 3,    'Academic',        'Hypothesis testing for my Statistics assignment',      'Friday',    'Afternoon', 'Online',       'Completed', '2026-09-19 10:00:00', '2026-09-19 10:00:00', '2026-09-20 10:00:00'),
-(5, 5, 4,    'Technology',      'Reviewing my Java data structures project',            'Thursday',  'Morning',   'Online',       'Completed', '2026-09-25 10:00:00', '2026-09-25 10:00:00', '2026-09-26 10:00:00'),
-(6, 2, 5,    'General Student', 'Advice on managing my study timetable',                'Monday',    'Afternoon', 'Online',       'Completed', '2026-10-01 10:00:00', '2026-10-01 10:00:00', '2026-10-02 10:00:00'),
+(3, 2, 4,    'Academic',        'Understanding Newton''s laws of motion',               'Wednesday', 'Afternoon', 'Face-to-face', 'Accepted', '2026-09-28 10:00:00', '2026-09-28 10:00:00', '2026-09-29 10:00:00'),
+(4, 1, 3,    'Academic',        'Hypothesis testing for my Statistics assignment',      'Friday',    'Afternoon', 'Online',       'Accepted', '2026-09-19 10:00:00', '2026-09-19 10:00:00', '2026-09-20 10:00:00'),
+(5, 5, 4,    'Technology',      'Reviewing my Java data structures project',            'Thursday',  'Morning',   'Online',       'Accepted', '2026-09-25 10:00:00', '2026-09-25 10:00:00', '2026-09-26 10:00:00'),
+(6, 2, 5,    'General Student', 'Advice on managing my study timetable',                'Monday',    'Afternoon', 'Online',       'Accepted', '2026-10-01 10:00:00', '2026-10-01 10:00:00', '2026-10-02 10:00:00'),
 (7, 1, NULL, 'New Student',     'Finding my way around campus and registering courses', 'Saturday',  'Morning',   'Face-to-face', 'Pending',   '2026-10-03 07:00:00', '2026-10-03 07:00:00', NULL);
 
 INSERT INTO volunteers (user_id, category, preferred_day, preferred_time, support_mode, is_available) VALUES
