@@ -37,6 +37,7 @@ CREATE TABLE volunteers (
     category       VARCHAR(50) NOT NULL,
     preferred_day  VARCHAR(10) NOT NULL,
     preferred_time TIME        NOT NULL,
+    skills         VARCHAR(255) NOT NULL,
     support_mode   VARCHAR(20) NOT NULL,
     is_available   CHAR(1)     NOT NULL DEFAULT 'N',
     created_at     DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
