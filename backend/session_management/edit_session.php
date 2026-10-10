@@ -7,10 +7,12 @@ requireLogin();
 
 $myId      = currentUser()['id'];
 $sessionId = (int)($_POST['session_id'] ?? $_GET['session_id'] ?? 0);
-$session   = findSessionWithStatus($conn, $sessionId, 'Pending');
+$session   = findSessionById($conn, $sessionId);
 
-if (!$session || ($session['user_id'] != $myId && $session['volunteer_id'] != $myId)) {
-    header('Location: index.php?err=' . urlencode('Only a Pending session can be edited.'));
+if (!$session
+    || !in_array($session['status'], ['Unscheduled', 'Pending'], true)
+    || ($session['user_id'] != $myId && $session['volunteer_id'] != $myId)) {
+    header('Location: index.php?err=' . urlencode('Only an Unscheduled or Pending session can be edited.'));
     exit;
 }
 
@@ -38,9 +40,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 include __DIR__ . '/../general/header.php';
 ?>
+<link rel="stylesheet" href="../../frontend/css/session.css">
 
 <h1>Edit session</h1>
-<p class="subtitle">You can change the category and description until the session is scheduled.</p>
+<p class="subtitle">You can change the category and description until the volunteer accepts the session.</p>
 
 <?php foreach ($errors as $error): ?>
 <div class="message message-error"><?php echo htmlspecialchars($error); ?></div>

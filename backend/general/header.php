@@ -6,6 +6,7 @@
 <title>Campus Connect</title>
 <link rel="stylesheet" href="../../frontend/css/style.css">
 <link rel="stylesheet" href="../../frontend/css/navigation.css">
+<link rel="stylesheet" href="../../frontend/css/profile.css">
 </head>
 <body>
 <div class="layout">

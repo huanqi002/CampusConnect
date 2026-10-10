@@ -7,7 +7,7 @@ requireLogin();
 
 $myId      = currentUser()['id'];
 $sessionId = isset($_GET['session_id']) ? (int)$_GET['session_id'] : 0;
-$session   = findSessionWithStatus($conn, $sessionId, 'Pending');
+$session   = findSessionWithStatus($conn, $sessionId, 'Unscheduled');
 
 if (!$session || ($session['user_id'] != $myId && $session['volunteer_id'] != $myId)) {
     header('Location: schedule_list.php?err=' . urlencode('This session is not ready to be scheduled.'));
@@ -16,6 +16,7 @@ if (!$session || ($session['user_id'] != $myId && $session['volunteer_id'] != $m
 
 include __DIR__ . '/../general/header.php';
 ?>
+<link rel="stylesheet" href="../../frontend/css/session.css">
 
 <h1>Book a session</h1>
 <p class="subtitle"><?php echo htmlspecialchars($session['category']); ?> &mdash;

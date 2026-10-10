@@ -11,6 +11,7 @@ $sessions = fetchActiveSessions($conn, $myId);
 
 include __DIR__ . '/../general/header.php';
 ?>
+<link rel="stylesheet" href="../../frontend/css/session.css">
 
 <h1 class="page-title">Session Dashboard</h1>
 
@@ -27,21 +28,12 @@ include __DIR__ . '/../general/header.php';
 
 <div class="card-list">
 <?php while ($s = $sessions->fetch_assoc()):
-    $id      = (int)$s['id'];
-    $actions = '';
-    if ($s['status'] === 'Pending') {
-        $actions .= cardIconLink("edit_session.php?session_id=$id", 'edit', 'Edit category and description');
-    }
-    if ($s['volunteer_id'] == $myId && $s['status'] === 'Scheduled' && hasSessionStarted($s)) {
-        $actions .= cardIconForm('mark_completed.php', ['session_id' => $id], 'complete', 'Mark as complete', 'Mark this session as complete?');
-    }
-    $actions .= cardIconForm('cancel_session.php', ['session_id' => $id], 'cancel', 'Cancel session', 'Cancel this session? The other participant will be notified.');
+    $id = (int)$s['id'];
 
     echo renderCard([
         'href'    => "session_details.php?session_id=$id",
         'fields'  => ['Category' => $s['category'], 'Description' => $s['description']],
         'status'  => sessionDisplayStatus($s),
-        'actions' => $actions,
     ]);
 endwhile; ?>
 </div>

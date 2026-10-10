@@ -8,13 +8,13 @@ DELETE FROM requests;
 DELETE FROM volunteers;
 DELETE FROM users;
 
-INSERT INTO users (id, email, full_name, university_name, password_hash, is_volunteer, is_active, created_at) VALUES
-(1, 'aisha@help.edu.com.my',   'Aisha Rahman',  'Help University',             '$2y$10$ilRV9CW9s.7DbKu7c6lwTOcsUNW70NiCn3qzyp5A8fAUlstcrX9ei', 'N', 'Y', '2026-08-04 10:00:00'),
-(2, 'ben@help.edu.com.my',     'Ben Tan',       'Help University',             '$2y$10$ilRV9CW9s.7DbKu7c6lwTOcsUNW70NiCn3qzyp5A8fAUlstcrX9ei', 'N', 'Y', '2026-08-19 10:00:00'),
-(3, 'b2300554@help.edu.com.my',   'Low Huan Qi',  'Help University',             '$2y$10$ilRV9CW9s.7DbKu7c6lwTOcsUNW70NiCn3qzyp5A8fAUlstcrX9ei', 'Y', 'Y', '2026-09-13 10:00:00'),
-(4, 'chandra@help.edu.com.my', 'Chandra Kumar', 'Help University',             '$2y$10$ilRV9CW9s.7DbKu7c6lwTOcsUNW70NiCn3qzyp5A8fAUlstcrX9ei', 'Y', 'Y', '2026-07-05 10:00:00'),
-(5, 'dinesh@help.edu.com.my',  'Dinesh Raj',    'Help University',             '$2y$10$ilRV9CW9s.7DbKu7c6lwTOcsUNW70NiCn3qzyp5A8fAUlstcrX9ei', 'Y', 'Y', '2026-07-15 10:00:00'),
-(6, 'elena@help.edu.com.my',   'Elena Wong',    'Help University',             '$2y$10$ilRV9CW9s.7DbKu7c6lwTOcsUNW70NiCn3qzyp5A8fAUlstcrX9ei', 'N', 'N', '2026-09-03 10:00:00');
+INSERT INTO users (id, student_id, email, full_name, university_name, password_hash, is_volunteer, is_active, created_at) VALUES
+(1, 'B2300001', 'aisha@help.edu.com.my',   'Aisha Rahman',  'Help University',             '$2y$10$ilRV9CW9s.7DbKu7c6lwTOcsUNW70NiCn3qzyp5A8fAUlstcrX9ei', 'N', 'Y', '2026-08-04 10:00:00'),
+(2, 'B2300002', 'ben@help.edu.com.my',     'Ben Tan',       'Help University',             '$2y$10$ilRV9CW9s.7DbKu7c6lwTOcsUNW70NiCn3qzyp5A8fAUlstcrX9ei', 'N', 'Y', '2026-08-19 10:00:00'),
+(3, 'B2300554', 'b2300554@help.edu.com.my',   'Low Huan Qi',  'Help University',             '$2y$10$ilRV9CW9s.7DbKu7c6lwTOcsUNW70NiCn3qzyp5A8fAUlstcrX9ei', 'Y', 'Y', '2026-09-13 10:00:00'),
+(4, 'B2300004', 'chandra@help.edu.com.my', 'Chandra Kumar', 'Help University',             '$2y$10$ilRV9CW9s.7DbKu7c6lwTOcsUNW70NiCn3qzyp5A8fAUlstcrX9ei', 'Y', 'Y', '2026-07-05 10:00:00'),
+(5, 'B2300005', 'dinesh@help.edu.com.my',  'Dinesh Raj',    'Help University',             '$2y$10$ilRV9CW9s.7DbKu7c6lwTOcsUNW70NiCn3qzyp5A8fAUlstcrX9ei', 'Y', 'Y', '2026-07-15 10:00:00'),
+(6, 'B2300006', 'elena@help.edu.com.my',   'Elena Wong',    'Help University',             '$2y$10$ilRV9CW9s.7DbKu7c6lwTOcsUNW70NiCn3qzyp5A8fAUlstcrX9ei', 'N', 'N', '2026-09-03 10:00:00');
 
 INSERT INTO requests (id, user_id, volunteer_id, category, description, preferred_day, preferred_time, support_mode, status, created_at, notified_at, responded_at) VALUES
 (1, 1, 3,    'Academic',        'Help with Maths - Algebra basics',                     'Monday',    'Morning',   'Online',       'Accepted', '2026-09-23 10:00:00', '2026-09-23 10:00:00', '2026-09-24 10:00:00'),
@@ -43,7 +43,7 @@ INSERT INTO sessions (id, request_id, user_id, volunteer_id, category, descripti
 (2, 3, 2, 4, 'Academic',        'Understanding Newton''s laws of motion',    '2026-10-05', '14:00:00', '15:00:00', 'Face-to-face', 'Scheduled', 'Y', 'Y', '2026-09-29 10:00:00'),
 (3, 4, 1, 3, 'Academic',        'Statistics: t-test and p-values',           '2026-09-26', '15:00:00', '16:00:00', 'Online',       'Completed', 'Y', 'Y', '2026-09-21 10:00:00'),
 (4, 5, 5, 4, 'Technology',      'Reviewing my Java data structures project', '2026-09-30', '09:00:00', '10:30:00', 'Online',       'Completed', 'Y', 'Y', '2026-09-27 10:00:00'),
-(5, 6, 2, 5, 'General Student', 'Advice on managing my study timetable',     NULL,         NULL,       NULL,       'Online',       'Pending',   'N', 'N', '2026-10-02 10:00:00');
+(5, 6, 2, 5, 'General Student', 'Advice on managing my study timetable',     NULL,         NULL,       NULL,       'Online',       'Unscheduled', 'N', 'N', '2026-10-02 10:00:00');
 
 INSERT INTO feedbacks (id, session_id, user_id, volunteer_id, rating, comments, submitted_at) VALUES
 (1, 3, 1, 3, 5, 'Huan Qi explained p-values really clearly. Very helpful!', '2026-09-27 10:00:00');

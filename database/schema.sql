@@ -12,18 +12,49 @@ DROP TABLE IF EXISTS volunteers;
 DROP TABLE IF EXISTS users;
 
 CREATE TABLE users (
+<<<<<<< Updated upstream
     id              INT AUTO_INCREMENT PRIMARY KEY,
     email           VARCHAR(150) NOT NULL,
     full_name       VARCHAR(100) NOT NULL,
     university_name VARCHAR(100) NOT NULL,
-    password_hash   VARCHAR(255) NOT NULL, 
-    picture_url     VARCHAR(255) NULL,
+      password_hash   VARCHAR(255) NOT NULL,
+      picture_url     VARCHAR(255) NULL,
+      cover_photo_url VARCHAR(255) NULL,
+      volunteer_picture_url VARCHAR(255) NULL,
+      volunteer_cover_photo_url VARCHAR(255) NULL,
     tfa_code        VARCHAR(255) NULL,     
     tfa_expiry      DATETIME     NULL,     
     is_volunteer    CHAR(1)      NOT NULL DEFAULT 'N',
     is_active       CHAR(1)      NOT NULL DEFAULT 'N',
     created_at      DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+=======
+    id                        INT AUTO_INCREMENT PRIMARY KEY,
+    student_id                VARCHAR(30)   NOT NULL,
+    email                     VARCHAR(150)  NOT NULL,
+    full_name                 VARCHAR(100)  NOT NULL,
+    university_name           VARCHAR(100)  NOT NULL,
+    password_hash             VARCHAR(255)  NOT NULL,
+    picture_url               VARCHAR(255)  NULL,
+    cover_photo_url           VARCHAR(255)  NULL,
+    volunteer_picture_url     VARCHAR(255)  NULL,
+    volunteer_cover_photo_url VARCHAR(255)  NULL,
+    education                 VARCHAR(500)  NULL,
+    skills                    VARCHAR(500)  NULL,
+    support_experience        VARCHAR(1000) NULL,
+    tfa_code                  VARCHAR(255)  NULL,
+    tfa_expiry                DATETIME      NULL,
+    failed_attempts           INT           NOT NULL DEFAULT 0,
+    locked_until              DATETIME      NULL,
+    remember_token_hash       CHAR(64)      NULL,
+    remember_expires          DATETIME      NULL,
+    reset_code                VARCHAR(6)    NULL,
+    reset_expiry              DATETIME      NULL,
+    is_volunteer              CHAR(1)       NOT NULL DEFAULT 'N',
+    is_active                 CHAR(1)       NOT NULL DEFAULT 'N',
+    created_at                DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+>>>>>>> Stashed changes
     CONSTRAINT uq_users_email      UNIQUE (email),
+    CONSTRAINT uq_users_student_id UNIQUE (student_id),
     CONSTRAINT chk_users_volunteer CHECK (is_volunteer IN ('Y', 'N')),
     CONSTRAINT chk_users_active    CHECK (is_active IN ('Y', 'N'))
 );
@@ -34,7 +65,7 @@ CREATE TABLE volunteers (
     category       VARCHAR(50) NOT NULL,
     preferred_day  VARCHAR(10) NOT NULL,
     preferred_time TIME        NOT NULL,
-    skills         VARCHAR(255) NOT NULL,
+    skills         VARCHAR(255) NULL,
     support_mode   VARCHAR(20) NOT NULL,
     is_available   CHAR(1)     NOT NULL DEFAULT 'N',
     created_at     DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -76,14 +107,14 @@ CREATE TABLE sessions (
     start_time     TIME         NULL,     
     end_time       TIME         NULL,
     support_mode   VARCHAR(20)  NOT NULL,
-    status         VARCHAR(20)  NOT NULL DEFAULT 'Pending',
-    conf_student   CHAR(1)      NOT NULL DEFAULT 'N',   
+    status         VARCHAR(20)  NOT NULL DEFAULT 'Unscheduled',
+    conf_student   CHAR(1)      NOT NULL DEFAULT 'N',
     conf_volunteer CHAR(1)      NOT NULL DEFAULT 'N',  
     created_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT chk_sessions_conf_student   CHECK (conf_student IN ('Y', 'N')),
     CONSTRAINT chk_sessions_conf_volunteer CHECK (conf_volunteer IN ('Y', 'N')),
     CONSTRAINT chk_sessions_times          CHECK (end_time IS NULL OR end_time > start_time),
-    CONSTRAINT chk_sessions_booked         CHECK (status IN ('Pending', 'Cancelled') OR (session_date IS NOT NULL AND start_time IS NOT NULL)),
+    CONSTRAINT chk_sessions_booked         CHECK (status IN ('Unscheduled', 'Cancelled') OR (session_date IS NOT NULL AND start_time IS NOT NULL)),
     CONSTRAINT chk_sessions_mode           CHECK (support_mode IN ('Online', 'Face-to-face')),
     CONSTRAINT fk_sessions_request   FOREIGN KEY (request_id)   REFERENCES requests (id),
     CONSTRAINT fk_sessions_user      FOREIGN KEY (user_id)      REFERENCES users (id),
@@ -132,3 +163,38 @@ CREATE TABLE notifications (
     CONSTRAINT chk_notifications_read CHECK (is_read IN ('Y', 'N')),
     CONSTRAINT fk_notifications_user  FOREIGN KEY (user_id) REFERENCES users (id)
 );
+
+USE support_system;
+
+ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS student_id VARCHAR(30) NULL AFTER id,
+    ADD COLUMN IF NOT EXISTS cover_photo_url VARCHAR(255) NULL,
+    ADD COLUMN IF NOT EXISTS education VARCHAR(500) NULL,
+    ADD COLUMN IF NOT EXISTS skills VARCHAR(500) NULL,
+    ADD COLUMN IF NOT EXISTS support_experience VARCHAR(1000) NULL,
+    ADD COLUMN IF NOT EXISTS failed_attempts INT NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS locked_until DATETIME NULL,
+    ADD COLUMN IF NOT EXISTS remember_token_hash CHAR(64) NULL,
+    ADD COLUMN IF NOT EXISTS remember_expires DATETIME NULL,
+    ADD COLUMN IF NOT EXISTS reset_code VARCHAR(6) NULL,
+    ADD COLUMN IF NOT EXISTS reset_expiry DATETIME NULL;
+
+UPDATE users
+SET student_id = CONCAT('USER', id)
+WHERE student_id IS NULL OR student_id = '';
+
+ALTER TABLE users
+    MODIFY student_id VARCHAR(30) NOT NULL;
+
+SET @index_exists := (
+    SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE TABLE_SCHEMA = DATABASE()
+      AND TABLE_NAME = 'users'
+      AND INDEX_NAME = 'uq_users_student_id'
+);
+SET @sql := IF(@index_exists = 0,
+    'ALTER TABLE users ADD CONSTRAINT uq_users_student_id UNIQUE (student_id)',
+    'SELECT 1');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
