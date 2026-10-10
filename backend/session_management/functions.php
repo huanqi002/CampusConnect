@@ -6,7 +6,7 @@ const FREE_SLOT_SQL = "FROM volunteers v
                        WHERE v.user_id = ? AND v.preferred_day = DAYNAME(?) AND v.is_available = 'Y'
                          AND NOT EXISTS (SELECT 1 FROM sessions s
                                          WHERE s.volunteer_id = v.user_id AND s.session_date = ?
-                                           AND s.start_time = v.preferred_time AND s.status = 'Scheduled')";
+                                           AND s.start_time = v.preferred_time AND s.status IN ('Pending', 'Scheduled'))";
 
 const SESSION_WITH_NAMES_SQL = "SELECT s.*, us.full_name AS student_name, uv.full_name AS volunteer_name
                                 FROM sessions s
@@ -23,6 +23,16 @@ function fetchActiveSessions(mysqli $conn, int $myId): mysqli_result
     return $stmt->get_result();
 }
 
+function fetchUnscheduledSessions(mysqli $conn, int $myId): mysqli_result
+{
+    $stmt = $conn->prepare(SESSION_WITH_NAMES_SQL . "
+                             WHERE (s.user_id = ? OR s.volunteer_id = ?) AND s.status = 'Unscheduled'
+                             ORDER BY s.created_at, s.id");
+    $stmt->bind_param('ii', $myId, $myId);
+    $stmt->execute();
+    return $stmt->get_result();
+}
+
 function findSessionById(mysqli $conn, int $sessionId): ?array
 {
     $stmt = $conn->prepare(SESSION_WITH_NAMES_SQL . " WHERE s.id = ?");
@@ -33,7 +43,7 @@ function findSessionById(mysqli $conn, int $sessionId): ?array
 
 function findActiveSession(mysqli $conn, int $sessionId): ?array
 {
-    $stmt = $conn->prepare(SESSION_WITH_NAMES_SQL . " WHERE s.id = ? AND s.status IN ('Pending', 'Scheduled')");
+    $stmt = $conn->prepare(SESSION_WITH_NAMES_SQL . " WHERE s.id = ? AND s.status IN ('Unscheduled', 'Pending', 'Scheduled')");
     $stmt->bind_param('i', $sessionId);
     $stmt->execute();
     return $stmt->get_result()->fetch_assoc() ?: null;
@@ -41,7 +51,7 @@ function findActiveSession(mysqli $conn, int $sessionId): ?array
 
 function updateSessionDetails(mysqli $conn, int $sessionId, string $category, string $description): void
 {
-    $stmt = $conn->prepare("UPDATE sessions SET category = ?, description = ? WHERE id = ? AND status = 'Pending'");
+    $stmt = $conn->prepare("UPDATE sessions SET category = ?, description = ? WHERE id = ? AND status IN ('Unscheduled', 'Pending')");
     $stmt->bind_param('ssi', $category, $description, $sessionId);
     $stmt->execute();
 }
@@ -68,7 +78,7 @@ function findAvailableSlot(mysqli $conn, int $volunteerId, string $date, string 
     return $stmt->get_result()->fetch_assoc() ?: null;
 }
 
-function createPendingSession(mysqli $conn, array $request): void
+function createUnscheduledSession(mysqli $conn, array $request): void
 {
     $requestId   = (int)$request['id'];
     $userId      = (int)$request['user_id'];
@@ -78,17 +88,51 @@ function createPendingSession(mysqli $conn, array $request): void
     $mode        = $request['support_mode'];
 
     $stmt = $conn->prepare("INSERT INTO sessions (request_id, user_id, volunteer_id, category, description, support_mode, status)
-                             VALUES (?, ?, ?, ?, ?, ?, 'Pending')");
+                             VALUES (?, ?, ?, ?, ?, ?, 'Unscheduled')");
     $stmt->bind_param('iiisss', $requestId, $userId, $volunteerId, $category, $description, $mode);
     $stmt->execute();
 }
 
-function scheduleSession(mysqli $conn, int $sessionId, string $date, string $time, string $mode): void
+function requestSessionTime(mysqli $conn, int $sessionId, string $date, string $time, string $mode): void
 {
-    $stmt = $conn->prepare("UPDATE sessions SET session_date = ?, start_time = ?, support_mode = ?, status = 'Scheduled'
-                             WHERE id = ? AND status = 'Pending'");
+    $stmt = $conn->prepare("UPDATE sessions SET session_date = ?, start_time = ?, support_mode = ?, status = 'Pending'
+                             WHERE id = ? AND status = 'Unscheduled'");
     $stmt->bind_param('sssi', $date, $time, $mode, $sessionId);
     $stmt->execute();
+}
+
+function fetchSessionRequests(mysqli $conn, int $volunteerId): mysqli_result
+{
+    $stmt = $conn->prepare(SESSION_WITH_NAMES_SQL . "
+                             WHERE s.volunteer_id = ? AND s.status = 'Pending'
+                             ORDER BY s.session_date, s.start_time, s.id");
+    $stmt->bind_param('i', $volunteerId);
+    $stmt->execute();
+    return $stmt->get_result();
+}
+
+function findSessionRequest(mysqli $conn, int $sessionId, int $volunteerId): ?array
+{
+    $stmt = $conn->prepare(SESSION_WITH_NAMES_SQL . " WHERE s.id = ? AND s.volunteer_id = ? AND s.status = 'Pending'");
+    $stmt->bind_param('ii', $sessionId, $volunteerId);
+    $stmt->execute();
+    return $stmt->get_result()->fetch_assoc() ?: null;
+}
+
+function acceptSessionRequest(mysqli $conn, int $sessionId): bool
+{
+    $stmt = $conn->prepare("UPDATE sessions SET status = 'Scheduled', conf_volunteer = 'Y' WHERE id = ? AND status = 'Pending'");
+    $stmt->bind_param('i', $sessionId);
+    $stmt->execute();
+    return $stmt->affected_rows === 1;
+}
+
+function rejectSessionRequest(mysqli $conn, int $sessionId): bool
+{
+    $stmt = $conn->prepare("UPDATE sessions SET status = 'Rejected' WHERE id = ? AND status = 'Pending'");
+    $stmt->bind_param('i', $sessionId);
+    $stmt->execute();
+    return $stmt->affected_rows === 1;
 }
 
 function findSessionWithStatus(mysqli $conn, int $sessionId, string $status): ?array

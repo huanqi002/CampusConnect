@@ -1,6 +1,8 @@
 <?php
 require __DIR__ . '/../general/config.php';
 require __DIR__ . '/../general/auth.php';
+require __DIR__ . '/../general/notifications.php';
+require __DIR__ . '/../general/format.php';
 require __DIR__ . '/functions.php';
 
 requireLogin();
@@ -16,7 +18,7 @@ if (!$sessionId || !$date || !$time || !in_array($mode, ['Online','Face-to-face'
     exit;
 }
 
-$session = findSessionWithStatus($conn, $sessionId, 'Pending');
+$session = findSessionWithStatus($conn, $sessionId, 'Unscheduled');
 
 if (!$session || ($session['user_id'] != $myId && $session['volunteer_id'] != $myId)) {
     header('Location: schedule_list.php?err=' . urlencode('This session is not ready to be scheduled.'));
@@ -28,6 +30,18 @@ if (!findAvailableSlot($conn, (int)$session['volunteer_id'], $date, $time)) {
     exit;
 }
 
-scheduleSession($conn, $sessionId, $date, $time, $mode);
-header('Location: schedule_list.php?msg=' . urlencode('Session booked successfully.'));
+$conn->begin_transaction();
+try {
+    requestSessionTime($conn, $sessionId, $date, $time, $mode);
+    $when = date('D, j M Y', strtotime($date)) . ' at ' . formatTime($time);
+    $message = $session['volunteer_id'] == $myId
+        ? "You picked $when for the {$session['category']} session. Please accept or reject it in Session Request."
+        : currentUser()['name'] . " requested a {$session['category']} session on $when. Please accept or reject it in Session Request.";
+    addNotification($conn, (int)$session['volunteer_id'], $message, 'Session Requested');
+    $conn->commit();
+    header('Location: schedule_list.php?msg=' . urlencode('Session time sent. It is now Pending until the volunteer accepts it.'));
+} catch (Exception $e) {
+    $conn->rollback();
+    header('Location: schedule.php?session_id=' . $sessionId . '&err=' . urlencode('Something went wrong. Please try again.'));
+}
 exit;

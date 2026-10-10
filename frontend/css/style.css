@@ -126,6 +126,7 @@ p.subtitle { color: var(--muted); margin-top: 0; }
 .pill-Upcoming  { background: #aad8ee; }
 .pill-Completed { background: #d9d9d9; }
 .pill-Cancelled { background: #f2c4c4; }
+.pill-Rejected  { background: #e57373; color: #fff; }
 
 .card-actions {
     position: relative;

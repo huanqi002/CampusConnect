@@ -1,14 +1,20 @@
+# CampusConnect
+BIT 216 Project 2 Campus Connect
 # Campus Connect - Use Case 1
 
 ## Project layout
 
-- `backend/` contains the feature modules, grouped by general utilities, users, requests, sessions, and history.
-- `frontend/css/` contains shared styles (`style.css`), profile and volunteer page styles (`profile.css`), and backend navigation styles (`navigation.css`).
+- `backend/` contains all PHP, grouped by feature:
+  - `general/` — shared code: `config.php` (the single config: database, `BASE_URL`, mail settings), `db.php` (PDO connection), `account_functions.php` (account helpers), `auth.php`, page layout, sidebars, card template, notifications.
+  - `user_management/` — login, register, logout, password reset, change password.
+  - `profile_management/` — profile, edit profile, profile/cover pictures, volunteer profile.
+  - `request_management/`, `session_management/`, `history_management/` — support requests, sessions, and history.
+- The root `.htaccess` keeps the short public URLs (e.g. `/login.php`) and maps them to the pages in `backend/`.
+- `frontend/css/` contains shared styles (`style.css`), profile and volunteer page styles (`profile.css`), backend navigation styles (`navigation.css`), and session page styles (`session.css`).
 - `frontend/js/` contains browser-side interactions.
-- `auth/`, `profile/`, and `security/` hold page implementations by feature. `routes/` contains categorized entry points, while the root `.htaccess` preserves the existing public URLs. `includes/` contains shared configuration, database, and helper code; `includes/legacy/` keeps the unused legacy sidebar separate. `config/` holds the safe mail configuration example.
-- `database/` contains the base schema and feature-specific SQL patches.
+- `database/` contains `schema.sql` (all tables) and `seed.sql` (sample data). Everything uses the `CampusConnect` database.
 - `uploads/` stores user-uploaded images; avoid committing private uploads.
-- `includes/config.php` and the local root-level `mail_config.php` hold settings. Keep secrets in local config files, never in source control.
+- Local settings go in `backend/general/config.local.php` and `backend/general/mail_config.php` (copy `mail_config.example.php`). Both are excluded from Git; never commit secrets.
 
 ## CSS organization
 
@@ -30,9 +36,9 @@ Profile Cover Photo -> Choose a separate JPG/PNG cover image (5MB maximum) -> Pr
 ## XAMPP
 1. Put this folder in `C:\xampp\htdocs\CampusConnect`.
 2. Start Apache and MySQL.
-3. Make sure Apache's `mod_rewrite` module is enabled and `.htaccess` overrides are allowed; the root `.htaccess` maps the existing PHP URLs to `routes/`.
-4. Import the group's `schema.sql` into phpMyAdmin.
-5. Run `database/schema_usecase1_patch.sql` in `support_system`.
+3. Make sure Apache's `mod_rewrite` module is enabled and `.htaccess` overrides are allowed; the root `.htaccess` maps the short PHP URLs to the pages in `backend/`.
+4. In phpMyAdmin, import `database/schema.sql` (creates the `CampusConnect` database), then `database/seed.sql` for sample data. Sample accounts use the password `welcome@123`.
+5. To update an older database, drop `CampusConnect` and import both files again (this replaces all data).
 6. Open `http://localhost/CampusConnect/register.php`.
 
 ## Microsoft Outlook OTP email (Microsoft Graph)
@@ -42,9 +48,10 @@ OTP messages for password reset and password change are sent using Microsoft Gra
 1. Register a single-tenant app in Microsoft Entra ID.
 2. Add Microsoft Graph `Mail.Send` under **Application permissions**, then grant admin consent.
 3. Create a client secret and copy its **Value** (not its Secret ID).
-4. Copy `config/mail_config.example.php` to `mail_config.php` and set the tenant ID, app client ID, secret value, and sender mailbox address. The sender must be a mailbox in the app's tenant.
+4. Copy `backend/general/mail_config.example.php` to `backend/general/mail_config.php` and set the tenant ID, app client ID, secret value, and sender mailbox address. The sender must be a mailbox in the app's tenant.
 5. Confirm PHP's cURL extension is enabled, then restart Apache and request a new OTP.
 
 The app requests a Graph access token with the client-credentials flow and calls `POST /users/{sender}/sendMail`. It shows a configuration error if Microsoft does not accept the send request. Keep the client secret private; `mail_config.php` is excluded from Git. Application `Mail.Send` is powerful, so an administrator should restrict the app to the designated sender mailbox where the tenant's Exchange configuration supports it.
 
 Profile photo uploads are saved under `uploads/profile/`; the folder is created on the first successful upload.
+

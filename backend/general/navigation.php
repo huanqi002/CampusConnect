@@ -12,7 +12,8 @@ $activeItem = [
     'session_management/session_details.php' => 'dashboard',
     'session_management/schedule_list.php' => 'schedule',
     'session_management/schedule.php' => 'schedule',
-    'request_management/volunteer_requests.php' => 'volunteer_requests',
+    'request_management/support_requests.php' => 'support_requests',
+    'session_management/volunteer_requests.php' => 'session_requests',
     'history_management/history.php' => 'history',
     'history_management/feedback.php' => 'history',
     'history_management/history_details.php' => 'history',
@@ -22,6 +23,11 @@ $navLink = static function (string $href, string $label, string $key, string $ic
     $active = $key === $activeItem ? ' active' : '';
     return '<a class="' . $active . '" href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '"><span class="side-nav-icon" aria-hidden="true">' . htmlspecialchars($icon, ENT_QUOTES, 'UTF-8') . '</span>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</a>';
 };
+
+$isVolunteer = $currentRole === 'volunteer';
+$requestHref = $isVolunteer ? '../request_management/support_requests.php' : '../request_management/request.php';
+$requestLabel = $isVolunteer ? 'Upcoming Request' : 'Request';
+$openSessions = in_array($activeItem, ['dashboard', 'schedule', 'session_requests'], true);
 
 $subLink = static function (string $href, string $label, string $key, string $icon) use ($activeItem): string {
     $active = $key === $activeItem ? ' active' : '';
