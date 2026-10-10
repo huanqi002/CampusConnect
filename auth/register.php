@@ -1,5 +1,5 @@
 <?php
-require_once dirname(__DIR__) . '/general/account_functions.php';
+require_once dirname(__DIR__) . '/includes/functions.php';
 
 if (!empty($_SESSION['user_id'])) {
     redirect('profile.php');

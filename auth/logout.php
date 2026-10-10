@@ -1,6 +1,6 @@
 <?php
-require_once dirname(__DIR__) . '/general/config.php';
-require_once dirname(__DIR__) . '/general/account_functions.php';
+require_once dirname(__DIR__) . '/includes/config.php';
+require_once dirname(__DIR__) . '/includes/functions.php';
 forget_remembered_login();
 $_SESSION = [];
 if (ini_get('session.use_cookies')) {

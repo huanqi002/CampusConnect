@@ -1,7 +1,8 @@
+/* Shared styles for the original backend modules. */
 :root {
-    --red: #c62828;
-    --red-dark: #8e1c1c;
-    --red-light: #fdecec;
+    --red: #e21b2d;
+    --red-dark: #c41225;
+    --red-light: #fff0f1;
     --text: #222222;
     --muted: #6b6b6b;
     --border: #e3d5d5;
@@ -260,8 +261,6 @@ textarea { min-height: 100px; resize: vertical; }
     .page { padding: 18px 14px 50px; }
     .topbar { flex-direction: column; align-items: flex-start; }
 }
-<<<<<<< Updated upstream
-=======
 
 /* Campus Connect demo welcome screen */
 .welcome-page {
@@ -639,8 +638,8 @@ textarea { min-height: 100px; resize: vertical; }
 .dashboard-side-group > summary { display: flex; align-items: center; gap: 11px; min-height: 39px; padding: 0 12px; border-radius: 8px; color: rgba(255,255,255,.8); cursor: pointer; list-style: none; font-size: 11px; }
 .dashboard-side-group > summary::-webkit-details-marker { display: none; }
 .dashboard-side-group > summary::marker { content: ""; }
-.dashboard-side-group > summary::after { margin-left: auto; color: rgba(255,255,255,.72); content: "\203A"; font-size: 17px; line-height: 1; transform: rotate(90deg); transition: transform .15s; }
-.dashboard-side-group[open] > summary::after { transform: rotate(-90deg); }
+.dashboard-side-group > summary::after { margin-left: auto; color: rgba(255,255,255,.72); content: "\203A"; font-size: 17px; line-height: 1; }
+.dashboard-side-group[open] > summary::after { content: "\2304"; }
 .dashboard-side-group > summary:hover { color: #fff; background: rgba(255,255,255,.11); }
 .dashboard-side-group > a { display: flex; align-items: center; gap: 9px; min-height: 33px; padding: 0 10px 0 42px; border-radius: 7px; color: rgba(255,255,255,.76); font-size: 10px; text-decoration: none; }
 .dashboard-side-group > a:hover { color: #fff; background: rgba(255,255,255,.1); }
@@ -717,4 +716,3 @@ textarea { min-height: 100px; resize: vertical; }
     .role-choice { min-height: 175px; }
     .dashboard-user-chip { display: none !important; }
 }
->>>>>>> Stashed changes

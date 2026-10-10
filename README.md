@@ -1,7 +1,5 @@
-<<<<<<< Updated upstream
 # CampusConnect
 BIT 216 Project 2 Campus Connect
-=======
 # Campus Connect - Use Case 1
 
 ## Project layout
@@ -56,4 +54,4 @@ OTP messages for password reset and password change are sent using Microsoft Gra
 The app requests a Graph access token with the client-credentials flow and calls `POST /users/{sender}/sendMail`. It shows a configuration error if Microsoft does not accept the send request. Keep the client secret private; `mail_config.php` is excluded from Git. Application `Mail.Send` is powerful, so an administrator should restrict the app to the designated sender mailbox where the tenant's Exchange configuration supports it.
 
 Profile photo uploads are saved under `uploads/profile/`; the folder is created on the first successful upload.
->>>>>>> Stashed changes
+

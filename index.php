@@ -1,10 +1,11 @@
 <?php
-<<<<<<< Updated upstream
-$landingPage = 'backend/user_management/select_user.php';
-
-header('Location: ' . $landingPage);
-exit;
-=======
 require __DIR__ . '/backend/user_management/login.php';
 ?>
->>>>>>> Stashed changes
+=======
+require_once __DIR__ . '/includes/functions.php';
+
+if (!empty($_SESSION['user_id'])) {
+    redirect('profile.php');
+}
+redirect('login.php');
+?>

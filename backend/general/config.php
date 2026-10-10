@@ -4,13 +4,9 @@ $DB_USER = 'root';
 $DB_PASS = '';
 $DB_NAME = 'CampusConnect';
 
-<<<<<<< Updated upstream
-$DEV_TOOLS = true;
-=======
 $BASE_URL = '/CampusConnect';
 
 $DEV_TOOLS = false;
->>>>>>> Stashed changes
 
 $localConfig = __DIR__ . '/config.local.php';
 if (is_file($localConfig)) {
