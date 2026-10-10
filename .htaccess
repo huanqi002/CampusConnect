@@ -1,0 +1,5 @@
+RewriteEngine On
+
+# Keep the short public URLs (e.g. /login.php) while the pages live in backend/.
+RewriteRule ^(account_created|forgot_password|login|logout|register|reset_password|verify_reset_code|change_password|password_changed|set_new_password|verify_password_otp)\.php$ backend/user_management/$1.php [L]
+RewriteRule ^(become_volunteer|edit_profile|profile|profile_cover|profile_picture|public_profile|volunteer)\.php$ backend/profile_management/$1.php [L]

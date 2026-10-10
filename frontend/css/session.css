@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 .page .btn,
 .action-btn {
     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
@@ -11,11 +12,24 @@
 .page .btn:active,
 .action-btn:active {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+=======
+.page .btn {
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    transition: box-shadow 0.15s, transform 0.15s, background 0.15s;
+}
+.page .btn:hover {
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+    transform: translateY(-1px);
+}
+.page .btn:active {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+>>>>>>> Stashed changes
     transform: translateY(1px);
 }
 
 .pill-Unscheduled { background: #d9d9d9; }
 
+<<<<<<< Updated upstream
 .dashboard-list .card-actions { width: 230px; gap: 8px; }
 .action-btn {
     display: inline-flex;
@@ -38,10 +52,48 @@
 .action-complete:hover { background: #256628; }
 .action-cancel { border-color: #c62828; color: #c62828; }
 .action-cancel:hover { background: #fdecec; }
+=======
+.detail-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-top: 16px;
+    padding-top: 18px;
+    border-top: 1px solid #e6e6e6;
+}
+.detail-actions form { margin: 0; display: flex; }
+.detail-actions .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 130px;
+    height: 44px;
+    padding: 0 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 15px;
+    line-height: 1;
+}
+.detail-actions .btn svg { width: 18px; height: 18px; margin-right: 8px; flex-shrink: 0; }
+.detail-actions .btn-back { margin-left: auto; font-weight: normal; }
+
+.btn-success { background: #2e7d32; border-color: #2e7d32; color: #fff; }
+.btn-success:hover { background: #256628; }
+.btn-danger { background: #fff; border-color: #c62828; color: #c62828; }
+.btn-danger:hover { background: #fdecec; }
+.btn-outline { background: #fff; border-color: #6f6f6f; color: #333; }
+.btn-outline:hover { background: #f1f1f1; }
+>>>>>>> Stashed changes
 
 .schedule-list .card-actions { width: auto; }
 .schedule-list .card-actions .btn { white-space: nowrap; }
 
 @media (max-width: 760px) {
+<<<<<<< Updated upstream
     .dashboard-list .card-actions { width: auto; }
+=======
+    .detail-actions .btn { flex: 1 1 140px; }
+    .detail-actions .btn-back { margin-left: 0; }
+>>>>>>> Stashed changes
 }

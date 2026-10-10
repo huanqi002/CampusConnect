@@ -8,6 +8,7 @@ $unreadCount   = $currentUserId ? countUnreadNotifications($conn, (int)$currentU
 
 $currentPage = basename(dirname($_SERVER['SCRIPT_NAME'])) . '/' . basename($_SERVER['SCRIPT_NAME']);
 $activeItem = [
+<<<<<<< Updated upstream
     'user_management/profile.php'               => 'profile',
     'request_management/request.php'            => 'request',
     'session_management/index.php'              => 'dashboard',
@@ -19,6 +20,20 @@ $activeItem = [
     'history_management/history.php'            => 'history',
     'history_management/feedback.php'           => 'history',
     'history_management/history_details.php'    => 'history',
+=======
+    'user_management/profile.php' => 'profile',
+    'request_management/request.php' => 'request',
+    'session_management/index.php' => 'dashboard',
+    'session_management/edit_session.php' => 'dashboard',
+    'session_management/session_details.php' => 'dashboard',
+    'session_management/schedule_list.php' => 'schedule',
+    'session_management/schedule.php' => 'schedule',
+    'request_management/support_requests.php' => 'support_requests',
+    'session_management/volunteer_requests.php' => 'session_requests',
+    'history_management/history.php' => 'history',
+    'history_management/feedback.php' => 'history',
+    'history_management/history_details.php' => 'history',
+>>>>>>> Stashed changes
 ][$currentPage] ?? '';
 
 $sessionItems = ['dashboard', 'schedule', 'volunteer_requests'];
@@ -27,6 +42,7 @@ $navLink = function (string $href, string $label, string $key, string $class) us
     $class .= $key === $activeItem ? ' active' : '';
     return '<a class="' . $class . '" href="' . $href . '">' . htmlspecialchars($label) . '</a>';
 };
+<<<<<<< Updated upstream
 ?>
 <aside class="sidebar">
     <div class="sidebar-top">
@@ -73,4 +89,26 @@ $navLink = function (string $href, string $label, string $key, string $class) us
 
         <?php include __DIR__ . '/dev_user_switcher.php'; ?>
     </div>
+=======
+
+$isVolunteer = $currentRole === 'volunteer';
+$requestHref = $isVolunteer ? '../request_management/support_requests.php' : '../request_management/request.php';
+$requestLabel = $isVolunteer ? 'Upcoming Request' : 'Request';
+$openSessions = in_array($activeItem, ['dashboard', 'schedule', 'session_requests'], true);
+?>
+<aside class="dashboard-sidebar">
+    <a class="account-brand account-brand-light" href="../../profile.php" aria-label="Campus Connect home"><img class="account-brand-logo" src="../../frontend/images/campus-connect-logo.png" alt="Campus Connect"></a>
+    <nav class="dashboard-side-nav" aria-label="Main navigation">
+        <?= $navLink('../../profile.php', 'My Profile', 'profile', 'P') ?>
+        <?= $navLink($requestHref, $requestLabel, $isVolunteer ? 'support_requests' : 'request', 'R') ?>
+        <details class="dashboard-side-group" <?= $openSessions ? 'open' : '' ?>>
+            <summary><span class="side-nav-icon" aria-hidden="true">S</span>Session</summary>
+            <?= $subLink('../session_management/index.php', 'Dashboard', 'dashboard', 'D') ?>
+            <?= $subLink('../session_management/schedule_list.php', 'Schedule', 'schedule', 'C') ?>
+            <?php if ($isVolunteer): ?><?= $subLink('../session_management/volunteer_requests.php', 'Request', 'session_requests', 'R') ?><?php endif; ?>
+        </details>
+        <?= $navLink('../history_management/history.php', 'History', 'history', 'H') ?>
+    </nav>
+    <a class="dashboard-side-logout" href="../user_management/logout.php"><span class="side-nav-icon" aria-hidden="true">↪</span>Log out</a>
+>>>>>>> Stashed changes
 </aside>
