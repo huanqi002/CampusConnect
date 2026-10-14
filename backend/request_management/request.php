@@ -1,20 +1,47 @@
 <?php
 require __DIR__ . '/../general/config.php';
 require __DIR__ . '/../general/auth.php';
-
 requireLogin();
+$user = currentUser();
+$userId = $user['id'];
 
+$sql = "
+    SELECT id, category, description, status, created_at, notified_at, responded_at
+    FROM requests
+    WHERE user_id = ?
+    ORDER BY created_at DESC
+";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $userId);
+$stmt->execute();
+$result = $stmt->get_result();
 include __DIR__ . '/../general/header.php';
 ?>
+<style>
+    .page-title {
+        text-align: center;
+        font-size: 36px;
+        font-weight: 800;
+        margin: 0 0 20px;
+    }
 
-<h1>Request</h1>
-<p class="subtitle">Ask for support and follow your requests until a volunteer accepts them.</p>
+    .request-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
 
-<div class="message message-success">This page is coming soon.</div>
+    .request-header h2 {
+        display: inline-block;
+        font-size: 30px;
+        font-weight: 700;
+        margin: 0;
+        padding-bottom: 4px;
+        border-bottom: 2px solid #999999;
+        line-height: 1;
+    }
 
-<<<<<<< Updated upstream
-<?php include __DIR__ . '/../general/footer.php'; ?>
-=======
     .request-list {
         display: flex;
         flex-direction: column;
@@ -209,4 +236,3 @@ include __DIR__ . '/../general/header.php';
 $stmt->close();
 include __DIR__ . '/../general/footer.php';
 ?>
->>>>>>> Stashed changes

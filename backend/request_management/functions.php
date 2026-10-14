@@ -18,8 +18,6 @@ function updateSupportRequestStatus(mysqli $conn, int $id, string $status): void
     $stmt->bind_param('si', $status, $id);
     $stmt->execute();
 }
-<<<<<<< Updated upstream
-=======
 
 // Volunteers on that day and mode whose preferred start-end range overlaps the requested start-end time.
 function findMatchingVolunteers($pdo, $day, $startTime, $endTime, $mode, $skills)
@@ -54,4 +52,3 @@ function findMatchingVolunteers($pdo, $day, $startTime, $endTime, $mode, $skills
     $stmt->execute($params);
     return $stmt->fetchAll();
 }
->>>>>>> Stashed changes
