@@ -18,3 +18,40 @@ function updateSupportRequestStatus(mysqli $conn, int $id, string $status): void
     $stmt->bind_param('si', $status, $id);
     $stmt->execute();
 }
+<<<<<<< Updated upstream
+=======
+
+// Volunteers on that day and mode whose preferred start-end range overlaps the requested start-end time.
+function findMatchingVolunteers($pdo, $day, $startTime, $endTime, $mode, $skills)
+{
+    $sql = "
+        SELECT v.*, u.full_name, u.email, u.picture_url
+        FROM volunteers v
+        JOIN users u ON v.user_id = u.id
+        WHERE v.preferred_day = ?
+          AND v.start_time < ?
+          AND v.end_time > ?
+          AND v.support_mode = ?
+    ";
+
+    $params = [$day, $endTime, $startTime, $mode];
+
+    // Check if skills filter was provided
+    if (!empty(trim($skills))) {
+        // Split the comma-separated skills into an array of individual tags
+        $skillsArray = array_map('trim', explode(',', $skills));
+
+        foreach ($skillsArray as $skill) {
+            if ($skill !== '') {
+                // Dynamically add a LIKE condition for EACH skill tag
+                $sql .= " AND v.skills LIKE ?";
+                $params[] = '%' . $skill . '%';
+            }
+        }
+    }
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    return $stmt->fetchAll();
+}
+>>>>>>> Stashed changes

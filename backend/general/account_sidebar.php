@@ -1,7 +1,7 @@
 <?php
 $isVolunteer = ($user['is_volunteer'] ?? 'N') === 'Y';
 $currentFile = basename($_SERVER['SCRIPT_NAME'] ?? 'profile.php');
-$requestUrl = BASE_URL . ($isVolunteer ? '/backend/request_management/support_requests.php' : '/backend/request_management/request.php');
+$requestUrl = BASE_URL . ($isVolunteer ? '/backend/request_management/upcoming_request.php' : '/backend/request_management/request.php');
 ?>
 <aside class="dashboard-sidebar">
     <a class="account-brand account-brand-light" href="<?= BASE_URL ?>/profile.php" aria-label="Campus Connect home"><img class="account-brand-logo" src="<?= BASE_URL ?>/frontend/images/campus-connect-logo.png" alt="Campus Connect"></a>

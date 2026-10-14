@@ -1,7 +1,8 @@
 /* Shared navigation shell for every page rendered through backend/general/header.php. */
 .layout { display: flex; min-height: 100vh; background: #f8f6f5; }
 .layout > .dashboard-sidebar { position: sticky; top: 0; z-index: 2; flex: 0 0 224px; width: 224px; height: 100vh; padding: 27px 13px 20px; border: 0; overflow-y: auto; }
-.layout > .page { flex: 1; width: min(100%,1200px); max-width: 1200px; min-width: 0; margin: 0 auto; padding: 38px clamp(22px,4vw,54px) 55px; }
+.layout > .layout-main { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+.layout-main > .page { flex: 1; width: min(100%,1200px); max-width: 1200px; min-width: 0; margin: 0 auto; padding: 38px clamp(22px,4vw,54px) 55px; }
 .layout .dashboard-sidebar .account-brand { display: flex; width: fit-content; margin: 0 auto 34px; padding: 5px 8px; border-radius: 7px; background: #fff; }
 .layout .dashboard-sidebar .account-brand-logo { width: 166px; }
 .layout .dashboard-side-nav { display: grid; gap: 5px; }
@@ -15,6 +16,10 @@
 .layout .page-title { margin: 0 0 22px; color: #20232c; text-align: left; font-size: clamp(27px,3vw,36px); letter-spacing: -1px; }
 .layout .card,.layout .detail-card { border: 1px solid #e9e4e3; border-radius: 12px; box-shadow: 0 5px 18px rgba(59,33,34,.035); }
 .layout .info-card { border: 1px solid #e9e4e3; border-radius: 12px; }
+.layout .detail-card { font-size: 13px; color: #484a52; }
+.layout .detail-card .pill { width: auto; padding: 5px 16px; font-size: 12px; }
+.layout .detail-row { padding: 10px 0; }
+.layout .detail-row dt { width: 140px; color: #373943; font-weight: 700; }
 .layout .nav-toggle { display: none; }
 @media(max-width:760px) {
     .layout { flex-direction: column; }
@@ -25,5 +30,5 @@
     .layout .dashboard-side-nav > a,.layout .dashboard-side-group > summary { min-height: 36px; padding: 0 8px; font-size: 10px; }
     .layout .dashboard-side-group > a { min-height: 31px; padding-left: 34px; }
     .layout .dashboard-side-logout { min-height: 34px; margin-top: 8px; padding-top: 8px; }
-    .layout > .page { width: 100%; padding: 24px 18px 45px; }
+    .layout-main > .page { width: 100%; padding: 24px 18px 45px; }
 }

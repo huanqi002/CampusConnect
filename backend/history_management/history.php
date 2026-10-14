@@ -12,7 +12,6 @@ $entries = fetchHistory($conn, $myId);
 include __DIR__ . '/../general/header.php';
 ?>
 
-<h1 class="page-title">History</h1>
 
 <?php if (isset($_GET['msg'])): ?>
 <div class="message message-success"><?php echo htmlspecialchars($_GET['msg']); ?></div>

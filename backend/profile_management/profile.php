@@ -1,5 +1,6 @@
 <?php
 require_once dirname(__DIR__) . '/general/account_functions.php';
+require_once dirname(__DIR__) . '/general/dashboard_header.php';
 require_login();
 $user = current_user();
 $isVolunteer = ($user['is_volunteer'] ?? 'N') === 'Y';
@@ -44,14 +45,7 @@ if ($isVolunteer) redirect('volunteer.php');
 <div class="dashboard-app">
 <?php include dirname(__DIR__) . '/general/account_sidebar.php'; ?>
 <main class="dashboard-main">
-    <header class="dashboard-header">
-        <div class="dashboard-header-title">My Profile</div>
-        <nav class="dashboard-nav" aria-label="Account navigation">
-            <a class="dashboard-user-chip profile-photo-chip" href="<?= BASE_URL ?>/profile_picture.php" aria-label="Change profile picture"><span class="dashboard-user-avatar"><?php if (!empty($user['picture_url'])): ?><img src="<?= e($user['picture_url']) ?>" alt=""><?php else: ?><?= e($initials) ?><?php endif; ?></span></a>
-            <a class="profile-header-name" href="<?= BASE_URL ?>/edit_profile.php" aria-label="View and edit your profile"><?= e($user['full_name']) ?></a>
-            <a class="dashboard-logout" href="<?= BASE_URL ?>/logout.php">Log out</a>
-        </nav>
-    </header>
+    <?= renderDashboardHeader('My Profile', $user) ?>
     <div class="dashboard-shell profile-dashboard-shell">
         <?php flash(); ?>
         <div class="profile-page-heading">

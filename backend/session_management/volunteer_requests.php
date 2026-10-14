@@ -4,6 +4,7 @@ require __DIR__ . '/../general/auth.php';
 require __DIR__ . '/../general/card_template.php';
 require __DIR__ . '/../general/format.php';
 require __DIR__ . '/functions.php';
+require __DIR__ . '/result_modal.php';
 
 requireLogin();
 
@@ -15,11 +16,20 @@ if (currentUser()['role'] !== 'volunteer') {
 $myId     = currentUser()['id'];
 $requests = fetchSessionRequests($conn, $myId);
 
+$results = [
+    'accepted' => ['check', 'Accepted', 'You have accepted the session.', 'success'],
+    'rejected' => ['rejected', 'Rejected', 'You have rejected the session.', 'danger'],
+];
+$result = $results[$_GET['done'] ?? ''] ?? null;
+
 include __DIR__ . '/../general/header.php';
 ?>
 <link rel="stylesheet" href="../../frontend/css/session.css">
 
-<h1 class="page-title">Session Request</h1>
+<?php if ($result) {
+    echo renderResultModal(...$result);
+}
+echo renderConfirmModal(); ?>
 
 <?php if (isset($_GET['msg'])): ?>
 <div class="message message-success"><?php echo htmlspecialchars($_GET['msg']); ?></div>
@@ -37,14 +47,11 @@ include __DIR__ . '/../general/header.php';
     $id = (int)$s['id'];
 
     echo renderCard([
-        'href'    => "session_details.php?session_id=$id",
-        'fields'  => [
-            'Category'      => $s['category'],
-            'Description'   => $s['description'],
-            'Student'       => $s['student_name'],
-            'Date and time' => date('D, j M Y', strtotime($s['session_date'])) . ', ' . formatTime($s['start_time']) . ' (' . $s['support_mode'] . ')',
-        ],
-        'status'  => 'Pending',
+        'href'    => "session_request_details.php?session_id=$id",
+        'title'   => sessionPartnerLabel($s, (int)$myId),
+        'meta'    => [[$s['category'], $s['support_mode']], date('D, j M Y', strtotime($s['session_date'])) . ' · ' . formatTimeRange($s['start_time'], $s['end_time'])],
+        'actions' => cardIconForm('accept_session.php', ['session_id' => $id], 'complete', 'Accept session')
+                   . cardIconForm('reject_session.php', ['session_id' => $id], 'cancel', 'Reject session'),
     ]);
 endwhile; ?>
 </div>

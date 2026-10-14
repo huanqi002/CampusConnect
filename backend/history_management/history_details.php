@@ -41,19 +41,17 @@ if ($isCompleted) {
 include __DIR__ . '/../general/header.php';
 ?>
 
-<h1 class="page-title">History Details</h1>
 
 <div class="detail-card">
     <span class="pill pill-<?php echo htmlspecialchars($entry['final_status']); ?>"><?php echo htmlspecialchars($entry['final_status']); ?></span>
 
     <?php echo renderDetails($details); ?>
 
+    <?php if (canRate($entry, $myId)): ?>
     <div class="btn-row">
-        <?php if (canRate($entry, $myId)): ?>
         <a class="btn btn-primary" href="feedback.php?session_id=<?php echo (int)$entry['session_id']; ?>">Rate this session</a>
-        <?php endif; ?>
-        <a class="btn btn-plain" href="history.php">Back to history</a>
     </div>
+    <?php endif; ?>
 </div>
 
 <?php include __DIR__ . '/../general/footer.php'; ?>

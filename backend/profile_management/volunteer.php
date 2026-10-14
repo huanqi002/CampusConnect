@@ -1,5 +1,6 @@
 <?php
 require_once dirname(__DIR__) . '/general/account_functions.php';
+require_once dirname(__DIR__) . '/general/dashboard_header.php';
 require_login();
 $user = current_user();
 $isVolunteer = ($user['is_volunteer'] ?? 'N') === 'Y';
@@ -29,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$stmt = $pdo->prepare('SELECT category, preferred_day, preferred_time, support_mode, is_available FROM volunteers WHERE user_id = ? ORDER BY FIELD(preferred_day, \'Monday\', \'Tuesday\', \'Wednesday\', \'Thursday\', \'Friday\', \'Saturday\', \'Sunday\'), preferred_time');
+$stmt = $pdo->prepare('SELECT category, preferred_day, start_time, end_time, support_mode, is_available FROM volunteers WHERE user_id = ? ORDER BY FIELD(preferred_day, \'Monday\', \'Tuesday\', \'Wednesday\', \'Thursday\', \'Friday\', \'Saturday\', \'Sunday\'), start_time');
 $stmt->execute([$user['id']]);
 $slots = $stmt->fetchAll();
 if (!$slots) redirect('become_volunteer.php');
@@ -37,7 +38,7 @@ $available = (bool)array_filter($slots, static fn($slot) => ($slot['is_available
 $categories = array_values(array_unique(array_column($slots, 'category')));
 $skills = array_filter(array_map('trim', explode(',', (string)($user['skills'] ?? ''))));
 $days = array_values(array_unique(array_column($slots, 'preferred_day')));
-$times = array_values(array_unique(array_map(static fn($slot) => date('g:i A', strtotime($slot['preferred_time'])), $slots)));
+$times = array_values(array_unique(array_map(static fn($slot) => date('g:i A', strtotime($slot['start_time'])) . ' - ' . date('g:i A', strtotime($slot['end_time'])), $slots)));
 $modes = array_values(array_unique(array_map(static fn($slot) => $slot['support_mode'] === 'Online' ? 'Virtual' : $slot['support_mode'], $slots)));
 $initials = '';
 foreach (array_slice(preg_split('/\s+/', trim($user['full_name'] ?? 'Student')), 0, 2) as $part) $initials .= strtoupper(substr($part, 0, 1));
@@ -55,7 +56,7 @@ foreach (array_slice(preg_split('/\s+/', trim($user['full_name'] ?? 'Student')),
 <div class="dashboard-app">
 <?php include dirname(__DIR__) . '/general/account_sidebar.php'; ?>
 <main class="dashboard-main">
-    <header class="dashboard-header"><div class="dashboard-header-title">Profile Dashboard</div><nav class="dashboard-nav"><a class="dashboard-user-chip profile-photo-chip" href="<?= BASE_URL ?>/profile_picture.php" aria-label="Change profile picture"><span class="dashboard-user-avatar"><?php if ($profilePicture): ?><img src="<?= e($profilePicture) ?>" alt=""><?php else: ?><?= e($initials) ?><?php endif; ?></span></a><a class="profile-header-name" href="<?= BASE_URL ?>/edit_profile.php"><?= e($user['full_name']) ?></a><a class="dashboard-logout" href="<?= BASE_URL ?>/logout.php">Log out</a></nav></header>
+    <?= renderDashboardHeader('Profile Dashboard', $user) ?>
     <div class="dashboard-shell profile-dashboard-shell volunteer-profile-shell">
         <?php flash(); ?>
         <div class="profile-page-heading volunteer-profile-heading"><div><span class="account-eyebrow">YOUR CAMPUS CONNECT PROFILE</span><h1>Profile Dashboard</h1></div><span class="volunteer-status <?= $available ? 'is-active' : 'is-paused' ?>"><?= $available ? 'Active' : 'Inactive' ?></span></div>

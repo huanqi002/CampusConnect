@@ -4,11 +4,21 @@ const CARD_ICONS = [
     'edit'     => '<svg class="icon-fill" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>',
     'cancel'   => '<svg class="icon-stroke" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19"/></svg>',
     'complete' => '<svg class="icon-stroke" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg>',
+    'back'     => '<svg class="icon-stroke" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4l-8 8 8 8"/></svg>',
 ];
 
 function cardIcon(string $name): string
 {
     return CARD_ICONS[$name] ?? '';
+}
+
+function renderPageHeading(string $title, string $backHref, string $backLabel): string
+{
+    $backLabel = htmlspecialchars($backLabel);
+    return '<div class="page-heading">'
+         . '<a class="back-link" href="' . htmlspecialchars($backHref) . '" title="' . $backLabel . '" aria-label="' . $backLabel . '">' . cardIcon('back') . '</a>'
+         . '<h1 class="page-title">' . htmlspecialchars($title) . '</h1>'
+         . '</div>';
 }
 
 function cardIconLink(string $href, string $icon, string $label): string
@@ -33,6 +43,13 @@ function cardIconForm(string $action, array $hidden, string $icon, string $label
 function renderCard(array $card): string
 {
     $text = '';
+    if (!empty($card['title'])) {
+        $text .= '<p class="card-title">' . htmlspecialchars($card['title']) . '</p>';
+    }
+    // 'meta' is a list of lines; a line given as an array is joined with " · ".
+    foreach ($card['meta'] ?? [] as $line) {
+        $text .= '<p class="card-meta">' . implode(' &middot; ', array_map('htmlspecialchars', (array)$line)) . '</p>';
+    }
     foreach ($card['fields'] ?? [] as $label => $value) {
         $text .= '<p><span class="card-label">' . htmlspecialchars($label) . ' :</span> '
                . htmlspecialchars((string)($value ?? '-')) . '</p>';

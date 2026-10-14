@@ -1,5 +1,6 @@
 <?php
 require_once dirname(__DIR__) . '/general/account_functions.php';
+require_once dirname(__DIR__) . '/general/dashboard_header.php';
 require_login();
 $user = current_user();
 $isVolunteer = ($user['is_volunteer'] ?? 'N') === 'Y';
@@ -15,7 +16,8 @@ $validDays = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sun
 $validModes = ['Online','Face-to-face'];
 $category = '';
 $preferredDays = [];
-$preferredTime = '';
+$startTime = '';
+$endTime = '';
 $supportMode = '';
 $volunteerSlots = [];
 $timeOptions = [];
@@ -26,13 +28,14 @@ for ($hour = 0; $hour < 24; $hour++) {
     }
 }
 if ($isVolunteer) {
-    $slotQuery = $pdo->prepare('SELECT category, preferred_day, preferred_time, support_mode, is_available FROM volunteers WHERE user_id = ? ORDER BY FIELD(preferred_day, \'Monday\', \'Tuesday\', \'Wednesday\', \'Thursday\', \'Friday\', \'Saturday\', \'Sunday\'), preferred_time');
+    $slotQuery = $pdo->prepare('SELECT category, preferred_day, start_time, end_time, support_mode, is_available FROM volunteers WHERE user_id = ? ORDER BY FIELD(preferred_day, \'Monday\', \'Tuesday\', \'Wednesday\', \'Thursday\', \'Friday\', \'Saturday\', \'Sunday\'), start_time');
     $slotQuery->execute([$user['id']]);
     $volunteerSlots = $slotQuery->fetchAll();
     if ($volunteerSlots) {
         $category = $volunteerSlots[0]['category'];
         $preferredDays = array_values(array_unique(array_column($volunteerSlots, 'preferred_day')));
-        $preferredTime = substr($volunteerSlots[0]['preferred_time'], 0, 5);
+        $startTime = substr($volunteerSlots[0]['start_time'], 0, 5);
+        $endTime = substr($volunteerSlots[0]['end_time'], 0, 5);
         $supportMode = $volunteerSlots[0]['support_mode'];
     }
 }
@@ -46,14 +49,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $skills = implode(', ', array_values(array_unique(array_filter(array_map('trim', explode(',', $_POST['skills'] ?? ''))))));
         $experience = trim($_POST['support_experience'] ?? '');
         $preferredDays = array_values(array_unique((array)($_POST['preferred_days'] ?? [])));
-        $preferredTime = $_POST['preferred_time'] ?? '';
+        $startTime = $_POST['start_time'] ?? '';
+        $endTime = $_POST['end_time'] ?? '';
         $supportMode = $_POST['support_mode'] ?? '';
         if (!in_array($category, $volunteerCategories, true)) $fieldErrors['category'] = 'Please select a support category.';
         if ($skills === '') $fieldErrors['skills'] = 'Please enter at least one skill.';
         elseif (mb_strlen($skills) > 500) $fieldErrors['skills'] = 'Skills must be 500 characters or fewer.';
         if (mb_strlen($experience) > 1000) $fieldErrors['support_experience'] = 'Support experience must be 1000 characters or fewer.';
         if (!$preferredDays || array_diff($preferredDays, $validDays)) $fieldErrors['preferred_days'] = 'Please select at least one day.';
-        if (!array_key_exists($preferredTime, $timeOptions)) $fieldErrors['preferred_time'] = 'Please select a preferred time.';
+        if (!array_key_exists($startTime, $timeOptions) || !array_key_exists($endTime, $timeOptions)) $fieldErrors['preferred_time'] = 'Please select a start and end time.';
+        elseif ($endTime <= $startTime) $fieldErrors['preferred_time'] = 'The end time must be after the start time.';
         if (!in_array($supportMode, $validModes, true)) $fieldErrors['support_mode'] = 'Please select a support mode.';
         if (!$fieldErrors) {
             try {
@@ -61,8 +66,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdo->prepare('UPDATE users SET skills = ?, support_experience = ? WHERE id = ?')->execute([$skills, $experience, $user['id']]);
                 $pdo->prepare('DELETE FROM volunteers WHERE user_id = ?')->execute([$user['id']]);
                 $availability = array_reduce($volunteerSlots, static fn($active, $slot) => $active || ($slot['is_available'] ?? 'N') === 'Y', false) ? 'Y' : 'N';
-                $insert = $pdo->prepare('INSERT INTO volunteers (user_id, category, preferred_day, preferred_time, support_mode, is_available) VALUES (?, ?, ?, ?, ?, ?)');
-                foreach ($preferredDays as $preferredDay) $insert->execute([$user['id'], $category, $preferredDay, $preferredTime . ':00', $supportMode, $availability]);
+                $insert = $pdo->prepare('INSERT INTO volunteers (user_id, category, preferred_day, start_time, end_time, skills, support_mode, is_available) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+                foreach ($preferredDays as $preferredDay) $insert->execute([$user['id'], $category, $preferredDay, $startTime . ':00', $endTime . ':00', $skills, $supportMode, $availability]);
                 $pdo->commit();
                 set_flash('success', 'Your volunteer profile has been updated.');
                 redirect('volunteer.php');
@@ -109,13 +114,7 @@ $user = current_user();
 <div class="dashboard-app">
 <?php include dirname(__DIR__) . '/general/account_sidebar.php'; ?>
 <main class="dashboard-main">
-    <header class="dashboard-header">
-        <div class="dashboard-header-title">Edit Profile</div>
-        <nav class="dashboard-nav" aria-label="Account navigation">
-            <a class="dashboard-user-chip" href="<?= $isVolunteer ? BASE_URL . '/volunteer.php' : BASE_URL . '/profile.php' ?>" aria-label="View your profile"><span class="dashboard-user-avatar"><?php if ($profilePicture): ?><img src="<?= e($profilePicture) ?>" alt=""><?php else: ?><?= e($initials) ?><?php endif; ?></span><?= e($user['full_name']) ?></a>
-            <a class="dashboard-logout" href="<?= BASE_URL ?>/logout.php">Log out</a>
-        </nav>
-    </header>
+    <?= renderDashboardHeader('Edit Profile', $user) ?>
     <div class="dashboard-shell edit-profile-shell">
         <div class="profile-page-heading edit-profile-heading"><div><span class="account-eyebrow">YOUR ACCOUNT</span><h1>Edit Profile</h1><p>Keep your information up to date so your campus community can get to know you.</p></div></div>
         <?php if ($errors): ?><div class="message message-error edit-profile-errors" role="alert"><?php foreach ($errors as $error): ?><div><?= e($error) ?></div><?php endforeach; ?></div><?php endif; ?>
@@ -129,8 +128,10 @@ $user = current_user();
                 <?php if (isset($fieldErrors['category'])): ?><small class="volunteer-field-error"><?= e($fieldErrors['category']) ?></small><?php endif; ?>
                 <fieldset class="volunteer-choice-fieldset <?= isset($fieldErrors['preferred_days']) ? 'has-error' : '' ?>"><legend>Preferred Day</legend><div class="volunteer-day-options"><?php foreach ($validDays as $option): ?><label class="volunteer-choice-pill"><input type="checkbox" name="preferred_days[]" value="<?= e($option) ?>" <?= in_array($option, $preferredDays, true) ? 'checked' : '' ?>><span><?= e(substr($option, 0, 3)) ?></span></label><?php endforeach; ?></div></fieldset>
                 <?php if (isset($fieldErrors['preferred_days'])): ?><small class="volunteer-field-error"><?= e($fieldErrors['preferred_days']) ?></small><?php endif; ?>
-                <label for="preferred_time" class="<?= isset($fieldErrors['preferred_time']) ? 'has-error' : '' ?>">Preferred Time</label>
-                <select id="preferred_time" name="preferred_time" class="<?= isset($fieldErrors['preferred_time']) ? 'is-invalid' : '' ?>" required><option value="" disabled <?= $preferredTime === '' ? 'selected' : '' ?>>Select preferred time slot...</option><?php foreach ($timeOptions as $value => $label): ?><option value="<?= e($value) ?>" <?= $preferredTime === $value ? 'selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?></select>
+                <label for="start_time" class="<?= isset($fieldErrors['preferred_time']) ? 'has-error' : '' ?>">Start Time</label>
+                <select id="start_time" name="start_time" class="<?= isset($fieldErrors['preferred_time']) ? 'is-invalid' : '' ?>" required><option value="" disabled <?= $startTime === '' ? 'selected' : '' ?>>Select start time...</option><?php foreach ($timeOptions as $value => $label): ?><option value="<?= e($value) ?>" <?= $startTime === $value ? 'selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?></select>
+                <label for="end_time" class="<?= isset($fieldErrors['preferred_time']) ? 'has-error' : '' ?>">End Time</label>
+                <select id="end_time" name="end_time" class="<?= isset($fieldErrors['preferred_time']) ? 'is-invalid' : '' ?>" required><option value="" disabled <?= $endTime === '' ? 'selected' : '' ?>>Select end time...</option><?php foreach ($timeOptions as $value => $label): ?><option value="<?= e($value) ?>" <?= $endTime === $value ? 'selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?></select>
                 <?php if (isset($fieldErrors['preferred_time'])): ?><small class="volunteer-field-error"><?= e($fieldErrors['preferred_time']) ?></small><?php endif; ?>
                 <fieldset class="volunteer-choice-fieldset <?= isset($fieldErrors['support_mode']) ? 'has-error' : '' ?>"><legend>Support Mode</legend><div class="volunteer-mode-options"><?php foreach (['Online' => 'Virtual','Face-to-face' => 'Face-to-Face'] as $value => $label): ?><label class="volunteer-choice-pill"><input type="radio" name="support_mode" value="<?= e($value) ?>" <?= $supportMode === $value ? 'checked' : '' ?>><span><?= e($label) ?></span></label><?php endforeach; ?></div></fieldset>
                 <?php if (isset($fieldErrors['support_mode'])): ?><small class="volunteer-field-error"><?= e($fieldErrors['support_mode']) ?></small><?php endif; ?>

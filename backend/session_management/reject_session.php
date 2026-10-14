@@ -25,7 +25,7 @@ try {
     addNotification($conn, (int)$session['user_id'],
         "{$me['name']} rejected your {$session['category']} session on $when.", 'Session Rejected');
     $conn->commit();
-    header('Location: volunteer_requests.php?msg=' . urlencode('Session rejected. The student has been notified.'));
+    header('Location: volunteer_requests.php?done=rejected');
 } catch (Exception $e) {
     $conn->rollback();
     header('Location: volunteer_requests.php?err=' . urlencode('Something went wrong. Please try again.'));

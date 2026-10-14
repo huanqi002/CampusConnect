@@ -1,5 +1,6 @@
 <?php
 require_once dirname(__DIR__) . '/general/account_functions.php';
+require_once dirname(__DIR__) . '/general/dashboard_header.php';
 require_login();
 $user = current_user();
 $isVolunteer = ($user['is_volunteer'] ?? 'N') === 'Y';
@@ -66,7 +67,7 @@ foreach (array_slice(preg_split('/\s+/', trim($user['full_name'] ?? 'Student')),
 <div class="photo-app">
     <?php include dirname(__DIR__) . '/general/account_sidebar.php'; ?>
     <main class="photo-main">
-        <header class="dashboard-header"><div class="dashboard-header-title">My profile</div><a class="dashboard-user-chip" href="<?= $isVolunteer ? BASE_URL . '/volunteer.php' : BASE_URL . '/profile.php' ?>"><span class="dashboard-user-avatar"><?php if ($profilePicture): ?><img src="<?= e($profilePicture) ?>" alt=""><?php else: ?><?= e($initials) ?><?php endif; ?></span><?= e($user['full_name']) ?></a></header>
+        <?= renderDashboardHeader('My Profile', $user) ?>
         <section class="photo-content">
             <div class="security-page-heading"><span class="account-eyebrow">YOUR PROFILE</span><h1>Edit profile picture</h1><p>Choose a clear photo so your campus community can recognize you.</p></div>
             <?php if ($error): ?><div class="message message-error photo-error" role="alert"><?= e($error) ?></div><?php endif; ?>
