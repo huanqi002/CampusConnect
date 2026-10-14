@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ");
         $notifStmt->execute([$userId, "Your {$category} request has been sent to volunteers. Response deadline timer has started."]);
 
-        header('Location: request.php');
+        header('Location: request.php?done=request_created');
         exit;
     }
 }
@@ -130,6 +130,23 @@ include __DIR__ . '/../general/header.php';
         outline: none;
         border-color: #c62828;
         box-shadow: 0 0 0 3px rgba(198, 40, 40, 0.1);
+    }
+
+    .time-select {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1px solid #d6d6d6;
+        border-radius: 8px;
+        font-size: 15px;
+        font-family: inherit;
+        background: #ffffff;
+        box-sizing: border-box;
+    }
+
+    .time-note {
+        margin: 4px 0 20px 146px;
+        font-size: 12px;
+        color: #666666;
     }
 
     /* OK button and validation message */
@@ -499,85 +516,92 @@ include __DIR__ . '/../general/header.php';
 
                 <input type="hidden" name="preferred_day" id="preferred_day" value="">
 
-                <!-- Preferred Time: start and end -->
                 <?php
-                $hourOptions = '';
-                for ($h = 0; $h < 24; $h++) {
-                    $hour = $h % 12 ?: 12;
-                    $hourOptions .= '<option value="' . sprintf('%02d:00', $h) . '">' . sprintf('%02d:00 %s', $hour, $h >= 12 ? 'PM' : 'AM') . '</option>';
+                $timeOptions = '';
+                for ($hour = 0; $hour < 24; $hour++) {
+                    foreach ([0, 30] as $minute) {
+                        $value = sprintf('%02d:%02d', $hour, $minute);
+                        $display = sprintf('%d%02dam', ($hour % 12 === 0 ? 12 : $hour % 12), $minute);
+                        if ($hour >= 12) {
+                            $display = sprintf('%d%02dpm', ($hour % 12 === 0 ? 12 : $hour % 12), $minute);
+                        }
+                        $timeOptions .= '<option value="' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($display, ENT_QUOTES, 'UTF-8') . '</option>';
+                    }
                 }
                 ?>
                 <div class="preference-row">
                     <label for="start_time">Start Time:</label>
-
                     <div class="preference-control">
                         <select name="start_time" id="start_time" class="time-select" required>
                             <option value="">-- Select a time --</option>
-                            <?= $hourOptions ?>
+                            <?= $timeOptions ?>
                         </select>
                     </div>
                 </div>
 
                 <div class="preference-row">
                     <label for="end_time">End Time:</label>
-
                     <div class="preference-control">
                         <select name="end_time" id="end_time" class="time-select" required>
                             <option value="">-- Select a time --</option>
-                            <?= $hourOptions ?>
+                            <?= $timeOptions ?>
                         </select>
                     </div>
                 </div>
 
-                <!-- Skills Tag Input -->
-                <div class="preference-row">
-                    <label for="skills">Skills:</label>
-
-                    <div class="preference-control">
-                        <div class="skills-container" id="skillsContainer">
-                            <input type="text" id="skillInput" class="skills-input-field"
-                                placeholder="Type skill and press Enter">
-                        </div>
-                        <input type="hidden" name="skills" id="skills" value="">
-                    </div>
+                <div class="time-note">
+                    Example: The student is available for support between 10:00 AM and 12:00 PM.
                 </div>
 
-                <!-- Support Mode -->
-                <div class="preference-row">
-                    <label>Support Mode:</label>
+                            <!-- Skills Tag Input -->
+                            <div class="preference-row">
+                                <label for="skills">Skills:</label>
 
-                    <div class="radio-group" id="modeGroup">
+                                <div class="preference-control">
+                                    <div class="skills-container" id="skillsContainer">
+                                        <input type="text" id="skillInput" class="skills-input-field"
+                                            placeholder="Type skill and press Enter">
+                                    </div>
+                                    <input type="hidden" name="skills" id="skills" value="">
+                                </div>
+                            </div>
 
-                        <label>
-                            <input type="radio" name="support_mode" value="Online">
-                            <span class="mode-btn">Virtual</span>
-                        </label>
+                            <!-- Support Mode -->
+                            <div class="preference-row">
+                                <label>Support Mode:</label>
 
-                        <label>
-                            <input type="radio" name="support_mode" value="Face-to-face">
-                            <span class="mode-btn">Face-2-Face</span>
-                        </label>
+                                <div class="radio-group" id="modeGroup">
 
-                    </div>
-                </div>
+                                    <label>
+                                        <input type="radio" name="support_mode" value="Online">
+                                        <span class="mode-btn">Virtual</span>
+                                    </label>
 
-                <!-- Find Button -->
-                <div class="find-actions">
-                    <button type="button" class="find-btn" id="findButton">
-                        Find
-                    </button>
-                </div>
+                                    <label>
+                                        <input type="radio" name="support_mode" value="Face-to-face">
+                                        <span class="mode-btn">Face-2-Face</span>
+                                    </label>
 
-                <!-- Volunteer Profile -->
-                <div class="section-heading">Volunteer Profile</div>
+                                </div>
+                            </div>
 
-                <div class="volunteer-list" id="volunteerList">
-                    <p class="empty-message">
-                        No volunteers to display yet.
-                        <br>
-                        Select your preferences and click Find.
-                    </p>
-                </div>
+                            <!-- Find Button -->
+                            <div class="find-actions">
+                                <button type="button" class="find-btn" id="findButton">
+                                    Find
+                                </button>
+                            </div>
+
+                            <!-- Volunteer Profile -->
+                            <div class="section-heading">Volunteer Profile</div>
+
+                            <div class="volunteer-list" id="volunteerList">
+                                <p class="empty-message">
+                                    No volunteers to display yet.
+                                    <br>
+                                    Select your preferences and click Find.
+                                </p>
+                            </div>
 
             </fieldset>
 

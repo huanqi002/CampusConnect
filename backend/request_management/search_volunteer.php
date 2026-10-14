@@ -1,15 +1,19 @@
 <?php
 require_once __DIR__ . '/../general/config.php';
 require_once __DIR__ . '/../general/db.php';
+require_once __DIR__ . '/../general/auth.php';
 require_once __DIR__ . '/functions.php';
 
+requireLogin();
+
+$currentUserId = currentUser()['id'];
 $day = $_POST['preferred_day'] ?? '';
 $startTime = $_POST['start_time'] ?? '';
 $endTime = $_POST['end_time'] ?? '';
 $mode = $_POST['support_mode'] ?? '';
 $skills = $_POST['skills'] ?? '';
 
-$volunteers = findMatchingVolunteers($pdo, $day, $startTime, $endTime, $mode, $skills);
+$volunteers = findMatchingVolunteers($pdo, $day, $startTime, $endTime, $mode, $skills, $currentUserId);
 
 if (empty($volunteers)) {
     echo '<p class="empty-message">No volunteers found matching your exact criteria in the database.</p>';
@@ -21,7 +25,8 @@ foreach ($volunteers as $volunteer) {
     $name = htmlspecialchars($volunteer['full_name'] ?? 'Volunteer', ENT_QUOTES, 'UTF-8');
     $vSkills = htmlspecialchars($volunteer['skills'] ?? 'General Support', ENT_QUOTES, 'UTF-8');
     $vDay = htmlspecialchars($volunteer['preferred_day'] ?? $day, ENT_QUOTES, 'UTF-8');
-    $vTime = htmlspecialchars(date('g:i A', strtotime($volunteer['start_time'])) . ' - ' . date('g:i A', strtotime($volunteer['end_time'])), ENT_QUOTES, 'UTF-8');
+    $vStartTime = htmlspecialchars($volunteer['start_time'] ?? $startTime, ENT_QUOTES, 'UTF-8');
+    $vEndTime = htmlspecialchars($volunteer['end_time'] ?? $endTime, ENT_QUOTES, 'UTF-8');
     $vMode = htmlspecialchars($volunteer['support_mode'] ?? $mode, ENT_QUOTES, 'UTF-8');
     $picture = !empty($volunteer['picture_url'])
         ? htmlspecialchars($volunteer['picture_url'], ENT_QUOTES, 'UTF-8')
@@ -41,7 +46,7 @@ foreach ($volunteers as $volunteer) {
                 <div style="margin-top: 8px; padding: 10px; background: #f9f9f9; border-radius: 8px; font-size: 14px; color: #444;">
                     <div><strong>Skills:</strong> ' . $vSkills . '</div>
                     <div><strong>Preferred Day:</strong> ' . $vDay . '</div>
-                    <div><strong>Preferred Time:</strong> ' . $vTime . '</div>
+                    <div><strong>Preferred Time:</strong> ' . $vStartTime . ' - ' . $vEndTime . '</div>
                     <div><strong>Support Mode:</strong> ' . $vMode . '</div>
                 </div>
             </details>
@@ -53,5 +58,38 @@ foreach ($volunteers as $volunteer) {
         </div>
 
     </div>';
+
+    // Read incoming parameters
+    $preferredDay = $_POST['preferred_day'] ?? '';
+    $startTime = $_POST['start_time'] ?? '';
+    $endTime = $_POST['end_time'] ?? '';
+    $supportMode = $_POST['support_mode'] ?? '';
+    $skillsInput = $_POST['skills'] ?? '';
+
+    // Base query joining volunteers with users
+    $sql = "
+    SELECT v.*, u.full_name, u.email, u.picture_url
+    FROM volunteers v
+    JOIN users u ON v.user_id = u.id
+    WHERE v.preferred_day = ? AND v.start_time = ? AND v.end_time = ? AND v.support_mode = ?";
+
+    $params = [$preferredDay, $startTime, $endTime, $supportMode];
+
+    // Split the comma-separated skills into an array of individual skills
+    if (!empty(trim($skillsInput))) {
+        $skillsArray = array_map('trim', explode(',', $skillsInput));
+
+        foreach ($skillsArray as $singleSkill) {
+            if ($singleSkill !== '') {
+                // Search for EACH individual skill using wildcard matching
+                $sql .= " AND v.skills LIKE ?";
+                $params[] = '%' . $singleSkill . '%';
+            }
+        }
+    }
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    $volunteers = $stmt->fetchAll();
 }
 ?>

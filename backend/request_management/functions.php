@@ -20,7 +20,7 @@ function updateSupportRequestStatus(mysqli $conn, int $id, string $status): void
 }
 
 // Volunteers on that day and mode whose preferred start-end range overlaps the requested start-end time.
-function findMatchingVolunteers($pdo, $day, $startTime, $endTime, $mode, $skills)
+function findMatchingVolunteers($pdo, $day, $startTime, $endTime, $mode, $skills, ?int $excludeUserId = null)
 {
     $sql = "
         SELECT v.*, u.full_name, u.email, u.picture_url
@@ -34,14 +34,15 @@ function findMatchingVolunteers($pdo, $day, $startTime, $endTime, $mode, $skills
 
     $params = [$day, $endTime, $startTime, $mode];
 
-    // Check if skills filter was provided
-    if (!empty(trim($skills))) {
-        // Split the comma-separated skills into an array of individual tags
-        $skillsArray = array_map('trim', explode(',', $skills));
+    if ($excludeUserId !== null) {
+        $sql .= " AND v.user_id <> ?";
+        $params[] = $excludeUserId;
+    }
 
+    if (!empty(trim($skills))) {
+        $skillsArray = array_map('trim', explode(',', $skills));
         foreach ($skillsArray as $skill) {
             if ($skill !== '') {
-                // Dynamically add a LIKE condition for EACH skill tag
                 $sql .= " AND v.skills LIKE ?";
                 $params[] = '%' . $skill . '%';
             }

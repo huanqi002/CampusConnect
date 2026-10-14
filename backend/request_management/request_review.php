@@ -147,7 +147,6 @@ include __DIR__ . '/../general/header.php';
         border-radius: 12px;
         border: 1px solid #e0e0e0;
     }
-
 </style>
 
 <div class="create-page">
@@ -175,7 +174,9 @@ include __DIR__ . '/../general/header.php';
 
         <div class="preference-row">
             <label>Preferred Time:</label>
-            <div class="preference-control"><?= htmlspecialchars(date('g:i A', strtotime($request['start_time'])) . ' - ' . date('g:i A', strtotime($request['end_time']))) ?></div>
+            <div class="preference-control">
+                <?= htmlspecialchars(date('g:i A', strtotime($request['start_time'])) . ' - ' . date('g:i A', strtotime($request['end_time']))) ?>
+            </div>
         </div>
 
         <div class="preference-row">
