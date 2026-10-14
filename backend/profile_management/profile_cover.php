@@ -1,5 +1,6 @@
 <?php
 require_once dirname(__DIR__) . '/general/account_functions.php';
+require_once dirname(__DIR__) . '/general/dashboard_header.php';
 require_login();
 $user = current_user();
 $isVolunteer = ($user['is_volunteer'] ?? 'N') === 'Y';
@@ -59,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="dashboard-app">
     <?php include dirname(__DIR__) . '/general/account_sidebar.php'; ?>
     <main class="dashboard-main">
-        <header class="dashboard-header"><div class="dashboard-header-title">My Profile</div><a class="dashboard-user-chip" href="<?= $isVolunteer ? BASE_URL . '/volunteer.php' : BASE_URL . '/profile.php' ?>"><?= e($user['full_name']) ?></a></header>
+        <?= renderDashboardHeader('My Profile', $user) ?>
         <div class="dashboard-shell cover-editor-shell">
             <div class="cover-editor-heading"><span class="account-eyebrow">YOUR PROFILE</span><h1>Edit cover photo</h1><p>Choose a wide photo that shows your campus story.</p></div>
             <?php if ($error): ?><div class="message message-error" role="alert"><?= e($error) ?></div><?php endif; ?>

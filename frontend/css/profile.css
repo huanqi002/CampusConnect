@@ -1,6 +1,5 @@
 /* Student profile dashboard and profile editor. */
 .profile-dashboard-shell { width: min(1030px,calc(100% - 54px)); padding-top: 34px; }
-.profile-view-page .dashboard-header { position: static; }
 .profile-view-page .profile-photo-chip { text-decoration: none; }
 .profile-view-page .profile-header-name { color: #484a52; font-size: 12px; font-weight: 650; text-decoration: none; }
 .profile-view-page .profile-header-name:hover { color: var(--account-red); }

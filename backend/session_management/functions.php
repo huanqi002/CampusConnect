@@ -2,33 +2,73 @@
 
 const SESSION_CATEGORIES = ['Academic', 'Technology', 'New Student', 'General Student'];
 
-const FREE_SLOT_SQL = "FROM volunteers v
-                       WHERE v.user_id = ? AND v.preferred_day = DAYNAME(?) AND v.is_available = 'Y'
-                         AND NOT EXISTS (SELECT 1 FROM sessions s
-                                         WHERE s.volunteer_id = v.user_id AND s.session_date = ?
-                                           AND s.start_time = v.preferred_time AND s.status IN ('Pending', 'Scheduled'))";
+// Bookable hours on a volunteer's preferred day, in 30-minute slots.
+const SLOT_DAY_START = '08:00';
+const SLOT_DAY_END   = '20:00';
 
-const SESSION_WITH_NAMES_SQL = "SELECT s.*, us.full_name AS student_name, uv.full_name AS volunteer_name
+// Older sessions were saved without an end time; treat them as one hour long.
+const BUSY_END_SQL = "COALESCE(end_time, ADDTIME(start_time, '01:00:00'))";
+// The last placeholder excludes one session (the one being edited); pass 0 to exclude none.
+const BUSY_SESSIONS_SQL = "FROM sessions
+                           WHERE volunteer_id = ? AND session_date = ? AND status IN ('Pending', 'Scheduled') AND id <> ?";
+
+const SESSION_WITH_NAMES_SQL = "SELECT s.*, us.full_name AS student_name, us.email AS student_email,
+                                       uv.full_name AS volunteer_name, uv.email AS volunteer_email
                                 FROM sessions s
                                 JOIN users us ON s.user_id = us.id
                                 JOIN users uv ON s.volunteer_id = uv.id";
 
-function fetchActiveSessions(mysqli $conn, int $myId): mysqli_result
+// Users see sessions only from the side of their current role: students as the student, volunteers as the volunteer.
+function sessionRoleColumn(?string $role): string
+{
+    return $role === 'volunteer' ? 'volunteer_id' : 'user_id';
+}
+
+function isMySession(array $session, int $myId, ?string $role): bool
+{
+    return (int)$session[sessionRoleColumn($role)] === $myId;
+}
+
+// Rows for the details card shared by Session Details and Session Request Details. Needs general/format.php.
+function sessionDetailRows(array $session): array
+{
+    $isBooked = $session['session_date'] !== null;
+    return [
+        'Category'     => $session['category'],
+        'Description'  => $session['description'],
+        'Student'      => $session['student_name'],
+        'Volunteer'    => $session['volunteer_name'],
+        'Date'         => $isBooked ? date('l, j F Y', strtotime($session['session_date'])) : 'Not booked yet',
+        'Time'         => $isBooked ? formatTimeRange($session['start_time'], $session['end_time']) : 'Not booked yet',
+        'Support mode' => $session['support_mode'],
+        'Created'      => formatDateTime($session['created_at']),
+    ];
+}
+
+// Card title for session lists: the other participant and their role.
+function sessionPartnerLabel(array $session, int $myId): string
+{
+    return (int)$session['user_id'] === $myId
+        ? $session['volunteer_name'] . ' (Volunteer)'
+        : $session['student_name'] . ' (Student)';
+}
+
+function fetchActiveSessions(mysqli $conn, int $myId, ?string $role): mysqli_result
 {
     $stmt = $conn->prepare(SESSION_WITH_NAMES_SQL . "
-                             WHERE (s.user_id = ? OR s.volunteer_id = ?) AND s.status IN ('Pending', 'Scheduled')
+                             WHERE s." . sessionRoleColumn($role) . " = ? AND s.status IN ('Pending', 'Scheduled')
                              ORDER BY s.session_date IS NULL, s.session_date, s.start_time, s.id");
-    $stmt->bind_param('ii', $myId, $myId);
+    $stmt->bind_param('i', $myId);
     $stmt->execute();
     return $stmt->get_result();
 }
 
-function fetchUnscheduledSessions(mysqli $conn, int $myId): mysqli_result
+function fetchUnscheduledSessions(mysqli $conn, int $myId, ?string $role): mysqli_result
 {
     $stmt = $conn->prepare(SESSION_WITH_NAMES_SQL . "
-                             WHERE (s.user_id = ? OR s.volunteer_id = ?) AND s.status = 'Unscheduled'
+                             WHERE s." . sessionRoleColumn($role) . " = ? AND s.status = 'Unscheduled'
                              ORDER BY s.created_at, s.id");
-    $stmt->bind_param('ii', $myId, $myId);
+    $stmt->bind_param('i', $myId);
     $stmt->execute();
     return $stmt->get_result();
 }
@@ -49,33 +89,82 @@ function findActiveSession(mysqli $conn, int $sessionId): ?array
     return $stmt->get_result()->fetch_assoc() ?: null;
 }
 
-function updateSessionDetails(mysqli $conn, int $sessionId, string $category, string $description): void
+function updatePendingSession(mysqli $conn, int $sessionId, string $description,
+                              string $date, string $start, string $end, string $mode): void
 {
-    $stmt = $conn->prepare("UPDATE sessions SET category = ?, description = ? WHERE id = ? AND status IN ('Unscheduled', 'Pending')");
-    $stmt->bind_param('ssi', $category, $description, $sessionId);
+    $stmt = $conn->prepare("UPDATE sessions SET description = ?, session_date = ?, start_time = ?, end_time = ?, support_mode = ?
+                             WHERE id = ? AND status = 'Pending'");
+    $stmt->bind_param('sssssi', $description, $date, $start, $end, $mode, $sessionId);
     $stmt->execute();
 }
 
-function getAvailableTimes(mysqli $conn, int $volunteerId, string $date): array
+// Weekday => preferred time ranges [['start' => 'HH:MM', 'end' => 'HH:MM'], ...] from the volunteer's active rows.
+function getPreferredTimes(mysqli $conn, int $volunteerId): array
 {
-    $stmt = $conn->prepare("SELECT v.preferred_time " . FREE_SLOT_SQL . " ORDER BY v.preferred_time");
-    $stmt->bind_param('iss', $volunteerId, $date, $date);
+    $stmt = $conn->prepare("SELECT preferred_day,
+                                   TIME_FORMAT(start_time, '%H:%i') AS start,
+                                   TIME_FORMAT(end_time, '%H:%i') AS end
+                             FROM volunteers WHERE user_id = ? AND is_available = 'Y' ORDER BY start_time");
+    $stmt->bind_param('i', $volunteerId);
     $stmt->execute();
-    $result = $stmt->get_result();
 
     $times = [];
-    while ($row = $result->fetch_assoc()) {
-        $times[] = substr($row['preferred_time'], 0, 5);
+    foreach ($stmt->get_result()->fetch_all(MYSQLI_ASSOC) as $row) {
+        $times[$row['preferred_day']][] = ['start' => $row['start'], 'end' => $row['end']];
     }
     return $times;
 }
 
-function findAvailableSlot(mysqli $conn, int $volunteerId, string $date, string $time): ?array
+function getPreferredDays(mysqli $conn, int $volunteerId): array
 {
-    $stmt = $conn->prepare("SELECT v.id " . FREE_SLOT_SQL . " AND v.preferred_time = ?");
-    $stmt->bind_param('isss', $volunteerId, $date, $date, $time);
+    return array_keys(getPreferredTimes($conn, $volunteerId));
+}
+
+function getBusyTimes(mysqli $conn, int $volunteerId, string $date, int $excludeSessionId = 0): array
+{
+    $stmt = $conn->prepare("SELECT TIME_FORMAT(start_time, '%H:%i') AS start, TIME_FORMAT(" . BUSY_END_SQL . ", '%H:%i') AS end "
+                         . BUSY_SESSIONS_SQL . " ORDER BY start_time");
+    $stmt->bind_param('isi', $volunteerId, $date, $excludeSessionId);
     $stmt->execute();
-    return $stmt->get_result()->fetch_assoc() ?: null;
+    return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+}
+
+function isTimeRangeFree(mysqli $conn, int $volunteerId, string $date, string $start, string $end, int $excludeSessionId = 0): bool
+{
+    $stmt = $conn->prepare("SELECT 1 " . BUSY_SESSIONS_SQL . " AND start_time < ? AND " . BUSY_END_SQL . " > ? LIMIT 1");
+    $stmt->bind_param('isiss', $volunteerId, $date, $excludeSessionId, $end, $start);
+    $stmt->execute();
+    return $stmt->get_result()->fetch_row() === null;
+}
+
+function isSlotTime(string $time): bool
+{
+    return (bool)preg_match('/^([01]\d|2[0-3]):(00|30)$/', $time)
+        && $time >= SLOT_DAY_START && $time <= SLOT_DAY_END;
+}
+
+// Checks a date/time picked on the booking or edit form. Returns an error message, or null when it can be booked.
+// Needs general/format.php.
+function validateSessionTime(mysqli $conn, int $volunteerId, string $date, string $start, string $end, int $excludeSessionId = 0): ?string
+{
+    $day = DateTime::createFromFormat('!Y-m-d', $date);
+
+    if (!$day || $day->format('Y-m-d') !== $date || $date < date('Y-m-d')) {
+        return 'Please choose a date from today onwards.';
+    }
+    if (!in_array($day->format('l'), getPreferredDays($conn, $volunteerId), true)) {
+        return 'The volunteer is not available on that day. Please choose a green date.';
+    }
+    if (!isSlotTime($start) || !isSlotTime($end) || $start >= $end) {
+        return 'Please choose an end time after the start time, between ' . formatTime(SLOT_DAY_START) . ' and ' . formatTime(SLOT_DAY_END) . '.';
+    }
+    if ($date === date('Y-m-d') && $start <= date('H:i')) {
+        return 'That start time has already passed. Please choose a later time.';
+    }
+    if (!isTimeRangeFree($conn, $volunteerId, $date, $start, $end, $excludeSessionId)) {
+        return 'The volunteer is busy during part of that time. Please choose another time.';
+    }
+    return null;
 }
 
 function createUnscheduledSession(mysqli $conn, array $request): void
@@ -93,11 +182,11 @@ function createUnscheduledSession(mysqli $conn, array $request): void
     $stmt->execute();
 }
 
-function requestSessionTime(mysqli $conn, int $sessionId, string $date, string $time, string $mode): void
+function requestSessionTime(mysqli $conn, int $sessionId, string $date, string $start, string $end, string $mode): void
 {
-    $stmt = $conn->prepare("UPDATE sessions SET session_date = ?, start_time = ?, support_mode = ?, status = 'Pending'
+    $stmt = $conn->prepare("UPDATE sessions SET session_date = ?, start_time = ?, end_time = ?, support_mode = ?, status = 'Pending'
                              WHERE id = ? AND status = 'Unscheduled'");
-    $stmt->bind_param('sssi', $date, $time, $mode, $sessionId);
+    $stmt->bind_param('ssssi', $date, $start, $end, $mode, $sessionId);
     $stmt->execute();
 }
 
@@ -137,10 +226,7 @@ function rejectSessionRequest(mysqli $conn, int $sessionId): bool
 
 function findSessionWithStatus(mysqli $conn, int $sessionId, string $status): ?array
 {
-    $stmt = $conn->prepare("SELECT s.*, uv.full_name AS volunteer_name
-                             FROM sessions s
-                             JOIN users uv ON s.volunteer_id = uv.id
-                             WHERE s.id = ? AND s.status = ?");
+    $stmt = $conn->prepare(SESSION_WITH_NAMES_SQL . " WHERE s.id = ? AND s.status = ?");
     $stmt->bind_param('is', $sessionId, $status);
     $stmt->execute();
     return $stmt->get_result()->fetch_assoc() ?: null;

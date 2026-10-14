@@ -26,7 +26,6 @@ if (!$session || $session['user_id'] != $_SESSION['user_id']) {
     echo '<a class="btn btn-plain" href="history.php">Back to history</a>';
 } else {
 ?>
-    <h1>Rate your session</h1>
     <p class="subtitle"><?php echo htmlspecialchars($session['category']); ?> with <?php echo htmlspecialchars($session['volunteer_name']); ?></p>
 
     <?php if (isset($_GET['err'])): ?>

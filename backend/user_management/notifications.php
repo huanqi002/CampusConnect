@@ -13,8 +13,6 @@ markAllNotificationsRead($conn, $myId);
 include __DIR__ . '/../general/header.php';
 ?>
 
-<h1>Notifications</h1>
-
 <?php if ($notifications->num_rows === 0): ?>
 <p class="empty-state">You have no notifications.</p>
 <?php endif; ?>

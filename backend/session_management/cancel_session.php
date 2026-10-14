@@ -12,7 +12,7 @@ $me        = currentUser();
 
 $session = findActiveSession($conn, $sessionId);
 
-if (!$session || ($session['user_id'] != $me['id'] && $session['volunteer_id'] != $me['id'])) {
+if (!$session || !isMySession($session, (int)$me['id'], $me['role'])) {
     header('Location: index.php?err=' . urlencode('This session cannot be cancelled.'));
     exit;
 }
@@ -35,7 +35,7 @@ try {
     }
 
     $conn->commit();
-    header('Location: index.php?msg=' . urlencode('Session cancelled. The student and volunteer have been notified.'));
+    header('Location: index.php?done=cancelled');
 } catch (Exception $e) {
     $conn->rollback();
     header('Location: index.php?err=' . urlencode('Something went wrong. Please try again.'));

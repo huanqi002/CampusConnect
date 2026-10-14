@@ -95,6 +95,21 @@ p.subtitle { color: var(--muted); margin-top: 0; }
 }
 .empty-state { text-align: center; color: var(--muted); }
 
+.page-heading { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }.page-heading .page-title,
+.layout .page-heading .page-title { width: auto; margin: 0; text-align: left; }
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    color: #20232c;
+}
+.back-link:hover { background: #ebe7e6; }
+.back-link svg { width: 30px; height: 30px; }
+
 .card-list { display: flex; flex-direction: column; gap: 14px; }
 .info-card {
     position: relative;
@@ -109,6 +124,8 @@ p.subtitle { color: var(--muted); margin-top: 0; }
 .info-card.is-clickable:hover { border-color: #3d3d3d; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12); }
 .card-text { flex: 1; min-width: 0; font-size: 16px; color: var(--text); text-decoration: none; }
 .card-text p { margin: 0; overflow-wrap: anywhere; }
+.card-text .card-title { font-size: 17px; font-weight: 700; }
+.card-text .card-meta { margin-top: 4px; color: var(--muted); font-size: 15px; }
 .card-link::after { content: ""; position: absolute; inset: 0; border-radius: 12px; }
 .card-link:focus-visible { outline: none; }
 .card-link:focus-visible::after { outline: 3px solid #1565c0; outline-offset: 2px; }
@@ -573,7 +590,6 @@ textarea { min-height: 100px; resize: vertical; }
 .photo-app { display: grid; grid-template-columns: 234px minmax(0,1fr); min-height: 100vh; background: #f3f3f4; }
 .photo-sidebar { background: linear-gradient(180deg,#f12d43,#d9162d); }
 .photo-main { min-width: 0; }
-.photo-main .dashboard-header { position: static; }
 .photo-content { width: min(940px,calc(100% - 64px)); margin: 0 auto; padding: 38px 0 55px; }
 .photo-content .security-page-heading { margin-bottom: 17px; }
 .photo-content .security-page-heading h1 { margin: 5px 0 8px; font-size: 31px; }
@@ -638,13 +654,15 @@ textarea { min-height: 100px; resize: vertical; }
 .dashboard-side-group > summary { display: flex; align-items: center; gap: 11px; min-height: 39px; padding: 0 12px; border-radius: 8px; color: rgba(255,255,255,.8); cursor: pointer; list-style: none; font-size: 11px; }
 .dashboard-side-group > summary::-webkit-details-marker { display: none; }
 .dashboard-side-group > summary::marker { content: ""; }
-.dashboard-side-group > summary::after { margin-left: auto; color: rgba(255,255,255,.72); content: "\203A"; font-size: 17px; line-height: 1; }
-.dashboard-side-group[open] > summary::after { content: "\2304"; }
+.dashboard-side-group > summary::after { flex: 0 0 auto; width: 3px; height: 3px; margin: 0 4px 0 auto; border-right: 2px solid rgba(255,255,255,.75); border-bottom: 2px solid rgba(255,255,255,.75); content: ""; transform: rotate(-45deg); transition: transform .2s ease; }
+.dashboard-side-group[open] > summary::after { transform: translateY(-2px) rotate(45deg); }
 .dashboard-side-group > summary:hover { color: #fff; background: rgba(255,255,255,.11); }
 .dashboard-side-group > a { display: flex; align-items: center; gap: 9px; min-height: 33px; padding: 0 10px 0 42px; border-radius: 7px; color: rgba(255,255,255,.76); font-size: 10px; text-decoration: none; }
 .dashboard-side-group > a:hover { color: #fff; background: rgba(255,255,255,.1); }
-.dashboard-header { position: sticky; top: 0; z-index: 1; min-height: 59px; padding: 0 27px; }
-.dashboard-header-title { color: #373943; font-size: 13px; font-weight: 700; }
+.dashboard-header { position: sticky; top: 0; z-index: 10; min-height: 59px; padding: 0 27px; }
+.dashboard-header-title { display: flex; align-items: center; gap: 6px; color: #373943; font-size: 13px; font-weight: 700; }
+.dashboard-header-title .back-link { width: 34px; height: 34px; margin-left: -8px; }
+.dashboard-header-title .back-link svg { width: 20px; height: 20px; }
 .dashboard-user-chip { display: flex; align-items: center; gap: 8px; color: #484a52 !important; }
 .dashboard-user-chip .dashboard-user-avatar { display: grid; place-items: center; flex: 0 0 38px; width: 38px; height: 38px; overflow: hidden; border: 2px solid #fff; border-radius: 50%; color: #fff; background: var(--account-red); box-shadow: 0 0 0 1px #f2d9dc; font-size: 11px; font-weight: 750; }
 .dashboard-user-chip .dashboard-user-avatar img { display: block; width: 100%; height: 100%; object-fit: cover; }

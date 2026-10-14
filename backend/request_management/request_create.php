@@ -13,18 +13,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $category = $_POST['category'] ?? '';
     $description = $_POST['description'] ?? '';
     $preferredDay = $_POST['preferred_day'] ?? '';
-    $preferredTime = $_POST['preferred_time'] ?? '';
+    $startTime = $_POST['start_time'] ?? '';
+    $endTime = $_POST['end_time'] ?? '';
     $supportMode = $_POST['support_mode'] ?? '';
     $skills = $_POST['skills'] ?? '';
 
     $volunteerId = !empty($_POST['selected_volunteer_id']) ? intval($_POST['selected_volunteer_id']) : null;
 
-    if (!empty($category) && !empty($description) && !empty($preferredDay) && !empty($preferredTime) && !empty($supportMode)) {
+    if (!empty($category) && !empty($description) && !empty($preferredDay) && !empty($startTime) && !empty($endTime) && $endTime > $startTime && !empty($supportMode)) {
         // Insert into requests setting notified_at to NOW() so the 7-day response timer starts immediately
         $stmt = $pdo->prepare("
         INSERT INTO requests (
-        user_id, volunteer_id, category, description, preferred_day, preferred_time, support_mode, skills, status, notified_at, created_at)            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Pending', NOW(), NOW())");
-        $stmt->execute([$userId, $volunteerId, $category, $description, $preferredDay, $preferredTime, $supportMode, $skills]);
+        user_id, volunteer_id, category, description, preferred_day, start_time, end_time, support_mode, skills, status, notified_at, created_at)            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending', NOW(), NOW())");
+        $stmt->execute([$userId, $volunteerId, $category, $description, $preferredDay, $startTime, $endTime, $supportMode, $skills]);
 
         // Automatically create an in-app notification for the student
         $notifStmt = $pdo->prepare("
@@ -444,7 +445,6 @@ include __DIR__ . '/../general/header.php';
 
 <div class="create-page">
 
-    <h1 class="page-title">Create Support Request</h1>
 
     <form method="POST" action="request_create.php" id="requestForm">
 
@@ -499,30 +499,32 @@ include __DIR__ . '/../general/header.php';
 
                 <input type="hidden" name="preferred_day" id="preferred_day" value="">
 
-                <!-- Preferred Time -->
+                <!-- Preferred Time: start and end -->
+                <?php
+                $hourOptions = '';
+                for ($h = 0; $h < 24; $h++) {
+                    $hour = $h % 12 ?: 12;
+                    $hourOptions .= '<option value="' . sprintf('%02d:00', $h) . '">' . sprintf('%02d:00 %s', $hour, $h >= 12 ? 'PM' : 'AM') . '</option>';
+                }
+                ?>
                 <div class="preference-row">
-                    <label for="preferred_time">Preferred Time:</label>
+                    <label for="start_time">Start Time:</label>
 
                     <div class="preference-control">
-                        <select name="preferred_time" id="preferred_time" class="time-select" required>
+                        <select name="start_time" id="start_time" class="time-select" required>
                             <option value="">-- Select a time --</option>
+                            <?= $hourOptions ?>
+                        </select>
+                    </div>
+                </div>
 
-                            <?php for ($h = 0; $h < 24; $h++):
-                                $period = $h >= 12 ? 'PM' : 'AM';
-                                $hour = $h % 12;
+                <div class="preference-row">
+                    <label for="end_time">End Time:</label>
 
-                                if ($hour == 0) {
-                                    $hour = 12;
-                                }
-
-                                $label = sprintf('%02d:00 %s', $hour, $period);
-                                $val = sprintf('%02d:00', $h);
-                                ?>
-                                <option value="<?= $val ?>">
-                                    <?= $label ?>
-                                </option>
-                            <?php endfor; ?>
-
+                    <div class="preference-control">
+                        <select name="end_time" id="end_time" class="time-select" required>
+                            <option value="">-- Select a time --</option>
+                            <?= $hourOptions ?>
                         </select>
                     </div>
                 </div>
@@ -603,7 +605,8 @@ include __DIR__ . '/../general/header.php';
     const submitButton = document.getElementById('submitButton');
 
     const preferredDay = document.getElementById('preferred_day');
-    const preferredTime = document.getElementById('preferred_time');
+    const startTime = document.getElementById('start_time');
+    const endTime = document.getElementById('end_time');
     const skills = document.getElementById('skills');
     const volunteerList = document.getElementById('volunteerList');
     const findButton = document.getElementById('findButton');
@@ -642,7 +645,8 @@ include __DIR__ . '/../general/header.php';
             btn.classList.remove('selected');
         });
 
-        preferredTime.value = '';
+        startTime.value = '';
+        endTime.value = '';
         skills.value = '';
     }
 
@@ -710,8 +714,13 @@ include __DIR__ . '/../general/header.php';
             return;
         }
 
-        if (preferredTime.value === '') {
-            volunteerList.innerHTML = '<p class="empty-message">Please select a preferred time.</p>';
+        if (startTime.value === '' || endTime.value === '') {
+            volunteerList.innerHTML = '<p class="empty-message">Please select a start and end time.</p>';
+            return;
+        }
+
+        if (endTime.value <= startTime.value) {
+            volunteerList.innerHTML = '<p class="empty-message">The end time must be after the start time.</p>';
             return;
         }
 
@@ -724,7 +733,8 @@ include __DIR__ . '/../general/header.php';
         // Prepare data to send to search_volunteer.php
         const formData = new FormData();
         formData.append('preferred_day', preferredDay.value);
-        formData.append('preferred_time', preferredTime.value);
+        formData.append('start_time', startTime.value);
+        formData.append('end_time', endTime.value);
         formData.append('support_mode', selectedMode.value);
         formData.append('skills', skills.value);
 

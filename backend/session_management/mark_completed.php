@@ -26,7 +26,7 @@ try {
     updateSessionStatus($conn, $sessionId, 'Completed');
     recordHistory($conn, $session, 'Completed');
     $conn->commit();
-    header('Location: index.php?msg=' . urlencode('Session marked as completed. The student can now leave feedback.'));
+    header('Location: index.php?done=completed');
 } catch (Exception $e) {
     $conn->rollback();
     header('Location: index.php?err=' . urlencode('Something went wrong. Please try again.'));

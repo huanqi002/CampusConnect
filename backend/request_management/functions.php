@@ -19,18 +19,20 @@ function updateSupportRequestStatus(mysqli $conn, int $id, string $status): void
     $stmt->execute();
 }
 
-function findMatchingVolunteers($pdo, $day, $time, $mode, $skills)
+// Volunteers on that day and mode whose preferred start-end range overlaps the requested start-end time.
+function findMatchingVolunteers($pdo, $day, $startTime, $endTime, $mode, $skills)
 {
     $sql = "
         SELECT v.*, u.full_name, u.email, u.picture_url
         FROM volunteers v
         JOIN users u ON v.user_id = u.id
-        WHERE v.preferred_day = ? 
-          AND v.preferred_time = ? 
+        WHERE v.preferred_day = ?
+          AND v.start_time < ?
+          AND v.end_time > ?
           AND v.support_mode = ?
     ";
 
-    $params = [$day, $time, $mode];
+    $params = [$day, $endTime, $startTime, $mode];
 
     // Check if skills filter was provided
     if (!empty(trim($skills))) {

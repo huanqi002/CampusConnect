@@ -1,5 +1,6 @@
 <?php
 require_once dirname(__DIR__) . '/general/account_functions.php';
+require_once dirname(__DIR__) . '/general/card_template.php';
 require_login();
 
 $id = (int)($_GET['id'] ?? 0);
@@ -22,7 +23,7 @@ if (!$user) {
 </head>
 <body>
 <div class="page">
-    <h1 class="page-title">Student Profile</h1>
+    <?= renderPageHeading('Student Profile', BASE_URL . '/profile.php', 'Back to profile') ?>
 
     <div class="detail-card">
         <h2><?= e($user['full_name']) ?></h2>
@@ -35,10 +36,6 @@ if (!$user) {
             <div class="detail-row"><dt>Skills</dt><dd><?= nl2br(e($user['skills'] ?: 'Not provided.')) ?></dd></div>
             <div class="detail-row"><dt>Support Experience</dt><dd><?= nl2br(e($user['support_experience'] ?: 'Not provided.')) ?></dd></div>
         </dl>
-    </div>
-
-    <div class="btn-row">
-        <a class="btn btn-secondary" href="<?= BASE_URL ?>/profile.php">Back to Profile</a>
     </div>
 </div>
 </body>

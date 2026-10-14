@@ -1,5 +1,6 @@
 <?php
 require_once dirname(__DIR__) . '/general/account_functions.php';
+require_once dirname(__DIR__) . '/general/dashboard_header.php';
 require_login();
 $user = current_user();
 if (($user['is_volunteer'] ?? 'N') === 'Y') redirect('volunteer.php');
@@ -14,7 +15,8 @@ $category = '';
 $skills = (string)($user['skills'] ?? '');
 $experience = (string)($user['support_experience'] ?? '');
 $selectedDays = ['Monday'];
-$time = '10:00';
+$startTime = '10:00';
+$endTime = '12:00';
 $mode = 'Online';
 $timeOptions = [];
 for ($hour = 0; $hour < 24; $hour++) {
@@ -30,13 +32,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $skills = trim($_POST['skills'] ?? '');
     $experience = trim($_POST['support_experience'] ?? '');
     $selectedDays = array_values(array_unique((array)($_POST['preferred_days'] ?? [])));
-    $time = $_POST['preferred_time'] ?? '';
+    $startTime = $_POST['start_time'] ?? '';
+    $endTime = $_POST['end_time'] ?? '';
     $mode = $_POST['support_mode'] ?? '';
 
     $validModes = ['Online','Face-to-face'];
     if (!in_array($category, $categories, true)) $errors[] = 'Please choose a valid support category.';
     if (!$selectedDays || array_diff($selectedDays, $days)) $errors[] = 'Choose at least one valid preferred day.';
-    if (!array_key_exists($time, $timeOptions)) $errors[] = 'Please choose a valid preferred time.';
+    if (!array_key_exists($startTime, $timeOptions) || !array_key_exists($endTime, $timeOptions)) $errors[] = 'Please choose a valid start and end time.';
+    elseif ($endTime <= $startTime) $errors[] = 'The end time must be after the start time.';
     if (!in_array($mode, $validModes, true)) $errors[] = 'Please choose a valid support mode.';
     if (mb_strlen($skills) > 500) $errors[] = 'Your skills list must be 500 characters or fewer.';
     if (mb_strlen($experience) > 1000) $errors[] = 'Your experience must be 1000 characters or fewer.';
@@ -46,9 +50,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo->beginTransaction();
             $pdo->prepare("UPDATE users SET is_volunteer = 'Y', skills = ?, support_experience = ? WHERE id = ?")
                 ->execute([$skills, $experience, $user['id']]);
-            $insert = $pdo->prepare("INSERT INTO volunteers (user_id, category, preferred_day, preferred_time, support_mode, is_available) VALUES (?, ?, ?, ?, ?, 'Y') ON DUPLICATE KEY UPDATE category = VALUES(category), support_mode = VALUES(support_mode), is_available = 'Y'");
+            $insert = $pdo->prepare("INSERT INTO volunteers (user_id, category, preferred_day, start_time, end_time, skills, support_mode, is_available) VALUES (?, ?, ?, ?, ?, ?, ?, 'Y') ON DUPLICATE KEY UPDATE category = VALUES(category), skills = VALUES(skills), support_mode = VALUES(support_mode), is_available = 'Y'");
             foreach ($selectedDays as $preferredDay) {
-                $insert->execute([$user['id'], $category, $preferredDay, $time . ':00', $mode]);
+                $insert->execute([$user['id'], $category, $preferredDay, $startTime . ':00', $endTime . ':00', $skills, $mode]);
             }
             $pdo->commit();
             $_SESSION['role'] = 'volunteer';
@@ -77,7 +81,7 @@ foreach (array_slice(preg_split('/\s+/', trim($user['full_name'] ?? 'Student')),
 <div class="dashboard-app">
 <?php include dirname(__DIR__) . '/general/account_sidebar.php'; ?>
 <main class="dashboard-main">
-    <header class="dashboard-header"><div class="dashboard-header-title">Become a Volunteer</div><nav class="dashboard-nav"><a class="dashboard-user-chip" href="<?= BASE_URL ?>/profile.php"><span class="dashboard-user-avatar"><?php if (!empty($user['picture_url'])): ?><img src="<?= e($user['picture_url']) ?>" alt=""><?php else: ?><?= e($initials) ?><?php endif; ?></span><?= e($user['full_name']) ?></a><a class="dashboard-logout" href="<?= BASE_URL ?>/logout.php">Log out</a></nav></header>
+    <?= renderDashboardHeader('Become a Volunteer', $user) ?>
     <div class="dashboard-shell volunteer-form-shell">
         <div class="volunteer-form-heading"><span class="account-eyebrow">SHARE WHAT YOU KNOW</span><h1>Become a Volunteer</h1><p>Register as a peer volunteer to help other students.</p></div>
         <?php if ($errors): ?><div class="message message-error" role="alert"><?php foreach ($errors as $error): ?><div><?= e($error) ?></div><?php endforeach; ?></div><?php endif; ?>
@@ -89,8 +93,10 @@ foreach (array_slice(preg_split('/\s+/', trim($user['full_name'] ?? 'Student')),
                 <label for="volunteer_skills">Skills</label>
                 <input type="text" id="volunteer_skills" name="skills" maxlength="500" value="<?= e($skills) ?>" placeholder="e.g. Peer Mentoring, Listening...">
                 <fieldset class="volunteer-choice-fieldset"><legend>Preferred Days</legend><div class="volunteer-day-options"><?php foreach ($days as $option): ?><label class="volunteer-choice-pill"><input type="checkbox" name="preferred_days[]" value="<?= e($option) ?>" <?= in_array($option, $selectedDays, true) ? 'checked' : '' ?>><span><?= e(substr($option, 0, 3)) ?></span></label><?php endforeach; ?></div></fieldset>
-                <label for="preferred_time">Preferred Time</label>
-                <select id="preferred_time" name="preferred_time" required><?php foreach ($timeOptions as $value => $label): ?><option value="<?= e($value) ?>" <?= $time === $value ? 'selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?></select>
+                <label for="start_time">Start Time</label>
+                <select id="start_time" name="start_time" required><?php foreach ($timeOptions as $value => $label): ?><option value="<?= e($value) ?>" <?= $startTime === $value ? 'selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?></select>
+                <label for="end_time">End Time</label>
+                <select id="end_time" name="end_time" required><?php foreach ($timeOptions as $value => $label): ?><option value="<?= e($value) ?>" <?= $endTime === $value ? 'selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?></select>
                 <fieldset class="volunteer-choice-fieldset"><legend>Support Mode</legend><div class="volunteer-mode-options"><?php foreach (['Online' => 'Virtual','Face-to-face' => 'Face-to-Face'] as $value => $label): ?><label class="volunteer-choice-pill"><input type="radio" name="support_mode" value="<?= e($value) ?>" <?= $mode === $value ? 'checked' : '' ?>><span><?= e($label) ?></span></label><?php endforeach; ?></div></fieldset>
                 <label for="support_experience">Support Experience <span class="volunteer-optional">(optional)</span></label>
                 <textarea id="support_experience" name="support_experience" maxlength="1000" rows="3" placeholder="Briefly describe any volunteering, teaching, mentoring or counselling experience you have..."><?= e($experience) ?></textarea>

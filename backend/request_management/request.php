@@ -150,7 +150,6 @@ include __DIR__ . '/../general/header.php';
     }
 </style>
 <div class="request-page">
-    <h1 class="page-title">Support Requests</h1>
     <div class="request-header">
         <h2>Submitted</h2>
         <a href="request_create.php" class="create-request-btn">+ Create</a>

@@ -148,32 +148,9 @@ include __DIR__ . '/../general/header.php';
         border: 1px solid #e0e0e0;
     }
 
-    .form-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 12px;
-        margin-top: 24px;
-    }
-
-    .back-btn {
-        padding: 10px 24px;
-        border-radius: 8px;
-        font-family: inherit;
-        font-size: 15px;
-        font-weight: 600;
-        text-decoration: none;
-        background: #f2f2f2;
-        color: #222222;
-        border: 1px solid #cccccc;
-    }
-
-    .back-btn:hover {
-        background: #e0e0e0;
-    }
 </style>
 
 <div class="create-page">
-    <h1 class="page-title">Request Details</h1>
 
     <div class="form-card">
 
@@ -198,7 +175,7 @@ include __DIR__ . '/../general/header.php';
 
         <div class="preference-row">
             <label>Preferred Time:</label>
-            <div class="preference-control"><?= htmlspecialchars($request['preferred_time']) ?></div>
+            <div class="preference-control"><?= htmlspecialchars(date('g:i A', strtotime($request['start_time'])) . ' - ' . date('g:i A', strtotime($request['end_time']))) ?></div>
         </div>
 
         <div class="preference-row">
@@ -260,9 +237,6 @@ include __DIR__ . '/../general/header.php';
         </div>
     </div>
 
-    <div class="form-actions">
-        <a href="request.php" class="back-btn">Back</a>
-    </div>
 </div>
 
 <?php include __DIR__ . '/../general/footer.php'; ?>

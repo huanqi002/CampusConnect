@@ -23,7 +23,7 @@ try {
     addNotification($conn, (int)$session['user_id'],
         "{$me['name']} accepted your {$session['category']} session on $when.", 'Session Scheduled');
     $conn->commit();
-    header('Location: volunteer_requests.php?msg=' . urlencode('Session accepted. It is now Scheduled.'));
+    header('Location: volunteer_requests.php?done=accepted');
 } catch (Exception $e) {
     $conn->rollback();
     header('Location: volunteer_requests.php?err=' . urlencode('Something went wrong. Please try again.'));
