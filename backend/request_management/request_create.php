@@ -1,6 +1,6 @@
 <?php
 require __DIR__ . '/../general/config.php';
-require __DIR__ . '/../general/db.php';     //inside request_management
+require __DIR__ . '/../general/db.php';
 require __DIR__ . '/../general/auth.php';
 
 requireLogin();
@@ -521,9 +521,11 @@ include __DIR__ . '/../general/header.php';
                 for ($hour = 0; $hour < 24; $hour++) {
                     foreach ([0, 30] as $minute) {
                         $value = sprintf('%02d:%02d', $hour, $minute);
-                        $display = sprintf('%d%02dam', ($hour % 12 === 0 ? 12 : $hour % 12), $minute);
+                        $displayHour = $hour % 12 === 0 ? 12 : $hour % 12;
+                        $meridiem = $hour < 12 ? 'am' : 'pm';
+                        $display = sprintf('%02d:%02dam', $displayHour, $minute);
                         if ($hour >= 12) {
-                            $display = sprintf('%d%02dpm', ($hour % 12 === 0 ? 12 : $hour % 12), $minute);
+                            $display = sprintf('%02d:%02dpm', $displayHour, $minute);
                         }
                         $timeOptions .= '<option value="' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($display, ENT_QUOTES, 'UTF-8') . '</option>';
                     }
@@ -549,59 +551,55 @@ include __DIR__ . '/../general/header.php';
                     </div>
                 </div>
 
-                <div class="time-note">
-                    Example: The student is available for support between 10:00 AM and 12:00 PM.
+                <!-- Skills Tag Input -->
+                <div class="preference-row">
+                    <label for="skills">Skills:</label>
+
+                    <div class="preference-control">
+                        <div class="skills-container" id="skillsContainer">
+                            <input type="text" id="skillInput" class="skills-input-field"
+                                placeholder="Type skill and press Enter">
+                        </div>
+                        <input type="hidden" name="skills" id="skills" value="">
+                    </div>
                 </div>
 
-                            <!-- Skills Tag Input -->
-                            <div class="preference-row">
-                                <label for="skills">Skills:</label>
+                <!-- Support Mode -->
+                <div class="preference-row">
+                    <label>Support Mode:</label>
 
-                                <div class="preference-control">
-                                    <div class="skills-container" id="skillsContainer">
-                                        <input type="text" id="skillInput" class="skills-input-field"
-                                            placeholder="Type skill and press Enter">
-                                    </div>
-                                    <input type="hidden" name="skills" id="skills" value="">
-                                </div>
-                            </div>
+                    <div class="radio-group" id="modeGroup">
 
-                            <!-- Support Mode -->
-                            <div class="preference-row">
-                                <label>Support Mode:</label>
+                        <label>
+                            <input type="radio" name="support_mode" value="Online">
+                            <span class="mode-btn">Virtual</span>
+                        </label>
 
-                                <div class="radio-group" id="modeGroup">
+                        <label>
+                            <input type="radio" name="support_mode" value="Face-to-face">
+                            <span class="mode-btn">Face-2-Face</span>
+                        </label>
 
-                                    <label>
-                                        <input type="radio" name="support_mode" value="Online">
-                                        <span class="mode-btn">Virtual</span>
-                                    </label>
+                    </div>
+                </div>
 
-                                    <label>
-                                        <input type="radio" name="support_mode" value="Face-to-face">
-                                        <span class="mode-btn">Face-2-Face</span>
-                                    </label>
+                <!-- Find Button -->
+                <div class="find-actions">
+                    <button type="button" class="find-btn" id="findButton">
+                        Find
+                    </button>
+                </div>
 
-                                </div>
-                            </div>
+                <!-- Volunteer Profile -->
+                <div class="section-heading">Volunteer Profile</div>
 
-                            <!-- Find Button -->
-                            <div class="find-actions">
-                                <button type="button" class="find-btn" id="findButton">
-                                    Find
-                                </button>
-                            </div>
-
-                            <!-- Volunteer Profile -->
-                            <div class="section-heading">Volunteer Profile</div>
-
-                            <div class="volunteer-list" id="volunteerList">
-                                <p class="empty-message">
-                                    No volunteers to display yet.
-                                    <br>
-                                    Select your preferences and click Find.
-                                </p>
-                            </div>
+                <div class="volunteer-list" id="volunteerList">
+                    <p class="empty-message">
+                        No volunteers to display yet.
+                        <br>
+                        Select your preferences and click Find.
+                    </p>
+                </div>
 
             </fieldset>
 
