@@ -2,8 +2,10 @@
 require __DIR__ . '/../general/config.php';
 require __DIR__ . '/../general/auth.php';
 require __DIR__ . '/../general/card_template.php';
+require __DIR__ . '/../general/format.php';
 require __DIR__ . '/functions.php';
 require __DIR__ . '/result_modal.php';
+require __DIR__ . '/session_card.php';
 
 requireLogin();
 
@@ -34,8 +36,7 @@ include __DIR__ . '/../general/header.php';
     $id = (int)$s['id'];
 
     echo renderCard([
-        'title'   => sessionPartnerLabel($s, (int)$myId),
-        'meta'    => [[$s['category'], $s['support_mode']], 'Not scheduled yet'],
+        'textHtml' => sessionCardText($s, (int)$myId),
         'actions' => '<a class="btn btn-schedule" href="schedule.php?session_id=' . $id . '">Schedule Now</a>',
     ]);
 endwhile; ?>

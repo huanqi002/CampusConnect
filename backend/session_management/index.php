@@ -5,6 +5,8 @@ require __DIR__ . '/../general/card_template.php';
 require __DIR__ . '/../general/format.php';
 require __DIR__ . '/functions.php';
 require __DIR__ . '/result_modal.php';
+require __DIR__ . '/session_card.php';
+require __DIR__ . '/calendar_functions.php';
 
 requireLogin();
 
@@ -17,6 +19,10 @@ $results = [
     'updated'   => ['scheduled', 'Session Updated', 'Your changes have been saved. The other participant has been notified.', 'success'],
 ];
 $result = $results[$_GET['done'] ?? ''] ?? null;
+
+// Only the organizer account ever connects; everyone else gets calendar invites automatically.
+$calendarReady     = googleCalendarConfig() !== null && (int)$myId === calendarOrganizerId();
+$calendarConnected = $calendarReady && isCalendarConnected($conn, (int)$myId);
 
 include __DIR__ . '/../general/header.php';
 ?>
@@ -34,6 +40,19 @@ include __DIR__ . '/../general/header.php';
 }
 echo renderConfirmModal(); ?>
 
+<?php if ($calendarReady): ?>
+<div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-bottom:14px;font-size:13px">
+    <?php if ($calendarConnected): ?>
+    <span>Google Calendar connected (organizer)</span>
+    <form method="post" action="calendar_disconnect.php" style="margin:0">
+        <button type="submit" class="btn btn-plain">Disconnect</button>
+    </form>
+    <?php else: ?>
+    <a class="btn btn-plain" href="calendar_connect.php">Connect Google Calendar</a>
+    <?php endif; ?>
+</div>
+<?php endif; ?>
+
 <?php if ($sessions->num_rows === 0): ?>
 <p class="empty-state">You have no active sessions. Completed and cancelled sessions are in History.</p>
 <?php endif; ?>
@@ -42,22 +61,25 @@ echo renderConfirmModal(); ?>
 <?php while ($s = $sessions->fetch_assoc()):
     $id        = (int)$s['id'];
     $isStudent = ($s['user_id'] == $myId);
-    $canFinish = !$isStudent && $s['status'] === 'Scheduled' && hasSessionStarted($s);
-    $when      = date('D, j M Y', strtotime($s['session_date'])) . ' · ' . formatTimeRange($s['start_time'], $s['end_time']);
+    $showFinish = !$isStudent && $s['status'] === 'Scheduled';
 
     $actions = '';
     if ($s['status'] === 'Pending') {
         $actions .= cardIconLink("edit_session.php?session_id=$id", 'edit', 'Edit session');
     }
-    if ($canFinish) {
+    if ($showFinish && hasSessionEnded($s)) {
         $actions .= cardIconForm('mark_completed.php', ['session_id' => $id], 'complete', 'Mark as complete');
+    } elseif ($showFinish) {
+        // Shown but not clickable; the wrapper carries the hover tooltip.
+        $actions .= '<span title="Tick will be enabled after the event ends" style="cursor:not-allowed">'
+                  . '<span class="icon-btn" aria-disabled="true" style="opacity:.35;pointer-events:none;color:#2e7d32">'
+                  . cardIcon('complete') . '</span></span>';
     }
     $actions .= cardIconForm('cancel_session.php', ['session_id' => $id], 'cancel', 'Cancel session');
 
     echo renderCard([
         'href'    => "session_details.php?session_id=$id",
-        'title'   => sessionPartnerLabel($s, (int)$myId),
-        'meta'    => [[$s['category'], $s['support_mode']], $when],
+        'textHtml' => sessionCardText($s, (int)$myId),
         'status'  => sessionDisplayStatus($s),
         'actions' => $actions,
     ]);

@@ -664,9 +664,13 @@ textarea { min-height: 100px; resize: vertical; }
 .dashboard-header-title .back-link { width: 34px; height: 34px; margin-left: -8px; }
 .dashboard-header-title .back-link svg { width: 20px; height: 20px; }
 .dashboard-user-chip { display: flex; align-items: center; gap: 8px; color: #484a52 !important; }
-.dashboard-user-chip .dashboard-user-avatar { display: grid; place-items: center; flex: 0 0 38px; width: 38px; height: 38px; overflow: hidden; border: 2px solid #fff; border-radius: 50%; color: #fff; background: var(--account-red); box-shadow: 0 0 0 1px #f2d9dc; font-size: 11px; font-weight: 750; }
+.dashboard-user-chip .dashboard-user-avatar { display: grid; place-items: center; flex: 0 0 38px; width: 38px; height: 38px; overflow: hidden; border: 2px solid #fff; border-radius: 50%; color: #fff; background: var(--account-red, #e21b2d); box-shadow: 0 0 0 1px #f2d9dc; font-size: 11px; font-weight: 750; }
 .dashboard-user-chip .dashboard-user-avatar img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .dashboard-header .dashboard-logout { padding: 7px 10px; border-color: #ede6e6; }
+.dashboard-nav .dashboard-bell { position: relative; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; color: #5d687b; transition: background 0.15s, color 0.15s; }
+.dashboard-nav .dashboard-bell:hover { background: #f3f4f8; color: #e21b2d; }
+.dashboard-bell svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.dashboard-bell-badge { position: absolute; top: -5px; right: -7px; min-width: 18px; height: 18px; padding: 0 4px; border: 2px solid #fff; border-radius: 999px; box-sizing: border-box; background: #e21b2d; color: #fff; font-size: 10px; font-weight: 700; line-height: 14px; text-align: center; pointer-events: none; }
 .dashboard-shell { width: min(1030px, calc(100% - 54px)); padding: 27px 0 45px; }
 .dashboard-welcome { display: grid; grid-template-columns: minmax(0,1fr) minmax(205px, .55fr); gap: 17px; align-items: stretch; margin-bottom: 19px; }
 .dashboard-welcome h1 { margin: 7px 0 5px; font-size: clamp(23px, 2.7vw, 32px); }

@@ -7,7 +7,7 @@
 .layout .dashboard-sidebar .account-brand-logo { width: 166px; }
 .layout .dashboard-side-nav { display: grid; gap: 5px; }
 .layout .dashboard-side-nav > a { min-height: 40px; font-size: 11px; }
-.layout .dashboard-side-nav .side-nav-icon { flex: 0 0 22px; width: 22px; height: 22px; }
+.layout .dashboard-side-nav .side-nav-icon { flex: 0 0 25px; width: 25px; height: 25px; border:#c9cacc 1px solid; border-radius: 7px; }
 .layout .dashboard-side-group > summary { min-height: 40px; }
 .layout .dashboard-side-group > a { min-height: 34px; }
 .layout .dashboard-side-logout { display: flex; align-items: center; gap: 10px; min-height: 42px; margin-top: auto; padding: 12px 10px 0; border-top: 1px solid rgba(255,255,255,.16); border-radius: 0; color: rgba(255,255,255,.8); font-size: 11px; text-decoration: none; }

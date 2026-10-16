@@ -12,8 +12,8 @@ const BUSY_END_SQL = "COALESCE(end_time, ADDTIME(start_time, '01:00:00'))";
 const BUSY_SESSIONS_SQL = "FROM sessions
                            WHERE volunteer_id = ? AND session_date = ? AND status IN ('Pending', 'Scheduled') AND id <> ?";
 
-const SESSION_WITH_NAMES_SQL = "SELECT s.*, us.full_name AS student_name, us.email AS student_email,
-                                       uv.full_name AS volunteer_name, uv.email AS volunteer_email
+const SESSION_WITH_NAMES_SQL = "SELECT s.*, us.full_name AS student_name, us.email AS student_email, us.personalemail AS student_personal_email,
+                                       uv.full_name AS volunteer_name, uv.email AS volunteer_email, uv.personalemail AS volunteer_personal_email
                                 FROM sessions s
                                 JOIN users us ON s.user_id = us.id
                                 JOIN users uv ON s.volunteer_id = uv.id";
@@ -27,30 +27,6 @@ function sessionRoleColumn(?string $role): string
 function isMySession(array $session, int $myId, ?string $role): bool
 {
     return (int)$session[sessionRoleColumn($role)] === $myId;
-}
-
-// Rows for the details card shared by Session Details and Session Request Details. Needs general/format.php.
-function sessionDetailRows(array $session): array
-{
-    $isBooked = $session['session_date'] !== null;
-    return [
-        'Category'     => $session['category'],
-        'Description'  => $session['description'],
-        'Student'      => $session['student_name'],
-        'Volunteer'    => $session['volunteer_name'],
-        'Date'         => $isBooked ? date('l, j F Y', strtotime($session['session_date'])) : 'Not booked yet',
-        'Time'         => $isBooked ? formatTimeRange($session['start_time'], $session['end_time']) : 'Not booked yet',
-        'Support mode' => $session['support_mode'],
-        'Created'      => formatDateTime($session['created_at']),
-    ];
-}
-
-// Card title for session lists: the other participant and their role.
-function sessionPartnerLabel(array $session, int $myId): string
-{
-    return (int)$session['user_id'] === $myId
-        ? $session['volunteer_name'] . ' (Volunteer)'
-        : $session['student_name'] . ' (Student)';
 }
 
 function fetchActiveSessions(mysqli $conn, int $myId, ?string $role): mysqli_result
@@ -247,6 +223,59 @@ function updateSessionStatus(mysqli $conn, int $sessionId, string $status): void
 function hasSessionStarted(array $session): bool
 {
     return strtotime($session['session_date'] . ' ' . $session['start_time']) <= time();
+}
+
+// Older sessions have no end time; treat them as one hour long (same as BUSY_END_SQL).
+function hasSessionEnded(array $session): bool
+{
+    $end = $session['end_time'] ?? null;
+    $endTs = $end !== null
+        ? strtotime($session['session_date'] . ' ' . $end)
+        : strtotime($session['session_date'] . ' ' . $session['start_time']) + 3600;
+    return $endTs <= time();
+}
+
+// Calendar event fields for a session. With a $viewerId the title names the other person (Add-to-Calendar link);
+// without one it names both people (the shared Google event). Null while the session has no booked time.
+function sessionCalendarDetails(array $session, ?int $viewerId = null): ?array
+{
+    if ($session['session_date'] === null || $session['start_time'] === null) {
+        return null;
+    }
+    $start  = strtotime($session['session_date'] . ' ' . $session['start_time']);
+    $end    = $session['end_time'] !== null
+            ? strtotime($session['session_date'] . ' ' . $session['end_time'])
+            : $start + 3600;
+    $online = $session['support_mode'] === 'Online';
+    $title  = $viewerId === null
+            ? 'CampusConnect: ' . $session['category'] . ' - ' . $session['student_name'] . ' & ' . $session['volunteer_name']
+            : 'CampusConnect: ' . $session['category'] . ' with '
+              . ((int)$session['volunteer_id'] === $viewerId ? $session['student_name'] : $session['volunteer_name']);
+
+    return [
+        'title'       => $title,
+        'start'       => $start,
+        'end'         => $end,
+        'description' => $session['description'] . "\n\nSupport mode: " . ($online ? 'Online' : 'Face-to-face'),
+        'location'    => $online ? 'Online' : 'Campus (face-to-face)',
+    ];
+}
+
+// Pre-filled "create event" link for Google Calendar; no API or sign-in needed on our side.
+function googleCalendarUrl(array $session, int $myId): ?string
+{
+    $event = sessionCalendarDetails($session, $myId);
+    if ($event === null) {
+        return null;
+    }
+    return 'https://calendar.google.com/calendar/render?' . http_build_query([
+        'action'   => 'TEMPLATE',
+        'text'     => $event['title'],
+        'dates'    => date('Ymd\THis', $event['start']) . '/' . date('Ymd\THis', $event['end']),
+        'ctz'      => date_default_timezone_get(),
+        'details'  => $event['description'],
+        'location' => $event['location'],
+    ], '', '&', PHP_QUERY_RFC3986);
 }
 
 function sessionDisplayStatus(array $session): string

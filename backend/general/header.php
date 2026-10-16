@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/dashboard_header.php';
+require_once __DIR__ . '/notifications.php';
 
 $scriptKey = basename(dirname($_SERVER['SCRIPT_NAME'])) . '/' . basename($_SERVER['SCRIPT_NAME']);
 
@@ -18,7 +19,7 @@ $headerTitle ??= [
     'request_management/request_create.php'     => 'Create Support Request',
     'request_management/request_review.php'     => 'Request Details',
     'request_management/upcoming_request.php'   => 'Upcoming Request',
-    'user_management/notifications.php'         => 'Notifications',
+    'notification_management/notifications.php' => 'Notifications',
 ][$scriptKey] ?? 'Campus Connect';
 
 $headerBack ??= [
@@ -40,5 +41,6 @@ $headerBack ??= [
 <div class="layout">
 <?php include __DIR__ . '/navigation.php'; ?>
 <div class="layout-main">
-<?php echo renderDashboardHeader($headerTitle, dashboardHeaderUser($conn, (int)($_SESSION['user_id'] ?? 0)), $headerBack); ?>
+<?php $headerUserId = (int)($_SESSION['user_id'] ?? 0);
+echo renderDashboardHeader($headerTitle, dashboardHeaderUser($conn, $headerUserId), $headerBack, countUnreadNotifications($conn, $headerUserId)); ?>
 <main class="page">
