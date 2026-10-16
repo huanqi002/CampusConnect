@@ -2,3 +2,5 @@
 /backend/general/config.local.php
 /mail_config.php
 /uploads/
+
+backend/general/google_config.php

@@ -3,6 +3,7 @@ require __DIR__ . '/../general/config.php';
 require __DIR__ . '/../general/auth.php';
 require __DIR__ . '/../general/notifications.php';
 require __DIR__ . '/functions.php';
+require __DIR__ . '/calendar_functions.php';
 require __DIR__ . '/../history_management/functions.php';
 
 requireLogin();
@@ -35,9 +36,12 @@ try {
     }
 
     $conn->commit();
-    header('Location: index.php?done=cancelled');
 } catch (Exception $e) {
     $conn->rollback();
     header('Location: index.php?err=' . urlencode('Something went wrong. Please try again.'));
+    exit;
 }
+
+syncCalendarOnCancel($conn, $session);
+header('Location: index.php?done=cancelled');
 exit;
