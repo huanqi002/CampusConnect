@@ -42,7 +42,8 @@ function cardIconForm(string $action, array $hidden, string $icon, string $label
 
 function renderCard(array $card): string
 {
-    $text = '';
+    // 'textHtml' is ready-made, already-escaped card content (e.g. sessionCardText()).
+    $text = $card['textHtml'] ?? '';
     if (!empty($card['title'])) {
         $text .= '<p class="card-title">' . htmlspecialchars($card['title']) . '</p>';
     }

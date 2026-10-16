@@ -5,6 +5,7 @@ require __DIR__ . '/../general/card_template.php';
 require __DIR__ . '/../general/format.php';
 require __DIR__ . '/functions.php';
 require __DIR__ . '/result_modal.php';
+require __DIR__ . '/session_card.php';
 
 requireLogin();
 
@@ -21,6 +22,17 @@ $results = [
     'rejected' => ['rejected', 'Rejected', 'You have rejected the session.', 'danger'],
 ];
 $result = $results[$_GET['done'] ?? ''] ?? null;
+$calendarAdded = $_SESSION['calendar_added'] ?? null;
+unset($_SESSION['calendar_added']);
+if ($result && ($_GET['done'] ?? '') === 'accepted' && $calendarAdded) {
+    $result[2] = 'The student has been notified.';
+    $result[4] = [
+        'heading' => 'Added to Google Calendar',
+        'detail'  => 'An invitation was emailed to you and the student.',
+        'when'    => $calendarAdded['when'],
+        'link'    => $calendarAdded['link'],
+    ];
+}
 
 include __DIR__ . '/../general/header.php';
 ?>
@@ -48,8 +60,7 @@ echo renderConfirmModal(); ?>
 
     echo renderCard([
         'href'    => "session_request_details.php?session_id=$id",
-        'title'   => sessionPartnerLabel($s, (int)$myId),
-        'meta'    => [[$s['category'], $s['support_mode']], date('D, j M Y', strtotime($s['session_date'])) . ' · ' . formatTimeRange($s['start_time'], $s['end_time'])],
+        'textHtml' => sessionCardText($s, (int)$myId),
         'actions' => cardIconForm('accept_session.php', ['session_id' => $id], 'complete', 'Accept session')
                    . cardIconForm('reject_session.php', ['session_id' => $id], 'cancel', 'Reject session'),
     ]);

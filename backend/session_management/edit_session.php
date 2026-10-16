@@ -4,6 +4,7 @@ require __DIR__ . '/../general/auth.php';
 require __DIR__ . '/../general/notifications.php';
 require __DIR__ . '/../general/format.php';
 require __DIR__ . '/functions.php';
+require __DIR__ . '/booking_parts.php';
 
 requireLogin();
 
@@ -61,11 +62,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$people = [
-    'Student Details'   => ['Name' => $session['student_name'], 'Email' => $session['student_email']],
-    'Volunteer Details' => ['Name' => $session['volunteer_name'], 'Email' => $session['volunteer_email']],
-];
-
 $preferredTimes = getPreferredTimes($conn, $volunteerId);
 
 $scheduleConfig = [
@@ -95,76 +91,20 @@ include __DIR__ . '/../general/header.php';
     <input type="hidden" name="start_time" id="startTime">
     <input type="hidden" name="end_time" id="endTime">
 
-    <div class="schedule-info-grid">
-        <?php foreach ($people as $heading => $fields): ?>
-        <section class="schedule-info">
-            <h2><?php echo htmlspecialchars($heading); ?></h2>
-            <?php foreach ($fields as $label => $value): ?>
-            <div class="schedule-info-row">
-                <span><?php echo htmlspecialchars($label); ?></span>
-                <div class="schedule-info-value"><?php echo htmlspecialchars((string)($value ?? '-')); ?></div>
-            </div>
-            <?php endforeach; ?>
-        </section>
-        <?php endforeach; ?>
-
-        <section class="schedule-info">
-            <h2>Session Details</h2>
-            <div class="schedule-info-row">
-                <span>Category</span>
-                <div class="schedule-info-value"><?php echo htmlspecialchars($session['category']); ?></div>
-            </div>
-            <div class="schedule-info-row">
-                <label for="description">Description</label>
-                <textarea id="description" name="description" class="schedule-info-input" maxlength="500" required><?php echo htmlspecialchars($description); ?></textarea>
-            </div>
-        </section>
-    </div>
-
-    <div class="schedule-form">
-        <div class="schedule-picker">
-            <div class="calendar">
-                <div class="calendar-head">
-                    <button type="button" class="calendar-nav" data-step="-1" aria-label="Previous month">&lsaquo;</button>
-                    <span id="calendarMonth"></span>
-                    <button type="button" class="calendar-nav" data-step="1" aria-label="Next month">&rsaquo;</button>
-                </div>
-                <div class="calendar-grid" id="calendarGrid"></div>
-            </div>
-            <div class="slot-grid" id="slotGrid"></div>
+    <section class="booking-intro">
+        <?php echo bookingPeopleHtml($session, $myId); ?>
+        <div class="booking-topic">
+            <div class="topic-head"><span class="topic-label">Session category</span><?php echo categoryChip($session['category']); ?></div>
+            <label class="topic-label" for="description">Description</label>
+            <textarea id="description" name="description" class="topic-input" maxlength="500" required><?php echo htmlspecialchars($description); ?></textarea>
         </div>
+    </section>
 
-        <div class="schedule-legend">
-            <span><i class="legend-dot is-off"></i>Unavailable</span>
-            <span><i class="legend-dot is-open"></i>Available</span>
-            <span><i class="legend-dot is-pref"></i>Preference</span>
-            <span><i class="legend-dot is-busy"></i>Busy</span>
-        </div>
+    <?php echo bookingPickerHtml($mode); ?>
 
-        <div class="schedule-fields">
-            <label for="selectedDate">Selected Date:</label>
-            <input type="text" id="selectedDate" placeholder="DD/MM/YYYY" readonly tabindex="-1">
-
-            <label for="startDisplay">Start Time:</label>
-            <input type="text" id="startDisplay" placeholder="--:-- --" readonly tabindex="-1">
-
-            <label for="endDisplay">End Time:</label>
-            <input type="text" id="endDisplay" placeholder="--:-- --" readonly tabindex="-1">
-
-            <label>Support Mode:</label>
-            <div class="mode-toggle">
-                <label><input type="radio" name="mode" value="Online" <?php echo $mode !== 'Face-to-face' ? 'checked' : ''; ?>><span>Virtual</span></label>
-                <span class="mode-divider">/</span>
-                <label><input type="radio" name="mode" value="Face-to-face" <?php echo $mode === 'Face-to-face' ? 'checked' : ''; ?>><span>Face-to-face</span></label>
-            </div>
-        </div>
-
-        <p class="schedule-help" id="slotHelp" aria-live="polite">Pick a green date to see the volunteer's times.</p>
-
-        <div class="schedule-actions">
-            <a class="btn btn-plain" href="index.php">Cancel</a>
-            <button type="submit" class="btn btn-success">Save Changes</button>
-        </div>
+    <div class="schedule-actions">
+        <a class="btn btn-plain" href="index.php">Cancel</a>
+        <button type="submit" class="btn btn-success">Save Changes</button>
     </div>
 </form>
 

@@ -16,8 +16,8 @@ if (!$session || $session['volunteer_id'] != $_SESSION['user_id']) {
     exit;
 }
 
-if (!hasSessionStarted($session)) {
-    header('Location: index.php?err=' . urlencode('A session can only be marked as completed once its start time has arrived.'));
+if (!hasSessionEnded($session)) {
+    header('Location: index.php?err=' . urlencode('A session can only be marked as completed once it has ended.'));
     exit;
 }
 

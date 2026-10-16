@@ -3,6 +3,7 @@ CREATE DATABASE IF NOT EXISTS CampusConnect
     COLLATE utf8mb4_unicode_ci;
 USE CampusConnect;
 
+DROP TABLE IF EXISTS calendar_tokens;
 DROP TABLE IF EXISTS notifications;
 DROP TABLE IF EXISTS history;
 DROP TABLE IF EXISTS feedbacks;
@@ -15,6 +16,7 @@ CREATE TABLE users (
     id                        INT AUTO_INCREMENT PRIMARY KEY,
     student_id                VARCHAR(30)   NOT NULL,
     email                     VARCHAR(150)  NOT NULL,
+    personalemail             VARCHAR(150)  NULL,
     full_name                 VARCHAR(100)  NOT NULL,
     university_name           VARCHAR(100)  NOT NULL,
     password_hash             VARCHAR(255)  NOT NULL,
@@ -152,20 +154,20 @@ CREATE TABLE notifications (
     CONSTRAINT fk_notifications_user  FOREIGN KEY (user_id) REFERENCES users (id)
 );
 
--- ============================================================================
--- Sample data. Re-importing this file rebuilds every table and reloads this data.
---   1 = Yukie Lian   (b123@helplive.edu.my)      - her existing password
---   2 = Low Huan Qi  (b2300554@helplive.edu.my)  - his existing password
---   3 = Melvin       (melvin@helplive.edu.my)    - password: welcome@123
--- All three are volunteers, so each has data as a student AND as a volunteer.
--- Session dates are relative to today, so Upcoming / Mark as complete keep working.
--- ============================================================================
+-- Google Calendar: the organizer account (organizer_user_id in general/google_config.php) connects once and its
+-- refresh token is stored here. Tokens come from the OAuth sign-in on each machine, so none are seeded.
+CREATE TABLE calendar_tokens (
+    user_id       INT PRIMARY KEY,
+    refresh_token TEXT NOT NULL,
+    connected_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_calendar_tokens_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+);
 
--- Users -------------------------------------------------------------------
-INSERT INTO users (id, student_id, email, full_name, university_name, password_hash, education, skills, support_experience, is_volunteer, is_active, created_at) VALUES
-(1, 'B123',     'b123@helplive.edu.my',     'Yukie Lian',  'HELP University', '$2y$10$1Y1GcuDG6D2ofr20THDxNeLmOlsAMDeAjHWRcrbBR6kAvf.2kan6W', 'Bachelor of Psychology',          'Mathematics, Statistics, Academic writing', 'Peer tutor for first-year students.',     'Y', 'Y', '2026-10-14 14:54:22'),
-(2, 'B2300554', 'b2300554@helplive.edu.my', 'Low Huan Qi', 'HELP University', '$2y$10$5zYWMviLaGOgYJb7a7fLpuCqN5AEyaQlzvwi9z1ZjnWpL5aj7Izz.', 'Bachelor of Computer Science',    'PHP, MySQL, JavaScript, CSS',               'Helped classmates debug web projects.',   'Y', 'Y', '2026-10-14 14:58:00'),
-(3, 'B2300003', 'melvin@helplive.edu.my',   'Melvin',      'HELP University', '$2y$10$ilRV9CW9s.7DbKu7c6lwTOcsUNW70NiCn3qzyp5A8fAUlstcrX9ei', 'Bachelor of Business',            'Time management, Study planning, Presenting', 'Student mentor in the orientation program.', 'Y', 'Y', '2026-10-14 15:00:00');
+-- personalemail is where calendar invitations are sent (falls back to email when empty).
+INSERT INTO users (id, student_id, email, personalemail, full_name, university_name, password_hash, education, skills, support_experience, is_volunteer, is_active, created_at) VALUES
+(1, 'B123',     'b123@helplive.edu.my',     'yukielian06@hotmail.com',    'Yukie Lian',  'HELP University', '$2y$10$1Y1GcuDG6D2ofr20THDxNeLmOlsAMDeAjHWRcrbBR6kAvf.2kan6W', 'Bachelor of Psychology',          'Mathematics, Statistics, Academic writing', 'Peer tutor for first-year students.',     'Y', 'Y', '2026-10-14 14:54:22'),
+(2, 'B2300554', 'b2300554@helplive.edu.my', 'haileyhuanqi@gmail.com',    'Low Huan Qi', 'HELP University', '$2y$10$5zYWMviLaGOgYJb7a7fLpuCqN5AEyaQlzvwi9z1ZjnWpL5aj7Izz.', 'Bachelor of Computer Science',    'PHP, MySQL, JavaScript, CSS',               'Helped classmates debug web projects.',   'Y', 'Y', '2026-10-14 14:58:00'),
+(3, 'B2300003', 'melvin@helplive.edu.my',   'melvinczl666@gmail.com',     'Melvin',      'HELP University', '$2y$10$ilRV9CW9s.7DbKu7c6lwTOcsUNW70NiCn3qzyp5A8fAUlstcrX9ei', 'Bachelor of Business',            'Time management, Study planning, Presenting', 'Student mentor in the orientation program.', 'Y', 'Y', '2026-10-14 15:00:00');
 
 -- Volunteers: preferred day with a start and end time ----------------------
 INSERT INTO volunteers (user_id, category, preferred_day, start_time, end_time, skills, support_mode, is_available) VALUES
@@ -267,4 +269,14 @@ INSERT INTO notifications (user_id, message, notice_type, is_read, created_at) V
 (1, 'Your Technology request has been sent to volunteers.',                                                'Request Submitted', 'Y', NOW() - INTERVAL 1 DAY),
 (3, 'Yukie Lian requested a General Student session with you. Please accept or reject it in Session Request.', 'Session Requested', 'N', NOW() - INTERVAL 2 DAY),
 (3, 'Yukie Lian rejected your Academic session.',                                                          'Session Rejected',  'N', NOW() - INTERVAL 1 DAY),
-(3, 'Low Huan Qi rated your General Student session 5/5.',                                                 'Feedback Received', 'Y', NOW() - INTERVAL 14 DAY);
+(3, 'Low Huan Qi rated your General Student session 5/5.',                                                 'Feedback Received', 'Y', NOW() - INTERVAL 14 DAY),
+-- More variety: every notice type, spread over today, yesterday and earlier so the page shows its day groups
+(2, 'Your Technology request has been sent to volunteers.',                                                'Request Submitted', 'N', NOW() - INTERVAL 20 MINUTE),
+(2, 'Yukie Lian changed your Academic session to Sat, 24 Oct 2026, 9:00 AM - 10:00 AM.',                   'Session Updated',   'N', NOW() - INTERVAL 3 HOUR),
+(2, 'You cancelled your Technology session with Melvin.',                                                  'Session Cancelled', 'N', NOW() - INTERVAL 1 DAY),
+(2, 'Melvin rejected your General Student session on Fri, 23 Oct 2026 at 10:00 AM.',                       'Session Rejected',  'Y', NOW() - INTERVAL 2 DAY),
+(2, 'Yukie Lian rated your Academic session 4/5.',                                                         'Feedback Received', 'Y', NOW() - INTERVAL 3 DAY),
+(1, 'Low Huan Qi changed the Academic session to Sat, 24 Oct 2026, 9:00 AM - 10:00 AM. Please accept or reject it in Session Request.', 'Session Updated', 'N', NOW() - INTERVAL 40 MINUTE),
+(1, 'Your Academic session is completed. Please leave feedback.',                                           'Feedback Reminder', 'N', NOW() - INTERVAL 1 DAY),
+(3, 'Melvin, you have a new Technology request waiting for a volunteer.',                                  'Request Submitted', 'N', NOW() - INTERVAL 2 HOUR),
+(3, 'Low Huan Qi accepted your Technology session.',                                                       'Session Scheduled', 'N', NOW() - INTERVAL 1 DAY);

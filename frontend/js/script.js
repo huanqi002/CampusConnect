@@ -14,8 +14,8 @@ function initScheduleForm(config) {
     var dateInput = document.getElementById('sessionDate');
     var startInput = document.getElementById('startTime');
     var endInput = document.getElementById('endTime');
-    var startDisplay = document.getElementById('startDisplay');
-    var endDisplay = document.getElementById('endDisplay');
+    var timeDisplay = document.getElementById('timeDisplay');
+    var durationDisplay = document.getElementById('durationDisplay');
 
     var dayStart = toMinutes(config.dayStart);
     var dayEnd = toMinutes(config.dayEnd);
@@ -29,6 +29,15 @@ function initScheduleForm(config) {
     function label12(m) {
         var h = Math.floor(m / 60);
         return pad((h % 12) || 12) + ':' + pad(m % 60) + ' ' + (h >= 12 ? 'PM' : 'AM');
+    }
+    // 90 -> "1 hr 30 min", 60 -> "1 hour", 30 -> "30 min"
+    function durationLabel(minutes) {
+        var h = Math.floor(minutes / 60);
+        var m = minutes % 60;
+        if (h === 0) {
+            return m + ' min';
+        }
+        return m === 0 ? h + (h === 1 ? ' hour' : ' hours') : h + ' hr ' + m + ' min';
     }
     function parseDate(s) { var p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
     function isoDate(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
@@ -76,7 +85,8 @@ function initScheduleForm(config) {
             var date = new Date(view.getFullYear(), view.getMonth(), d);
             var iso = isoDate(date);
             var bookable = isBookableDay(date);
-            var classes = 'calendar-day ' + (bookable ? 'is-pref' : 'is-off') + (iso === state.date ? ' is-selected' : '');
+            var classes = 'calendar-day ' + (bookable ? 'is-pref' : 'is-off') + (iso === state.date ? ' is-selected' : '')
+                        + (iso === config.today ? ' is-today' : '');
             html += '<button type="button" class="' + classes + '" data-date="' + iso + '"'
                   + (bookable ? '' : ' disabled') + ' aria-label="' + iso + '">' + d + '</button>';
         }
@@ -85,26 +95,66 @@ function initScheduleForm(config) {
 
     function renderSlots() {
         var preferred = state.date ? (config.preferredTimes[WEEKDAYS[parseDate(state.date).getDay()]] || []) : [];
+        var limit = endLimit();
         var html = '';
-        for (var m = dayStart; m < dayEnd; m += SLOT) {
-            var blocked = state.date ? slotState(m) : 'off';
-            var selected = state.start !== null && m >= state.start && m < state.end;
-            var isPref = !blocked && preferred.some(function (range) {
+        for (var m = dayStart; m <= dayEnd; m += SLOT) {
+            // The extra slot at dayEnd (8:00 PM) is only shown when it can be the end of the session.
+            var endOnly = m === dayEnd;
+            if (endOnly && limit !== dayEnd) {
+                continue;
+            }
+            var blocked = !state.date ? 'off' : endOnly ? '' : slotState(m);
+            var canEnd = state.pickingEnd && m > state.start && m <= limit;
+            var selected = state.start !== null && (state.end === null ? m === state.start : m >= state.start && m < state.end);
+            var isPref = !blocked && !endOnly && preferred.some(function (range) {
                 return m >= toMinutes(range.start) && m < toMinutes(range.end);
             });
-            var classes = 'slot' + (blocked ? ' is-' + blocked : '') + (isPref ? ' is-pref' : '') + (selected ? ' is-selected' : '');
-            html += '<button type="button" class="' + classes + '" data-minutes="' + m + '"'
-                  + (blocked ? ' disabled' : '') + '>' + label12(m) + '</button>';
+            var classes = 'slot'
+                        + (blocked ? ' is-' + blocked : '')
+                        + (isPref ? ' is-pref' : '')
+                        + (selected ? ' is-selected' : '')
+                        + (state.start !== null && m === state.start ? ' is-start' : '')
+                        + (!state.pickingEnd && state.end !== null && m === state.end ? ' is-end' : '')
+                        + (canEnd ? ' is-can-end' : '')
+                        + (state.pickingEnd && m > limit ? ' is-dim' : '');
+            // A busy slot can still be clicked as the end time when the session stops right as it begins.
+            var title = blocked && canEnd ? ' title="Ends at ' + label12(m) + ' - the volunteer is busy after this."' : '';
+            html += '<button type="button" class="' + classes + '" data-minutes="' + m + '"' + title
+                  + (blocked && !canEnd ? ' disabled' : '') + '>' + label12(m) + '</button>';
         }
         slotGrid.innerHTML = html;
+    }
+
+    // While picking the end: the latest possible end time (the next busy/past slot, or the end of the day).
+    function endLimit() {
+        if (!state.pickingEnd || state.start === null) {
+            return -1;
+        }
+        for (var m = state.start + SLOT; m < dayEnd; m += SLOT) {
+            if (slotState(m)) {
+                return m;
+            }
+        }
+        return dayEnd;
+    }
+
+    // Hovering a possible end time previews the range in light green.
+    function previewRange(endMinutes) {
+        slotGrid.querySelectorAll('.slot').forEach(function (slot) {
+            var m = parseInt(slot.dataset.minutes, 10);
+            slot.classList.toggle('is-preview', endMinutes !== null && m > state.start && m < endMinutes);
+        });
     }
 
     function validate() {
         if (!state.date) {
             return 'Pick a green date first.';
         }
-        if (state.start === null || state.end === null) {
+        if (state.start === null) {
             return 'Click a time to choose when the session starts. Green times are the volunteer\'s preference.';
+        }
+        if (state.end === null) {
+            return 'Please select an end time.';
         }
         if (state.end <= state.start) {
             return 'The end time must be after the start time.';
@@ -123,15 +173,16 @@ function initScheduleForm(config) {
         dateInput.value = state.date || '';
         startInput.value = error ? '' : toTime(state.start);
         endInput.value = error ? '' : toTime(state.end);
-        startDisplay.value = state.start === null ? '' : label12(state.start);
-        endDisplay.value = state.end === null ? '' : label12(state.end);
-        help.classList.toggle('is-error', !!error && state.start !== null);
+        var waitingForEnd = state.start !== null && state.end === null;
+        timeDisplay.value = state.start === null ? '' : label12(state.start) + ' – ' + (waitingForEnd ? '?' : label12(state.end));
+        durationDisplay.value = error ? '' : durationLabel(state.end - state.start);
+        help.classList.toggle('is-error', !!error && state.start !== null && !waitingForEnd);
+        help.classList.toggle('is-prompt', waitingForEnd);
 
         if (!error) {
-            help.textContent = 'Selected ' + label12(state.start) + ' - ' + label12(state.end)
-                + (state.pickingEnd ? '. Click a later time to extend the session.' : '.');
+            help.textContent = '';
         } else if (state.date && state.start === null) {
-            help.textContent = 'Click a time to start, then click a later time to set the end.';
+            help.textContent = 'Please select a start time, then an end time.';
         } else {
             help.textContent = error;
         }
@@ -140,13 +191,14 @@ function initScheduleForm(config) {
 
     // preset: optional { start, end } in 'HH:MM' to select once the busy times have loaded (edit form).
     function selectDate(iso, preset) {
-        var parts = iso.split('-');
+        var day = parseDate(iso);
         state.date = iso;
         state.busy = [];
         state.start = state.end = null;
         state.pickingEnd = false;
-        selectedDate.value = parts[2] + '/' + parts[1] + '/' + parts[0];
-        startDisplay.value = endDisplay.value = '';
+        selectedDate.value = WEEKDAYS[day.getDay()].slice(0, 3) + ', ' + day.getDate() + ' '
+                           + MONTHS[day.getMonth()].slice(0, 3) + ' ' + day.getFullYear();
+        timeDisplay.value = durationDisplay.value = '';
         renderCalendar();
         renderSlots();
         help.classList.remove('is-error');
@@ -173,13 +225,15 @@ function initScheduleForm(config) {
             });
     }
 
+    // First click sets the start; the second, later click sets the end time itself (required),
+    // so 2:00 PM then 4:00 PM books 2:00 - 4:00 PM.
     function selectSlot(m) {
-        if (state.pickingEnd && m >= state.start && isRangeFree(state.start, m + SLOT)) {
-            state.end = m + SLOT;
+        if (state.pickingEnd && m > state.start && isRangeFree(state.start, m)) {
+            state.end = m;
             state.pickingEnd = false;
         } else {
             state.start = m;
-            state.end = m + SLOT;
+            state.end = null;
             state.pickingEnd = true;
         }
         update();
@@ -199,11 +253,29 @@ function initScheduleForm(config) {
         }
     });
 
+    slotGrid.addEventListener('mouseover', function (event) {
+        var slot = event.target.closest && event.target.closest('.slot');
+        previewRange(slot && slot.classList.contains('is-can-end') ? parseInt(slot.dataset.minutes, 10) : null);
+    });
+    slotGrid.addEventListener('mouseleave', function () {
+        previewRange(null);
+    });
+
     slotGrid.addEventListener('click', function (event) {
         var slot = event.target.closest('.slot');
         if (slot && !slot.disabled) {
             selectSlot(parseInt(slot.dataset.minutes, 10));
         }
+    });
+
+    // Step 4 summary follows the support mode chosen in step 3.
+    var modeDisplay = document.getElementById('modeDisplay');
+    form.querySelectorAll('input[name="mode"]').forEach(function (radio) {
+        radio.addEventListener('change', function () {
+            if (modeDisplay && radio.checked) {
+                modeDisplay.value = radio.value === 'Online' ? 'Virtual' : 'Face-to-face';
+            }
+        });
     });
 
     form.addEventListener('submit', function (event) {
