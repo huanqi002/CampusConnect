@@ -36,7 +36,8 @@ $subLink = static function (string $href, string $label, string $key, string $ic
 };
 ?>
 <aside class="dashboard-sidebar">
-    <a class="account-brand account-brand-light" href="../../profile.php" aria-label="Campus Connect home"><img class="account-brand-logo" src="../../frontend/images/campus-connect-logo.png" alt="Campus Connect"></a>
+    <a class="account-brand account-brand-light" href="../../profile.php" aria-label="Campus Connect home"><img
+            class="account-brand-logo" src="../../frontend/images/campus-connect-logo.png" alt="Campus Connect"></a>
     <nav class="dashboard-side-nav" aria-label="Main navigation">
         <?= $navLink('../../profile.php', 'My Profile', 'profile', 'P') ?>
         <?= $navLink($requestHref, $requestLabel, $isVolunteer ? 'upcoming_request' : 'request', 'R') ?>
@@ -44,9 +45,10 @@ $subLink = static function (string $href, string $label, string $key, string $ic
             <summary><span class="side-nav-icon" aria-hidden="true">S</span>Session</summary>
             <?= $subLink('../session_management/index.php', 'Dashboard', 'dashboard', 'D') ?>
             <?= $subLink('../session_management/schedule_list.php', 'Schedule', 'schedule', 'C') ?>
-            <?php if ($isVolunteer): ?><?= $subLink('../session_management/volunteer_requests.php', 'Request', 'session_requests', 'R') ?><?php endif; ?>
+            <?php if ($isVolunteer): ?>    <?= $subLink('../session_management/volunteer_requests.php', 'Request', 'session_requests', 'R') ?><?php endif; ?>
         </details>
         <?= $navLink('../history_management/history.php', 'History', 'history', 'H') ?>
     </nav>
-    <a class="dashboard-side-logout" href="../user_management/logout.php"><span class="side-nav-icon" aria-hidden="true">↪</span>Log out</a>
+    <a class="dashboard-side-logout" href="../user_management/logout.php"><span class="side-nav-icon"
+            aria-hidden="true">↪</span>Log out</a>
 </aside>

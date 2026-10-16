@@ -19,36 +19,55 @@ function updateSupportRequestStatus(mysqli $conn, int $id, string $status): void
     $stmt->execute();
 }
 
-// Volunteers on that day and mode whose preferred start-end range overlaps the requested start-end time.
-function findMatchingVolunteers($pdo, $day, $startTime, $endTime, $mode, $skills)
+// Match volunteers only when the day, time window, support mode, and skill filters all apply together.
+function findMatchingVolunteers($pdo, $day, $startTime, $endTime, $mode, $skills, ?int $excludeUserId = null)
 {
     $sql = "
-        SELECT v.*, u.full_name, u.email, u.picture_url
+        SELECT DISTINCT v.user_id, u.full_name, u.email, u.volunteer_picture_url AS picture_url,
+                        v.preferred_day, v.start_time, v.end_time, v.support_mode, v.skills
         FROM volunteers v
-        JOIN users u ON v.user_id = u.id
+        JOIN users u ON u.id = v.user_id
         WHERE v.preferred_day = ?
+          AND v.support_mode = ?
           AND v.start_time < ?
           AND v.end_time > ?
-          AND v.support_mode = ?
     ";
 
-    $params = [$day, $endTime, $startTime, $mode];
+    $params = [$day, $mode, $endTime, $startTime];
 
-    // Check if skills filter was provided
-    if (!empty(trim($skills))) {
-        // Split the comma-separated skills into an array of individual tags
-        $skillsArray = array_map('trim', explode(',', $skills));
+    if ($excludeUserId !== null) {
+        $sql .= " AND v.user_id <> ?";
+        $params[] = $excludeUserId;
+    }
 
+    if (!empty(trim((string) $skills))) {
+        $skillClauses = [];
+        $skillsArray = array_map('trim', explode(',', (string) $skills));
         foreach ($skillsArray as $skill) {
             if ($skill !== '') {
-                // Dynamically add a LIKE condition for EACH skill tag
-                $sql .= " AND v.skills LIKE ?";
+                $skillClauses[] = 'v.skills LIKE ?';
                 $params[] = '%' . $skill . '%';
             }
         }
+
+        if (!empty($skillClauses)) {
+            $sql .= ' AND (' . implode(' AND ', $skillClauses) . ')';
+        }
     }
+
+    $sql .= " ORDER BY u.full_name, v.start_time";
 
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
-    return $stmt->fetchAll();
+    $rows = $stmt->fetchAll();
+
+    $uniqueResults = [];
+    foreach ($rows as $row) {
+        $userId = (int) ($row['user_id'] ?? 0);
+        if ($userId > 0 && !isset($uniqueResults[$userId])) {
+            $uniqueResults[$userId] = $row;
+        }
+    }
+
+    return array_values($uniqueResults);
 }

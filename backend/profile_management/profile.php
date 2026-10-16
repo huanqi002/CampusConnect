@@ -39,6 +39,7 @@ if ($isVolunteer) redirect('volunteer.php');
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Profile - Campus Connect</title>
     <link rel="stylesheet" href="<?= BASE_URL ?>/frontend/css/style.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/frontend/css/navigation.css">
     <link rel="stylesheet" href="<?= BASE_URL ?>/frontend/css/profile.css">
 </head>
 <body class="account-page dashboard-page profile-view-page">
@@ -76,5 +77,6 @@ if ($isVolunteer) redirect('volunteer.php');
     </div>
 </main>
 </div>
+<script src="<?= BASE_URL ?>/frontend/js/navigation.js"></script>
 </body>
 </html>

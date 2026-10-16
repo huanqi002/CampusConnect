@@ -1,6 +1,7 @@
 <?php
 require __DIR__ . '/../general/config.php';
 require __DIR__ . '/../general/auth.php';
+require __DIR__ . '/../session_management/result_modal.php';
 requireLogin();
 $user = currentUser();
 $userId = $user['id'];
@@ -15,8 +16,15 @@ $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $userId);
 $stmt->execute();
 $result = $stmt->get_result();
+
+$done = $_GET['done'] ?? '';
+$resultModal = $done === 'request_created'
+    ? renderResultModal('check', 'Request Submitted', 'Your support request has been sent to volunteers. The response deadline has started.', 'success')
+    : '';
+
 include __DIR__ . '/../general/header.php';
 ?>
+<link rel="stylesheet" href="../../frontend/css/session.css">
 <style>
     .page-title {
         text-align: center;
@@ -57,7 +65,7 @@ include __DIR__ . '/../general/header.php';
         background: #ffffff;
         border: 1px solid #cfcfcf;
         border-radius: 12px;
-        padding: 12px 16px;
+        padding: 20px 22px;
         box-shadow: 0 3px 5px rgba(0, 0, 0, 0.15);
         cursor: pointer;
     }
@@ -72,9 +80,9 @@ include __DIR__ . '/../general/header.php';
     }
 
     .request-details p {
-        margin: 2px 0;
-        font-size: 12px;
-        line-height: 1.35;
+        margin: 4px 0;
+        font-size: 15px;
+        line-height: 1.5;
         overflow-wrap: anywhere;
     }
 
@@ -100,14 +108,14 @@ include __DIR__ . '/../general/header.php';
 
     .request-status {
         flex-shrink: 0;
-        width: 130px;
-        padding: 7px 0;
+        width: 140px;
+        padding: 9px 0;
         border-radius: 12px;
         text-align: center;
-        font-size: 14px;
+        font-size: 15px;
         font-weight: 600;
-        margin-left: 15px;
-        margin-top: 10px;
+        margin-left: 18px;
+        margin-top: 8px;
     }
 
     .request-status.pending {
@@ -156,14 +164,18 @@ include __DIR__ . '/../general/header.php';
     </div>
 
     <div class="request-list">
+        <?php echo $resultModal; ?>
+
         <?php if ($result->num_rows > 0): ?>
-            <?php while ($request = $result->fetch_assoc()): ?>
+                    <?php while ($request = $result->fetch_assoc()): ?>
                 <?php
                 // Fallback to created_at if notified_at is empty, then add 7 days
                 $baseTime = !empty($request['notified_at']) ? $request['notified_at'] : $request['created_at'];
                 $deadlineTs = !empty($baseTime) ? strtotime($baseTime) + (7 * 24 * 3600) : null;
                 $deadlineMs = $deadlineTs ? $deadlineTs * 1000 : 0;
-                $isAccepted = strtolower($request['status']) === 'accepted';
+                $requestStatus = strtolower($request['status']);
+                $isPending = $requestStatus === 'pending';
+                $isAccepted = $requestStatus === 'accepted';
 
                 // Define $canChange so the button knows its initial state
                 $deadlineOver = ($deadlineTs !== null) && $deadlineTs <= time();
@@ -174,14 +186,17 @@ include __DIR__ . '/../general/header.php';
                         <p><strong>Category:</strong> <?= htmlspecialchars($request['category']) ?></p>
                         <p><strong>Description:</strong> <?= htmlspecialchars($request['description']) ?></p>
 
-                        <p><strong>Response Deadline:</strong>
-                            <?php if ($deadlineTs !== null): ?>
-                                <span class="countdown-timer" data-deadline="<?= $deadlineMs ?>"
-                                    data-accepted="<?= $isAccepted ? 'true' : 'false' ?>">
+                        <p><strong><?= $isPending ? 'Response Deadline:' : 'Note:' ?></strong>
+                            <?php if ($isPending && $deadlineTs !== null): ?>
+                                <span class="countdown-timer" data-deadline="<?= $deadlineMs ?>">
                                     Calculating timer...
                                 </span>
+                            <?php elseif ($requestStatus === 'accepted'): ?>
+                                Volunteer accepted this request.
+                            <?php elseif ($requestStatus === 'rejected'): ?>
+                                Volunteer declined this request.
                             <?php else: ?>
-                                Not responded yet
+                                <?= htmlspecialchars(ucfirst($requestStatus)) ?>
                             <?php endif; ?>
                         </p>
 

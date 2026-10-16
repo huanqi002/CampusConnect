@@ -1,6 +1,6 @@
 <?php
 require __DIR__ . '/../general/config.php';
-require __DIR__ . '/../general/db.php';     //inside request_management
+require __DIR__ . '/../general/db.php';
 require __DIR__ . '/../general/auth.php';
 
 requireLogin();
@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ");
         $notifStmt->execute([$userId, "Your {$category} request has been sent to volunteers. Response deadline timer has started."]);
 
-        header('Location: request.php');
+        header('Location: request.php?done=request_created');
         exit;
     }
 }
@@ -130,6 +130,23 @@ include __DIR__ . '/../general/header.php';
         outline: none;
         border-color: #c62828;
         box-shadow: 0 0 0 3px rgba(198, 40, 40, 0.1);
+    }
+
+    .time-select {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1px solid #d6d6d6;
+        border-radius: 8px;
+        font-size: 15px;
+        font-family: inherit;
+        background: #ffffff;
+        box-sizing: border-box;
+    }
+
+    .time-note {
+        margin: 4px 0 20px 146px;
+        font-size: 12px;
+        color: #666666;
     }
 
     /* OK button and validation message */
@@ -499,32 +516,37 @@ include __DIR__ . '/../general/header.php';
 
                 <input type="hidden" name="preferred_day" id="preferred_day" value="">
 
-                <!-- Preferred Time: start and end -->
                 <?php
-                $hourOptions = '';
-                for ($h = 0; $h < 24; $h++) {
-                    $hour = $h % 12 ?: 12;
-                    $hourOptions .= '<option value="' . sprintf('%02d:00', $h) . '">' . sprintf('%02d:00 %s', $hour, $h >= 12 ? 'PM' : 'AM') . '</option>';
+                $timeOptions = '';
+                for ($hour = 0; $hour < 24; $hour++) {
+                    foreach ([0, 30] as $minute) {
+                        $value = sprintf('%02d:%02d', $hour, $minute);
+                        $displayHour = $hour % 12 === 0 ? 12 : $hour % 12;
+                        $meridiem = $hour < 12 ? 'am' : 'pm';
+                        $display = sprintf('%02d:%02dam', $displayHour, $minute);
+                        if ($hour >= 12) {
+                            $display = sprintf('%02d:%02dpm', $displayHour, $minute);
+                        }
+                        $timeOptions .= '<option value="' . htmlspecialchars($value, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($display, ENT_QUOTES, 'UTF-8') . '</option>';
+                    }
                 }
                 ?>
                 <div class="preference-row">
                     <label for="start_time">Start Time:</label>
-
                     <div class="preference-control">
                         <select name="start_time" id="start_time" class="time-select" required>
                             <option value="">-- Select a time --</option>
-                            <?= $hourOptions ?>
+                            <?= $timeOptions ?>
                         </select>
                     </div>
                 </div>
 
                 <div class="preference-row">
                     <label for="end_time">End Time:</label>
-
                     <div class="preference-control">
                         <select name="end_time" id="end_time" class="time-select" required>
                             <option value="">-- Select a time --</option>
-                            <?= $hourOptions ?>
+                            <?= $timeOptions ?>
                         </select>
                     </div>
                 </div>
