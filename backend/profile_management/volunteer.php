@@ -1,6 +1,7 @@
 <?php
 require_once dirname(__DIR__) . '/general/account_functions.php';
 require_once dirname(__DIR__) . '/general/dashboard_header.php';
+require_once dirname(__DIR__) . '/general/notifications.php';
 require_login();
 $user = current_user();
 $isVolunteer = ($user['is_volunteer'] ?? 'N') === 'Y';
@@ -56,7 +57,7 @@ foreach (array_slice(preg_split('/\s+/', trim($user['full_name'] ?? 'Student')),
 <div class="dashboard-app">
 <?php include dirname(__DIR__) . '/general/account_sidebar.php'; ?>
 <main class="dashboard-main">
-    <?= renderDashboardHeader('Profile Dashboard', $user) ?>
+    <?= renderDashboardHeader('Profile Dashboard', $user, null, countUnreadNotifications($conn, (int)$user['id'], 'volunteer')) ?>
     <div class="dashboard-shell profile-dashboard-shell volunteer-profile-shell">
         <?php flash(); ?>
         <div class="profile-page-heading volunteer-profile-heading"><div><span class="account-eyebrow">YOUR CAMPUS CONNECT PROFILE</span><h1>Profile Dashboard</h1></div><span class="volunteer-status <?= $available ? 'is-active' : 'is-paused' ?>"><?= $available ? 'Active' : 'Inactive' ?></span></div>

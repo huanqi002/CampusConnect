@@ -12,8 +12,9 @@ $startTime = trim((string) ($_POST['start_time'] ?? ''));
 $endTime = trim((string) ($_POST['end_time'] ?? ''));
 $mode = trim((string) ($_POST['support_mode'] ?? ''));
 $skills = trim((string) ($_POST['skills'] ?? ''));
+$excludeVolunteerId = isset($_POST['exclude_volunteer_id']) ? (int) $_POST['exclude_volunteer_id'] : null;
 
-$volunteers = findMatchingVolunteers($pdo, $day, $startTime, $endTime, $mode, $skills, $currentUserId);
+$volunteers = findMatchingVolunteers($pdo, $day, $startTime, $endTime, $mode, $skills, $currentUserId, $excludeVolunteerId);
 
 if (empty($volunteers)) {
     echo '<p class="empty-message">No volunteers found matching your selected day, time, support mode, and skills.</p>';

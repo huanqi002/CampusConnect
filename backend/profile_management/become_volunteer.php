@@ -1,6 +1,7 @@
 <?php
 require_once dirname(__DIR__) . '/general/account_functions.php';
 require_once dirname(__DIR__) . '/general/dashboard_header.php';
+require_once dirname(__DIR__) . '/general/notifications.php';
 require_login();
 $user = current_user();
 if (($user['is_volunteer'] ?? 'N') === 'Y') redirect('volunteer.php');
@@ -81,7 +82,7 @@ foreach (array_slice(preg_split('/\s+/', trim($user['full_name'] ?? 'Student')),
 <div class="dashboard-app">
 <?php include dirname(__DIR__) . '/general/account_sidebar.php'; ?>
 <main class="dashboard-main">
-    <?= renderDashboardHeader('Become a Volunteer', $user) ?>
+    <?= renderDashboardHeader('Become a Volunteer', $user, null, countUnreadNotifications($conn, (int)$user['id'], 'student')) ?>
     <div class="dashboard-shell volunteer-form-shell">
         <div class="volunteer-form-heading"><span class="account-eyebrow">SHARE WHAT YOU KNOW</span><h1>Become a Volunteer</h1><p>Register as a peer volunteer to help other students.</p></div>
         <?php if ($errors): ?><div class="message message-error" role="alert"><?php foreach ($errors as $error): ?><div><?= e($error) ?></div><?php endforeach; ?></div><?php endif; ?>

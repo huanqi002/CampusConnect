@@ -50,11 +50,21 @@ try {
         createUnscheduledSession($conn, $request);
     }
 
-    $notificationMessage = $response === 'Accepted'
-        ? 'Your support request has been accepted.'
-        : 'Your support request has been rejected.';
-    $notification = $conn->prepare("INSERT INTO notifications (user_id, message, notice_type, is_read, created_at) VALUES (?, ?, 'Request Response', 'N', NOW())");
-    $notification->bind_param('is', $request['user_id'], $notificationMessage);
+    $outcome = strtolower($response);
+    $volunteerName = (string) $user['name'];
+    $description = (string) $request['description'];
+    $statusSuffix = $response === 'Rejected' ? "\nPlease re-select another volunteer." : '';
+    $noticeType = 'Status Update';
+    $prefix = "Your {$request['category']} request for “";
+    $suffix = "” has been {$outcome} by volunteer {$volunteerName}.{$statusSuffix}";
+    $notification = $conn->prepare("INSERT INTO notifications (user_id, message, notice_type, is_read, created_at) VALUES (?, ?, ?, 'N', NOW())");
+    $descriptionLimit = max(0, 500 - mb_strlen($prefix) - mb_strlen($suffix));
+    $noticeDescription = mb_substr($description, 0, $descriptionLimit);
+    if (mb_strlen($description) > $descriptionLimit && $descriptionLimit > 0) {
+        $noticeDescription = mb_substr($noticeDescription, 0, $descriptionLimit - 1) . '…';
+    }
+    $notificationMessage = $prefix . $noticeDescription . $suffix;
+    $notification->bind_param('iss', $request['user_id'], $notificationMessage, $noticeType);
     $notification->execute();
     $notification->close();
 

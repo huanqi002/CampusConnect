@@ -1,6 +1,7 @@
 <?php
 require_once dirname(__DIR__) . '/general/account_functions.php';
 require_once dirname(__DIR__) . '/general/dashboard_header.php';
+require_once dirname(__DIR__) . '/general/notifications.php';
 require_login();
 $user = current_user();
 $isVolunteer = ($user['is_volunteer'] ?? 'N') === 'Y';
@@ -46,7 +47,7 @@ if ($isVolunteer) redirect('volunteer.php');
 <div class="dashboard-app">
 <?php include dirname(__DIR__) . '/general/account_sidebar.php'; ?>
 <main class="dashboard-main">
-    <?= renderDashboardHeader('My Profile', $user) ?>
+    <?= renderDashboardHeader('My Profile', $user, null, countUnreadNotifications($conn, (int)$user['id'], $isVolunteer ? 'volunteer' : 'student')) ?>
     <div class="dashboard-shell profile-dashboard-shell">
         <?php flash(); ?>
         <div class="profile-page-heading">

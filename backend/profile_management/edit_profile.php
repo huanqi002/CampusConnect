@@ -1,6 +1,7 @@
 <?php
 require_once dirname(__DIR__) . '/general/account_functions.php';
 require_once dirname(__DIR__) . '/general/dashboard_header.php';
+require_once dirname(__DIR__) . '/general/notifications.php';
 require_login();
 $user = current_user();
 $isVolunteer = ($user['is_volunteer'] ?? 'N') === 'Y';
@@ -114,7 +115,7 @@ $user = current_user();
 <div class="dashboard-app">
 <?php include dirname(__DIR__) . '/general/account_sidebar.php'; ?>
 <main class="dashboard-main">
-    <?= renderDashboardHeader('Edit Profile', $user) ?>
+    <?= renderDashboardHeader('Edit Profile', $user, null, countUnreadNotifications($conn, (int)$user['id'], $isVolunteer ? 'volunteer' : 'student')) ?>
     <div class="dashboard-shell edit-profile-shell">
         <div class="profile-page-heading edit-profile-heading"><div><span class="account-eyebrow">YOUR ACCOUNT</span><h1>Edit Profile</h1><p>Keep your information up to date so your campus community can get to know you.</p></div></div>
         <?php if ($errors): ?><div class="message message-error edit-profile-errors" role="alert"><?php foreach ($errors as $error): ?><div><?= e($error) ?></div><?php endforeach; ?></div><?php endif; ?>

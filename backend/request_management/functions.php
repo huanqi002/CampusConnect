@@ -20,7 +20,7 @@ function updateSupportRequestStatus(mysqli $conn, int $id, string $status): void
 }
 
 // Match volunteers only when the day, time window, support mode, and skill filters all apply together.
-function findMatchingVolunteers($pdo, $day, $startTime, $endTime, $mode, $skills, ?int $excludeUserId = null)
+function findMatchingVolunteers($pdo, $day, $startTime, $endTime, $mode, $skills, ?int $excludeUserId = null, ?int $excludeVolunteerId = null)
 {
     $sql = "
         SELECT DISTINCT v.user_id, u.full_name, u.email, u.volunteer_picture_url AS picture_url,
@@ -38,6 +38,11 @@ function findMatchingVolunteers($pdo, $day, $startTime, $endTime, $mode, $skills
     if ($excludeUserId !== null) {
         $sql .= " AND v.user_id <> ?";
         $params[] = $excludeUserId;
+    }
+
+    if ($excludeVolunteerId !== null) {
+        $sql .= " AND v.user_id <> ?";
+        $params[] = $excludeVolunteerId;
     }
 
     if (!empty(trim((string) $skills))) {

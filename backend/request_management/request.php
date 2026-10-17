@@ -176,10 +176,11 @@ include __DIR__ . '/../general/header.php';
                 $requestStatus = strtolower($request['status']);
                 $isPending = $requestStatus === 'pending';
                 $isAccepted = $requestStatus === 'accepted';
+                $isRejected = $requestStatus === 'rejected';
 
                 // Define $canChange so the button knows its initial state
                 $deadlineOver = ($deadlineTs !== null) && $deadlineTs <= time();
-                $canChange = $deadlineOver && !$isAccepted;
+                $canChange = $isRejected || ($deadlineOver && !$isAccepted);
                 ?>
                 <div class="request-card" onclick="window.location.href='request_review.php?id=<?= $request['id'] ?>'">
                     <div class="request-details">
