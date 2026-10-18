@@ -121,6 +121,45 @@ function current_user(): ?array {
 function send_otp(string $email, string $subject, string $otp): bool {
     global $MAIL_CONFIG;
     if (!extension_loaded('curl') || !is_array($MAIL_CONFIG ?? null)) return false;
+
+    if (($MAIL_CONFIG['provider'] ?? '') === 'gmail') {
+        foreach (['sender_email', 'app_password'] as $key) {
+            if (empty($MAIL_CONFIG[$key])) return false;
+        }
+
+        $payload = implode("\r\n", [
+            'To: ' . $email,
+            'From: Campus Connect <' . $MAIL_CONFIG['sender_email'] . '>',
+            'Subject: ' . $subject,
+            'MIME-Version: 1.0',
+            'Content-Type: text/plain; charset=UTF-8',
+            '',
+            "Your Campus Connect verification code is: {$otp}\n\nThis code expires in 10 minutes. If you did not request it, you can ignore this email.",
+        ]) . "\r\n";
+        $offset = 0;
+        $mailHandle = curl_init('smtp://smtp.gmail.com:587');
+        curl_setopt_array($mailHandle, [
+            CURLOPT_USE_SSL => CURLUSESSL_ALL,
+            CURLOPT_USERNAME => $MAIL_CONFIG['sender_email'],
+            CURLOPT_PASSWORD => str_replace(' ', '', $MAIL_CONFIG['app_password']),
+            CURLOPT_MAIL_FROM => '<' . $MAIL_CONFIG['sender_email'] . '>',
+            CURLOPT_MAIL_RCPT => ['<' . $email . '>'],
+            CURLOPT_UPLOAD => true,
+            CURLOPT_INFILESIZE => strlen($payload),
+            CURLOPT_READFUNCTION => static function ($handle, $stream, int $length) use (&$offset, $payload): string {
+                $chunk = substr($payload, $offset, $length);
+                $offset += strlen($chunk);
+                return $chunk;
+            },
+            CURLOPT_CONNECTTIMEOUT => 8,
+            CURLOPT_TIMEOUT => 20,
+        ]);
+        $sent = curl_exec($mailHandle);
+        $status = (int)curl_getinfo($mailHandle, CURLINFO_RESPONSE_CODE);
+        curl_close($mailHandle);
+        return $sent !== false && $status >= 200 && $status < 300;
+    }
+
     foreach (['tenant_id', 'client_id', 'client_secret', 'sender_email'] as $key) {
         if (empty($MAIL_CONFIG[$key])) return false;
     }

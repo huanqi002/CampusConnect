@@ -2,6 +2,7 @@
 require_once dirname(__DIR__) . '/general/account_functions.php';
 
 $email = '';
+$error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     check_csrf();
     $email = strtolower(trim($_POST['email'] ?? ''));
@@ -24,13 +25,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt = $pdo->prepare('UPDATE users SET reset_code = NULL, reset_expiry = NULL WHERE id = ?');
                 $stmt->execute([$user['id']]);
                 unset($_SESSION['password_reset_email']);
-                set_flash('error', 'We could not send the reset email. Check the Microsoft Graph mail configuration and try again.');
+                set_flash('error', 'We could not send the reset email. Check that backend/general/mail_config.php has valid Gmail SMTP settings and try again.');
                 redirect('forgot_password.php');
             }
+            redirect('verify_reset_code.php');
         }
+        $error = 'Account not found. Check the email address or create an account.';
     }
-
-    redirect('verify_reset_code.php');
 }
 ?>
 <!DOCTYPE html>
@@ -52,8 +53,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php flash(); ?>
             <form method="post">
                 <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">
-                <label for="email">University email</label>
-                <input type="email" id="email" name="email" autocomplete="email" required autofocus>
+                <label for="email">Account email</label>
+                <?php if ($error): ?><div class="message message-error" role="alert"><?= e($error) ?></div><?php endif; ?>
+                <input type="email" id="email" name="email" value="<?= e($email) ?>" autocomplete="email" required autofocus>
                 <button class="btn btn-primary account-submit" type="submit">Send reset code</button>
             </form>
             <p class="account-switch"><a href="<?= BASE_URL ?>/login.php">Back to login</a></p>

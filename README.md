@@ -21,7 +21,7 @@ BIT 216 Project 2 Campus Connect
 `style.css` owns shared legacy module styles and current account, authentication, security, dashboard, and sidebar styles. `profile.css` owns profile, volunteer, and image upload screens. `navigation.css` is used by the original backend modules. Load `style.css` before `profile.css` on profile pages so page-specific rules can refine shared components.
 
 Flow:
-Register -> Account Created -> Login with Email + Password -> Profile Dashboard
+Register with an email address you can access (including Gmail) -> Account Created -> Login with Email + Password -> Profile Dashboard
 
 Login locks an account for 15 minutes after 3 incorrect passwords. “Remember me” keeps the browser signed in for 14 days.
 
@@ -41,17 +41,16 @@ Profile Cover Photo -> Choose a separate JPG/PNG cover image (5MB maximum) -> Pr
 5. To update an older database, drop `CampusConnect` and import both files again (this replaces all data).
 6. Open `http://localhost/CampusConnect/register.php`.
 
-## Microsoft Outlook OTP email (Microsoft Graph)
+## Gmail OTP email
 
-OTP messages for password reset and password change are sent using Microsoft Graph. The app does not display demo codes. Real delivery requires an Outlook/Microsoft 365 mailbox and a Microsoft Entra app registration with Graph `Mail.Send` **application** permission and admin consent. The tenant administrator may need to approve the permission. Microsoft documents the [Graph sendMail API](https://learn.microsoft.com/graph/api/user-sendmail?view=graph-rest-1.0) and [client credentials flow](https://learn.microsoft.com/entra/identity-platform/v2-oauth2-client-creds-grant-flow).
+OTP messages for password reset and password change are sent through Gmail SMTP to the account email on file. The recipient may use Gmail or another email provider. To enable sending:
 
-1. Register a single-tenant app in Microsoft Entra ID.
-2. Add Microsoft Graph `Mail.Send` under **Application permissions**, then grant admin consent.
-3. Create a client secret and copy its **Value** (not its Secret ID).
-4. Copy `backend/general/mail_config.example.php` to `backend/general/mail_config.php` and set the tenant ID, app client ID, secret value, and sender mailbox address. The sender must be a mailbox in the app's tenant.
-5. Confirm PHP's cURL extension is enabled, then restart Apache and request a new OTP.
+1. Turn on 2-Step Verification for the Gmail account that will send the messages.
+2. Create a Google App Password for Campus Connect. Google requires 2-Step Verification for App Passwords; see [Google's App Password instructions](https://support.google.com/mail/answer/185833).
+3. Copy `backend/general/mail_config.example.php` to `backend/general/mail_config.php`, then set `sender_email` to the sending Gmail address and `app_password` to the generated App Password (remove spaces if present). Never use your regular Gmail password.
+4. Confirm PHP's cURL extension is enabled, restart Apache, and request a new OTP.
 
-The app requests a Graph access token with the client-credentials flow and calls `POST /users/{sender}/sendMail`. It shows a configuration error if Microsoft does not accept the send request. Keep the client secret private; `mail_config.php` is excluded from Git. Application `Mail.Send` is powerful, so an administrator should restrict the app to the designated sender mailbox where the tenant's Exchange configuration supports it.
+The sender and recipient may be the same Gmail account. Keep the App Password private; `mail_config.php` is excluded from Git. The connection uses Gmail's authenticated SMTP service with TLS on port 587 ([Gmail SMTP settings](https://support.google.com/mail/answer/7104828)).
 
 Profile photo uploads are saved under `uploads/profile/`; the folder is created on the first successful upload.
 

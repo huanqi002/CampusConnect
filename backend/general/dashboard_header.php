@@ -51,7 +51,7 @@ function renderDashboardHeader(string $title, array $user, ?array $back = null, 
          . $bell
          . '<a class="dashboard-user-chip" href="' . BASE_URL . ($isVolunteer ? '/volunteer.php' : '/profile.php') . '" aria-label="View your profile">'
          . '<span class="dashboard-user-avatar">' . $avatar . '</span>' . htmlspecialchars($name) . '</a>'
-         . '<a class="dashboard-logout" href="' . BASE_URL . '/logout.php">Log out</a>'
+         . '<span class="dashboard-role-badge ' . ($isVolunteer ? 'is-volunteer' : 'is-student') . '" aria-label="Current role: ' . ($isVolunteer ? 'Volunteer' : 'Student') . '">' . ($isVolunteer ? 'Volunteer' : 'Student') . '</span>'
          . '</nav></header>'
          . ($isNotificationsPage
              ? '<script>(function () {'

@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="security-stepper" aria-label="Password change steps"><div class="current"><span>1</span><small>Current Password</small></div><i></i><div><span>2</span><small>OTP / 2FA</small></div><i></i><div><span>3</span><small>New Password</small></div></div>
             <section class="security-card">
                 <div class="security-form-panel">
-                    <h2>Verify it’s you</h2><p>Enter your current password. We’ll send a 6-digit verification code to <strong><?= e($user['email']) ?></strong>.</p>
+                    <h2>Verify it’s you</h2><p>Enter your current password. We’ll send a 6-digit verification code to your account email: <strong><?= e($user['email']) ?></strong>.</p>
                     <?php if ($error): ?><div class="message message-error"><?= e($error) ?></div><?php endif; ?>
                     <form method="post">
                         <input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>">

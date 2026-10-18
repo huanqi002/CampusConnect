@@ -17,8 +17,7 @@ $validDays = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sun
 $validModes = ['Online','Face-to-face'];
 $category = '';
 $preferredDays = [];
-$startTime = '';
-$endTime = '';
+$dayTimes = [];
 $supportMode = '';
 $volunteerSlots = [];
 $timeOptions = [];
@@ -35,8 +34,12 @@ if ($isVolunteer) {
     if ($volunteerSlots) {
         $category = $volunteerSlots[0]['category'];
         $preferredDays = array_values(array_unique(array_column($volunteerSlots, 'preferred_day')));
-        $startTime = substr($volunteerSlots[0]['start_time'], 0, 5);
-        $endTime = substr($volunteerSlots[0]['end_time'], 0, 5);
+        foreach ($volunteerSlots as $slot) {
+            $dayTimes[$slot['preferred_day']] = [
+                'start' => substr($slot['start_time'], 0, 5),
+                'end' => substr($slot['end_time'], 0, 5),
+            ];
+        }
         $supportMode = $volunteerSlots[0]['support_mode'];
     }
 }
@@ -50,16 +53,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $skills = implode(', ', array_values(array_unique(array_filter(array_map('trim', explode(',', $_POST['skills'] ?? ''))))));
         $experience = trim($_POST['support_experience'] ?? '');
         $preferredDays = array_values(array_unique((array)($_POST['preferred_days'] ?? [])));
-        $startTime = $_POST['start_time'] ?? '';
-        $endTime = $_POST['end_time'] ?? '';
+        $dayTimes = (array)($_POST['availability'] ?? []);
         $supportMode = $_POST['support_mode'] ?? '';
         if (!in_array($category, $volunteerCategories, true)) $fieldErrors['category'] = 'Please select a support category.';
         if ($skills === '') $fieldErrors['skills'] = 'Please enter at least one skill.';
         elseif (mb_strlen($skills) > 500) $fieldErrors['skills'] = 'Skills must be 500 characters or fewer.';
         if (mb_strlen($experience) > 1000) $fieldErrors['support_experience'] = 'Support experience must be 1000 characters or fewer.';
         if (!$preferredDays || array_diff($preferredDays, $validDays)) $fieldErrors['preferred_days'] = 'Please select at least one day.';
-        if (!array_key_exists($startTime, $timeOptions) || !array_key_exists($endTime, $timeOptions)) $fieldErrors['preferred_time'] = 'Please select a start and end time.';
-        elseif ($endTime <= $startTime) $fieldErrors['preferred_time'] = 'The end time must be after the start time.';
+        foreach ($preferredDays as $preferredDay) {
+            $start = $dayTimes[$preferredDay]['start'] ?? '';
+            $end = $dayTimes[$preferredDay]['end'] ?? '';
+            if (!array_key_exists($start, $timeOptions) || !array_key_exists($end, $timeOptions)) $fieldErrors['preferred_time'] = "Please select a valid start and end time for {$preferredDay}.";
+            elseif ($end <= $start) $fieldErrors['preferred_time'] = "The end time must be after the start time on {$preferredDay}.";
+        }
         if (!in_array($supportMode, $validModes, true)) $fieldErrors['support_mode'] = 'Please select a support mode.';
         if (!$fieldErrors) {
             try {
@@ -68,7 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdo->prepare('DELETE FROM volunteers WHERE user_id = ?')->execute([$user['id']]);
                 $availability = array_reduce($volunteerSlots, static fn($active, $slot) => $active || ($slot['is_available'] ?? 'N') === 'Y', false) ? 'Y' : 'N';
                 $insert = $pdo->prepare('INSERT INTO volunteers (user_id, category, preferred_day, start_time, end_time, skills, support_mode, is_available) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-                foreach ($preferredDays as $preferredDay) $insert->execute([$user['id'], $category, $preferredDay, $startTime . ':00', $endTime . ':00', $skills, $supportMode, $availability]);
+                foreach ($preferredDays as $preferredDay) $insert->execute([$user['id'], $category, $preferredDay, $dayTimes[$preferredDay]['start'] . ':00', $dayTimes[$preferredDay]['end'] . ':00', $skills, $supportMode, $availability]);
                 $pdo->commit();
                 set_flash('success', 'Your volunteer profile has been updated.');
                 redirect('volunteer.php');
@@ -127,12 +133,9 @@ $user = current_user();
                 <label for="category" class="<?= isset($fieldErrors['category']) ? 'has-error' : '' ?>">Support Category</label>
                 <select id="category" name="category" class="<?= isset($fieldErrors['category']) ? 'is-invalid' : '' ?>" required><option value="" disabled <?= $category === '' ? 'selected' : '' ?>>Select...</option><?php foreach ($volunteerCategories as $option): ?><option value="<?= e($option) ?>" <?= $category === $option ? 'selected' : '' ?>><?= e($option) ?></option><?php endforeach; ?></select>
                 <?php if (isset($fieldErrors['category'])): ?><small class="volunteer-field-error"><?= e($fieldErrors['category']) ?></small><?php endif; ?>
-                <fieldset class="volunteer-choice-fieldset <?= isset($fieldErrors['preferred_days']) ? 'has-error' : '' ?>"><legend>Preferred Day</legend><div class="volunteer-day-options"><?php foreach ($validDays as $option): ?><label class="volunteer-choice-pill"><input type="checkbox" name="preferred_days[]" value="<?= e($option) ?>" <?= in_array($option, $preferredDays, true) ? 'checked' : '' ?>><span><?= e(substr($option, 0, 3)) ?></span></label><?php endforeach; ?></div></fieldset>
+                <fieldset class="volunteer-choice-fieldset <?= isset($fieldErrors['preferred_days']) ? 'has-error' : '' ?>"><legend>Preferred Days</legend><div class="volunteer-day-options"><?php foreach ($validDays as $option): ?><label class="volunteer-choice-pill"><input type="checkbox" name="preferred_days[]" value="<?= e($option) ?>" <?= in_array($option, $preferredDays, true) ? 'checked' : '' ?>><span><?= e(substr($option, 0, 3)) ?></span></label><?php endforeach; ?></div></fieldset>
                 <?php if (isset($fieldErrors['preferred_days'])): ?><small class="volunteer-field-error"><?= e($fieldErrors['preferred_days']) ?></small><?php endif; ?>
-                <label for="start_time" class="<?= isset($fieldErrors['preferred_time']) ? 'has-error' : '' ?>">Start Time</label>
-                <select id="start_time" name="start_time" class="<?= isset($fieldErrors['preferred_time']) ? 'is-invalid' : '' ?>" required><option value="" disabled <?= $startTime === '' ? 'selected' : '' ?>>Select start time...</option><?php foreach ($timeOptions as $value => $label): ?><option value="<?= e($value) ?>" <?= $startTime === $value ? 'selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?></select>
-                <label for="end_time" class="<?= isset($fieldErrors['preferred_time']) ? 'has-error' : '' ?>">End Time</label>
-                <select id="end_time" name="end_time" class="<?= isset($fieldErrors['preferred_time']) ? 'is-invalid' : '' ?>" required><option value="" disabled <?= $endTime === '' ? 'selected' : '' ?>>Select end time...</option><?php foreach ($timeOptions as $value => $label): ?><option value="<?= e($value) ?>" <?= $endTime === $value ? 'selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?></select>
+                <fieldset class="volunteer-choice-fieldset"><legend class="<?= isset($fieldErrors['preferred_time']) ? 'has-error' : '' ?>">Availability by day</legend><div class="volunteer-day-times"><?php foreach ($validDays as $option): $selected = in_array($option, $preferredDays, true); $times = $dayTimes[$option] ?? ['start' => '', 'end' => '']; ?><div class="volunteer-day-time<?= $selected ? '' : ' is-hidden' ?>" data-day-time="<?= e($option) ?>"><strong><?= e($option) ?></strong><label>Start time<select name="availability[<?= e($option) ?>][start]" class="<?= isset($fieldErrors['preferred_time']) ? 'is-invalid' : '' ?>" <?= $selected ? 'required' : 'disabled' ?>><option value="">Select start time...</option><?php foreach ($timeOptions as $value => $label): ?><option value="<?= e($value) ?>" <?= ($times['start'] ?? '') === $value ? 'selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?></select></label><label>End time<select name="availability[<?= e($option) ?>][end]" class="<?= isset($fieldErrors['preferred_time']) ? 'is-invalid' : '' ?>" <?= $selected ? 'required' : 'disabled' ?>><option value="">Select end time...</option><?php foreach ($timeOptions as $value => $label): ?><option value="<?= e($value) ?>" <?= ($times['end'] ?? '') === $value ? 'selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?></select></label></div><?php endforeach; ?></div></fieldset>
                 <?php if (isset($fieldErrors['preferred_time'])): ?><small class="volunteer-field-error"><?= e($fieldErrors['preferred_time']) ?></small><?php endif; ?>
                 <fieldset class="volunteer-choice-fieldset <?= isset($fieldErrors['support_mode']) ? 'has-error' : '' ?>"><legend>Support Mode</legend><div class="volunteer-mode-options"><?php foreach (['Online' => 'Virtual','Face-to-face' => 'Face-to-Face'] as $value => $label): ?><label class="volunteer-choice-pill"><input type="radio" name="support_mode" value="<?= e($value) ?>" <?= $supportMode === $value ? 'checked' : '' ?>><span><?= e($label) ?></span></label><?php endforeach; ?></div></fieldset>
                 <?php if (isset($fieldErrors['support_mode'])): ?><small class="volunteer-field-error"><?= e($fieldErrors['support_mode']) ?></small><?php endif; ?>
@@ -151,9 +154,9 @@ $user = current_user();
                 <?php else: ?>
                 <label for="full_name">Full Name</label>
                 <input type="text" id="full_name" name="full_name" value="<?= e($fullName) ?>" maxlength="100" autocomplete="name" required>
-                <label for="email">University Email</label>
+                <label for="email">Account email</label>
                 <input class="profile-readonly" type="email" id="email" value="<?= e($user['email']) ?>" readonly aria-describedby="emailNote">
-                <p class="edit-field-note" id="emailNote">Contact support if you need to change your university email.</p>
+                <p class="edit-field-note" id="emailNote">Password verification codes are sent to this address. Contact support if you need to change it.</p>
                 <label for="education">Educational Background</label>
                 <textarea id="education" name="education" maxlength="500" rows="3" placeholder="Add your course, major, and year of study…"><?= e($education) ?></textarea>
                 <label for="skillEntry">Skills</label>
@@ -175,6 +178,17 @@ $user = current_user();
 </main>
 </div>
 <script>
+document.querySelectorAll('input[name="preferred_days[]"]').forEach((checkbox) => {
+    const row = document.querySelector(`[data-day-time="${checkbox.value}"]`);
+    const selects = row.querySelectorAll('select');
+    const sync = () => {
+        row.classList.toggle('is-hidden', !checkbox.checked);
+        selects.forEach((select) => { select.disabled = !checkbox.checked; select.required = checkbox.checked; });
+    };
+    checkbox.addEventListener('change', sync);
+    sync();
+});
+
 (() => {
     const editor = document.getElementById('skillEditor');
     const tags = document.getElementById('skillTags');

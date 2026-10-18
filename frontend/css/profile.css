@@ -119,6 +119,13 @@
 .volunteer-choice-fieldset legend { float: left; width: 100%; padding: 0; }
 .volunteer-day-options,.volunteer-mode-options { display: grid; clear: both; gap: 7px; }
 .volunteer-day-options { grid-template-columns: repeat(7,minmax(0,1fr)); }
+.volunteer-day-times { display: grid; gap: 9px; clear: both; }
+.volunteer-day-time { display: grid; grid-template-columns: minmax(90px,.7fr) repeat(2,minmax(0,1fr)); align-items: end; gap: 10px; padding: 10px; border: 1px solid #e5e7ed; border-radius: 8px; background: #fafbfc; }
+.volunteer-day-time.is-hidden { display: none; }
+.volunteer-day-time > strong { align-self: center; color: #30394a; font-size: 13px; }
+.volunteer-day-time > label { display: grid; gap: 5px; color: #5b6372; font-size: 11px; font-weight: 650; }
+.volunteer-day-time select { width: 100%; min-height: 38px; padding: 7px 9px; border: 1px solid #dfe2eb; border-radius: 7px; color: #30394a; background: #fff; font: inherit; font-size: 12px; }
+.volunteer-day-time select:focus { border-color: var(--account-red); outline: 0; box-shadow: 0 0 0 3px rgba(226,27,45,.09); }
 .volunteer-mode-options { grid-template-columns: repeat(2,minmax(0,1fr)); }
 .volunteer-choice-pill { position: relative; display: block; margin: 0; cursor: pointer; }
 .volunteer-choice-pill input { position: absolute; width: 1px; height: 1px; opacity: 0; }
@@ -149,6 +156,8 @@
 .volunteer-preference-row > span:first-child { flex: 0 0 125px; color: #737987; font-weight: 650; }
 .volunteer-preference-row > strong { color: #292d37; text-align: right; }
 .volunteer-profile-tags,.volunteer-profile-days { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 5px; }
+.volunteer-schedule-list { display: grid; gap: 4px; text-align: right; }
+.volunteer-schedule-list span { color: #292d37; font-weight: 650; }
 .volunteer-profile-tags > span { padding: 3px 8px; border: 1px solid #d7d9df; border-radius: 999px; color: #454a54; background: #f8f8f9; }
 .volunteer-profile-days > span { min-width: 34px; padding: 4px 6px; border: 1px solid #d7d9df; border-radius: 6px; color: #4b5260; text-align: center; }
 .volunteer-profile-days > span.is-selected { border-color: #e21b2d; color: #fff; background: #e21b2d; font-weight: 700; }
@@ -162,6 +171,15 @@
 .volunteer-profile-actions .btn-plain:hover { border-color: #c9cdd5; background: #f6f6f7; }
 .volunteer-profile-actions .btn-inactive { border: 1px solid #e21b2d; color: #e21b2d; background: #fff; }
 .volunteer-profile-actions .btn-inactive:hover { color: #fff; background: #e21b2d; }
+.volunteer-profile-actions .btn-active { border: 1px solid #218b55; color: #218b55; background: #fff; }
+.volunteer-profile-actions .btn-active:hover { color: #fff; background: #218b55; }
+form[data-confirm-icon="switch"] .btn { border-color: #218b55; color: #fff; background: #24975d; box-shadow: 0 4px 11px rgba(24,130,67,.16); }
+form[data-confirm-icon="switch"] .btn:hover { color: #fff; background: #187a49; }
+form[data-confirm-icon="switch"] .btn::before { content: "\21C4"; margin-right: 7px; font-size: 16px; line-height: 0; vertical-align: -1px; }
+form[data-confirm-icon="active"] .btn-active { border-color: #218b55 !important; color: #218b55 !important; background: #fff !important; }
+form[data-confirm-icon="active"] .btn-active:hover { color: #fff !important; background: #218b55 !important; }
+form[data-confirm-icon="inactive"] .btn-inactive { border-color: #cf3442 !important; color: #fff !important; background: #d94350 !important; }
+form[data-confirm-icon="inactive"] .btn-inactive:hover { background: #bd2e3b !important; }
 .volunteer-edit-intro p { margin: 0 0 13px; color: #737987; font-size: 13px; }
 .edit-profile-card .volunteer-field-error { display: block; margin: 4px 0 0; color: #d7192b; font-size: 11px; }
 .edit-profile-card label.has-error,.edit-profile-card .volunteer-choice-fieldset.has-error legend { color: #d7192b; }
@@ -181,11 +199,14 @@
     .volunteer-form-heading p { font-size: 13px; }
     .volunteer-form-card { padding: 17px 15px; }
     .volunteer-day-options { gap: 4px; }
+    .volunteer-day-time { grid-template-columns: 1fr 1fr; }
+    .volunteer-day-time > strong { grid-column: 1 / -1; }
     .volunteer-choice-pill span { min-height: 34px; padding: 6px 3px; font-size: 10px; }
     .volunteer-preferences-card,.volunteer-experience-card,.volunteer-skills-card { padding: 14px; }
     .volunteer-preference-row { align-items: flex-start; gap: 8px; padding: 8px 0; }
     .volunteer-preference-row > span:first-child { flex-basis: 88px; }
     .volunteer-profile-days { gap: 3px; }
+    .volunteer-schedule-list { text-align: right; }
     .volunteer-profile-days > span { min-width: 29px; padding: 4px; }
     .volunteer-profile-actions { flex-wrap: wrap; }
     .volunteer-profile-actions form:last-child { margin-left: auto; }
