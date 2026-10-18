@@ -32,16 +32,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errors) {
-        do {
-            $studentId = 'CC' . strtoupper(bin2hex(random_bytes(10)));
-            $stmt = $pdo->prepare('SELECT id FROM users WHERE student_id = ? LIMIT 1');
-            $stmt->execute([$studentId]);
-        } while ($stmt->fetch());
-
-        $stmt = $pdo->prepare("INSERT INTO users (student_id, email, full_name, university_name, password_hash, is_volunteer, is_active) VALUES (?, ?, ?, ?, ?, 'N', 'Y')");
-        $stmt->execute([$studentId, $email, $fullName, $university, password_hash($password, PASSWORD_DEFAULT)]);
-        $_SESSION['created_email'] = $email;
-        redirect('account_created.php');
+        $code = create_otp();
+        $_SESSION['pending_registration'] = [
+            'email' => $email,
+            'full_name' => $fullName,
+            'university_name' => $university,
+            'password_hash' => password_hash($password, PASSWORD_DEFAULT),
+            'code' => $code,
+            'expires' => time() + 600,
+        ];
+        if (send_otp($email, 'Campus Connect Registration Verification Code', $code)) {
+            redirect('verify_registration_otp.php');
+        }
+        unset($_SESSION['pending_registration']);
+        $errors[] = 'We could not send a verification code to that email. Check the mail sender settings and try again.';
     }
 }
 ?>
@@ -73,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <input type="text" id="full_name" name="full_name" autocomplete="name" value="<?= e($fullName) ?>" required>
             <label for="email">Email address</label>
             <input type="email" id="email" name="email" autocomplete="email" value="<?= e($email) ?>" required>
-            <p class="help-text">Use an email address you can access. Password verification codes will be sent here.</p>
+            <p class="help-text">Use an email address you can access. We’ll send a verification code before creating your account.</p>
             <label for="university_name">University</label>
             <input type="text" id="university_name" name="university_name" autocomplete="organization" value="<?= e($university) ?>" required>
             <label for="password">Password</label>

@@ -21,7 +21,7 @@ BIT 216 Project 2 Campus Connect
 `style.css` owns shared legacy module styles and current account, authentication, security, dashboard, and sidebar styles. `profile.css` owns profile, volunteer, and image upload screens. `navigation.css` is used by the original backend modules. Load `style.css` before `profile.css` on profile pages so page-specific rules can refine shared components.
 
 Flow:
-Register with an email address you can access (including Gmail) -> Account Created -> Login with Email + Password -> Profile Dashboard
+Register with any email address you can access -> 6-Digit Email Verification Code -> Account Created -> Login with Email + Password -> Profile Dashboard
 
 Login locks an account for 15 minutes after 3 incorrect passwords. “Remember me” keeps the browser signed in for 14 days.
 
