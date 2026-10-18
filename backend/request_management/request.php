@@ -167,7 +167,7 @@ include __DIR__ . '/../general/header.php';
         <?php echo $resultModal; ?>
 
         <?php if ($result->num_rows > 0): ?>
-                    <?php while ($request = $result->fetch_assoc()): ?>
+            <?php while ($request = $result->fetch_assoc()): ?>
                 <?php
                 // Fallback to created_at if notified_at is empty, then add 7 days
                 $baseTime = !empty($request['notified_at']) ? $request['notified_at'] : $request['created_at'];
@@ -193,9 +193,9 @@ include __DIR__ . '/../general/header.php';
                                     Calculating timer...
                                 </span>
                             <?php elseif ($requestStatus === 'accepted'): ?>
-                                Volunteer accepted this request.
+                                Volunteer has accepted this request.
                             <?php elseif ($requestStatus === 'rejected'): ?>
-                                Volunteer declined this request.
+                                Volunteer has rejected this request. Please click Change Volunteer to find another volunteer.
                             <?php else: ?>
                                 <?= htmlspecialchars(ucfirst($requestStatus)) ?>
                             <?php endif; ?>
