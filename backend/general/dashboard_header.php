@@ -22,17 +22,18 @@ function renderDashboardHeader(string $title, array $user, ?array $back = null, 
     $name        = $user['full_name'] ?? 'Student';
     $picture     = $isVolunteer ? ($user['volunteer_picture_url'] ?? '') : ($user['picture_url'] ?? '');
 
-    $initials = '';
-    foreach (array_slice(preg_split('/\s+/', trim($name)), 0, 2) as $part) {
-        $initials .= strtoupper(substr($part, 0, 1));
-    }
+    $avatar = '<img src="' . htmlspecialchars($picture ?: DEFAULT_PROFILE_PICTURE) . '" alt="">';
 
-    $avatar = $picture
-        ? '<img src="' . htmlspecialchars($picture) . '" alt="">'
-        : htmlspecialchars($initials);
-
-    $bellLabel = $unreadNotifications > 0 ? "Notifications, $unreadNotifications unread" : 'Notifications';
-    $bell = '<a class="dashboard-bell" href="' . BASE_URL . '/backend/notification_management/notifications.php" title="Notifications" aria-label="' . $bellLabel . '">'
+    $scriptKey = basename(dirname($_SERVER['SCRIPT_NAME'] ?? '')) . '/' . basename($_SERVER['SCRIPT_NAME'] ?? '');
+    $isNotificationsPage = $scriptKey === 'notification_management/notifications.php';
+    $bellLabel = $isNotificationsPage
+        ? 'Close notifications'
+        : ($unreadNotifications > 0 ? "Notifications, $unreadNotifications unread" : 'Notifications');
+    $bellHref = $isNotificationsPage
+        ? BASE_URL . ($isVolunteer ? '/volunteer.php' : '/profile.php')
+        : BASE_URL . '/backend/notification_management/notifications.php';
+    $bell = '<a class="dashboard-bell"' . ($isNotificationsPage ? ' data-notification-toggle="close"' : '')
+          . ' href="' . $bellHref . '" title="' . $bellLabel . '" aria-label="' . $bellLabel . '">'
           . '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>'
           . ($unreadNotifications > 0 ? '<span class="dashboard-bell-badge">' . ($unreadNotifications > 9 ? '9+' : $unreadNotifications) . '</span>' : '')
           . '</a>';
@@ -43,6 +44,19 @@ function renderDashboardHeader(string $title, array $user, ?array $back = null, 
          . $bell
          . '<a class="dashboard-user-chip" href="' . BASE_URL . ($isVolunteer ? '/volunteer.php' : '/profile.php') . '" aria-label="View your profile">'
          . '<span class="dashboard-user-avatar">' . $avatar . '</span>' . htmlspecialchars($name) . '</a>'
-         . '<a class="dashboard-logout" href="' . BASE_URL . '/logout.php">Log out</a>'
-         . '</nav></header>';
+         . '<span class="dashboard-role-badge ' . ($isVolunteer ? 'is-volunteer' : 'is-student') . '" aria-label="Current role: ' . ($isVolunteer ? 'Volunteer' : 'Student') . '">' . ($isVolunteer ? 'Volunteer' : 'Student') . '</span>'
+         . '</nav></header>'
+         . ($isNotificationsPage
+             ? '<script>(function () {'
+             . 'var closeLink = document.querySelector("[data-notification-toggle=\\"close\\"]");'
+             . 'if (!closeLink) { return; }'
+             . 'closeLink.addEventListener("click", function (event) {'
+             . '  if (window.history.length < 2 || !document.referrer) { return; }'
+             . '  if (document.referrer === window.location.origin || document.referrer.indexOf(window.location.origin + "/") === 0) {'
+             . '    event.preventDefault();'
+             . '    window.history.back();'
+             . '  }'
+             . '});'
+             . '})();</script>'
+             : '');
 }

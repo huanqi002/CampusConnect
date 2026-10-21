@@ -1,0 +1,154 @@
+/* History list (history.php). Loaded after session.css, which provides the card layout. */
+
+/* Status pills: soft tint with coloured text */
+.pill-Completed { background: #c8ead1; color: #166329; }
+.pill-Cancelled { background: #efefef; color: #55585f; }
+.pill-Rejected  { background: #fdecec; color: #c62828; }
+
+/* Left accent bar matches the status */
+.card-list .info-card:has(.pill-Completed) { --accent: #1f9a47; }
+.card-list .info-card:has(.pill-Cancelled) { --accent: #b3b5bb; }
+.card-list .info-card:has(.pill-Rejected)  { --accent: #c62828; }
+
+/* Right column: status pill, then a thin divider, then Rate Now or the rating.
+   Fixed width so the pills line up on every card, even when the column is empty. */
+.history-list .card-actions {
+    justify-content: center;
+    width: 150px;
+    min-height: 32px;
+    padding-left: 18px;
+    border-left: 1px solid #f0ecec;
+}
+.history-list .card-actions:empty { border-left-color: transparent; }
+
+/* Rate Now and the rating share one chip shape, the same height as the status pill */
+.page .history-list .btn-rate,
+.history-list .card-rating {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* Rate Now: solid amber call to action (History list and History Details) */
+.page .btn-rate {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border: 0;
+    background: #f59e0b;
+    color: #fff;
+    box-shadow: 0 3px 8px rgba(245, 158, 11, 0.28);
+}
+.page .btn-rate span { font-size: 13px; line-height: 1; }
+.page .btn-rate:hover { background: #d97706; box-shadow: 0 5px 12px rgba(217, 119, 6, 0.32); }
+
+/* Given rating: five stars (filled ones amber) and the score on one line */
+.history-list .card-rating { background: #fff8eb; color: #92400e; }
+.card-stars { display: inline-flex; gap: 1px; color: #e8d9bd; font-size: 13px; line-height: 1; letter-spacing: 0; }
+.card-stars .is-on { color: #f59e0b; }
+.history-list .card-rating strong { font-size: 12px; }
+
+/* History Details (history_details.php): outcome note and Feedback section */
+.history-view .tile-sub { display: none; }   /* "In 5 days" / "2 days ago" is not useful for a finished session */
+.status-note-Completed { background: #eaf7ee; color: #166329; }
+.status-note-Cancelled { background: #f3f3f4; color: #55585f; }
+.status-note-Rejected  { background: #fdecec; color: #c62828; }
+
+.feedback-card {
+    padding: 14px 18px;
+    border: 1px solid #f3e6cc;
+    border-radius: 12px;
+    background: #fffaf0;
+}
+.feedback-score { display: flex; align-items: baseline; gap: 8px; }
+.feedback-score .card-stars { align-self: center; font-size: 20px; }
+.feedback-score strong { color: #20232c; font-size: 18px; }
+.feedback-out-of { color: #8a8d96; font-size: 13px; }
+.feedback-comment {
+    margin: 10px 0 0;
+    padding-left: 12px;
+    border-left: 3px solid #f5c870;
+    color: #373943;
+    font-size: 14px;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+.feedback-comment.is-empty { color: #8a8d96; font-style: italic; }
+.feedback-meta { margin: 10px 0 0; color: #8a8d96; font-size: 12px; }
+.feedback-empty {
+    margin: 0;
+    padding: 12px 16px;
+    border: 1px dashed #e3dfde;
+    border-radius: 12px;
+    color: #6b6e78;
+    font-size: 13px;
+}
+
+/* Rate Your Session (feedback.php) */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+.rate-view { max-width: 760px; margin: 0 auto; }
+.rate-view .view-title { margin-bottom: 0; }
+.rate-view > .status-note { margin-top: 14px; }
+
+/* Volunteer and session summary at the top */
+.rate-summary { display: flex; align-items: center; gap: 14px; }
+.rate-summary .sc-avatar { flex-basis: 52px; width: 52px; height: 52px; font-size: 17px; }
+.rate-summary-body { display: grid; gap: 2px; min-width: 0; }
+.rate-summary-body strong { color: #20232c; font-size: 17px; }
+.rate-summary-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 6px 0 0; color: #5f626b; font-size: 12px; }
+.rate-summary-meta > span:not(.sc-cat) { display: inline-flex; align-items: center; gap: 5px; }
+.rate-summary-meta svg { width: 14px; height: 14px; fill: none; stroke: #9a9ca4; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.rate-topic {
+    margin: 14px 0 0;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: #fbfaf9;
+    color: #373943;
+    font-size: 14px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+/* Star picker: big stars, hovering previews, the chosen ones stay amber */
+.rate-stars-section { text-align: center; }
+.star-picker { display: inline-flex; gap: 6px; margin: 18px 0 0; padding: 0; border: 0; }
+.star-picker input { position: absolute; opacity: 0; pointer-events: none; }
+.star-picker label { display: grid; place-items: center; margin: 0; padding: 4px; border-radius: 10px; color: #e3e0dc; cursor: pointer; transition: color 0.12s, transform 0.12s; }
+.star-picker svg { width: 44px; height: 44px; fill: currentColor; }
+.star-picker :where(input:checked + label, label:has(~ input:checked)) { color: #f59e0b; }
+.star-picker:hover label { color: #e3e0dc; }
+.star-picker label:hover,
+.star-picker label:has(~ label:hover) { color: #fbbf24; }
+.star-picker label:hover { transform: scale(1.12); }
+.star-picker input:focus-visible + label { outline: 2px solid #1565c0; outline-offset: 2px; }
+.star-caption { min-height: 20px; margin: 10px 0 0; color: #8a8d96; font-size: 13px; }
+.star-caption.is-set { color: #b45309; font-weight: 700; }
+
+.rate-view label.view-label { display: block; margin: 0 0 10px; font-weight: 700; }
+.rate-optional { color: #b6b8bf; font-weight: 600; letter-spacing: 0; text-transform: none; }
+.rate-view .topic-input:focus { border-color: #f59e0b; box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15); }
+.page .btn-rate:disabled { opacity: 0.45; box-shadow: none; cursor: not-allowed; transform: none; }
+
+@media (max-width: 760px) {
+    .star-picker svg { width: 36px; height: 36px; }
+    .history-list .card-actions { width: auto; padding-left: 0; border-left: 0; }
+    .history-list .card-actions:empty { display: none; }
+    .page .history-list .btn-rate,
+    .history-list .card-rating { width: auto; }
+}

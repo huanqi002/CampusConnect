@@ -14,6 +14,9 @@ const NOTICE_TYPES = [
     'Session Rejected'  => ['x',        'red'],
     // Request
     'Request Submitted' => ['send',     'blue'],
+    'Pending Request'   => ['send',     'orange'],
+    'Request Response'  => ['check',    'green'],
+    'Status Update'     => ['alert',    'blue'],
     // History / feedback
     'Feedback Received' => ['star',     'purple'],
     'Feedback Reminder' => ['star',     'orange'],

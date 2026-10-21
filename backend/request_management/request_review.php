@@ -2,6 +2,7 @@
 require __DIR__ . '/../general/config.php';
 require __DIR__ . '/../general/db.php';
 require __DIR__ . '/../general/auth.php';
+require __DIR__ . '/../general/card_template.php';
 require_once __DIR__ . '/functions.php';
 
 requireLogin();
@@ -17,7 +18,7 @@ $stmt = $pdo->prepare("
            us.email AS student_email,
            uv.full_name AS volunteer_name,
            uv.email AS volunteer_email,
-           uv.picture_url AS volunteer_picture,
+           uv.volunteer_picture_url AS volunteer_picture,
            v.skills AS volunteer_skills
     FROM requests r
     JOIN users us ON r.user_id = us.id
@@ -148,6 +149,37 @@ include __DIR__ . '/../general/header.php';
         border: 1px solid #e0e0e0;
     }
 
+    .detail-actions {
+        display: flex;
+        justify-content: flex-end;
+        width: 100%;
+        margin-top: 18px;
+        padding-top: 18px;
+        border-top: 1px solid #d9d9d9;
+    }
+
+    .btn-back-inline {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        min-width: 120px;
+        padding: 14px 24px;
+        border-radius: 14px;
+        border: 1px solid transparent;
+        background: #efefef;
+        color: #1f1f1f;
+        font-size: 18px;
+        font-weight: 600;
+        text-decoration: none;
+        box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.02);
+    }
+
+    .btn-back-inline svg {
+        width: 18px;
+        height: 18px;
+        stroke: currentColor;
+    }
 </style>
 
 <div class="create-page">
@@ -175,7 +207,9 @@ include __DIR__ . '/../general/header.php';
 
         <div class="preference-row">
             <label>Preferred Time:</label>
-            <div class="preference-control"><?= htmlspecialchars(date('g:i A', strtotime($request['start_time'])) . ' - ' . date('g:i A', strtotime($request['end_time']))) ?></div>
+            <div class="preference-control">
+                <?= htmlspecialchars(date('g:i A', strtotime($request['start_time'])) . ' - ' . date('g:i A', strtotime($request['end_time']))) ?>
+            </div>
         </div>
 
         <div class="preference-row">
@@ -213,7 +247,7 @@ include __DIR__ . '/../general/header.php';
             <div class="preference-control">
                 <?php if (!empty($request['volunteer_name'])): ?>
                     <div class="volunteer-box">
-                        <img src="<?= !empty($request['volunteer_picture']) ? htmlspecialchars($request['volunteer_picture']) : BASE_URL . '/images/default-avatar.png' ?>"
+                        <img src="<?= !empty($request['volunteer_picture']) ? htmlspecialchars($request['volunteer_picture']) : DEFAULT_PROFILE_PICTURE ?>"
                             alt="Volunteer"
                             style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 1px solid #ccc;">
                         <div>
@@ -234,6 +268,10 @@ include __DIR__ . '/../general/header.php';
                     <?= htmlspecialchars($request['status']) ?>
                 </span>
             </div>
+        </div>
+
+        <div class="detail-actions">
+            <a class="btn-back-inline" href="request.php"><?php echo cardIcon('back'); ?><span>Back</span></a>
         </div>
     </div>
 

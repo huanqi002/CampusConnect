@@ -1,6 +1,7 @@
 <?php
 require_once dirname(__DIR__) . '/general/account_functions.php';
 require_once dirname(__DIR__) . '/general/dashboard_header.php';
+require_once dirname(__DIR__) . '/general/notifications.php';
 require_login();
 $user = current_user();
 if (($user['is_volunteer'] ?? 'N') === 'Y') redirect('volunteer.php');
@@ -15,8 +16,7 @@ $category = '';
 $skills = (string)($user['skills'] ?? '');
 $experience = (string)($user['support_experience'] ?? '');
 $selectedDays = ['Monday'];
-$startTime = '10:00';
-$endTime = '12:00';
+$dayTimes = ['Monday' => ['start' => '10:00', 'end' => '12:00']];
 $mode = 'Online';
 $timeOptions = [];
 for ($hour = 0; $hour < 24; $hour++) {
@@ -32,15 +32,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $skills = trim($_POST['skills'] ?? '');
     $experience = trim($_POST['support_experience'] ?? '');
     $selectedDays = array_values(array_unique((array)($_POST['preferred_days'] ?? [])));
-    $startTime = $_POST['start_time'] ?? '';
-    $endTime = $_POST['end_time'] ?? '';
+    $dayTimes = (array)($_POST['availability'] ?? []);
     $mode = $_POST['support_mode'] ?? '';
 
     $validModes = ['Online','Face-to-face'];
     if (!in_array($category, $categories, true)) $errors[] = 'Please choose a valid support category.';
     if (!$selectedDays || array_diff($selectedDays, $days)) $errors[] = 'Choose at least one valid preferred day.';
-    if (!array_key_exists($startTime, $timeOptions) || !array_key_exists($endTime, $timeOptions)) $errors[] = 'Please choose a valid start and end time.';
-    elseif ($endTime <= $startTime) $errors[] = 'The end time must be after the start time.';
+    foreach ($selectedDays as $selectedDay) {
+        $start = $dayTimes[$selectedDay]['start'] ?? '';
+        $end = $dayTimes[$selectedDay]['end'] ?? '';
+        if (!array_key_exists($start, $timeOptions) || !array_key_exists($end, $timeOptions)) {
+            $errors[] = "Please choose a valid start and end time for {$selectedDay}.";
+        } elseif ($end <= $start) {
+            $errors[] = "The end time must be after the start time on {$selectedDay}.";
+        }
+    }
     if (!in_array($mode, $validModes, true)) $errors[] = 'Please choose a valid support mode.';
     if (mb_strlen($skills) > 500) $errors[] = 'Your skills list must be 500 characters or fewer.';
     if (mb_strlen($experience) > 1000) $errors[] = 'Your experience must be 1000 characters or fewer.';
@@ -52,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ->execute([$skills, $experience, $user['id']]);
             $insert = $pdo->prepare("INSERT INTO volunteers (user_id, category, preferred_day, start_time, end_time, skills, support_mode, is_available) VALUES (?, ?, ?, ?, ?, ?, ?, 'Y') ON DUPLICATE KEY UPDATE category = VALUES(category), skills = VALUES(skills), support_mode = VALUES(support_mode), is_available = 'Y'");
             foreach ($selectedDays as $preferredDay) {
-                $insert->execute([$user['id'], $category, $preferredDay, $startTime . ':00', $endTime . ':00', $skills, $mode]);
+                $insert->execute([$user['id'], $category, $preferredDay, $dayTimes[$preferredDay]['start'] . ':00', $dayTimes[$preferredDay]['end'] . ':00', $skills, $mode]);
             }
             $pdo->commit();
             $_SESSION['role'] = 'volunteer';
@@ -81,7 +87,7 @@ foreach (array_slice(preg_split('/\s+/', trim($user['full_name'] ?? 'Student')),
 <div class="dashboard-app">
 <?php include dirname(__DIR__) . '/general/account_sidebar.php'; ?>
 <main class="dashboard-main">
-    <?= renderDashboardHeader('Become a Volunteer', $user) ?>
+    <?= renderDashboardHeader('Become a Volunteer', $user, null, countUnreadNotifications($conn, (int)$user['id'], 'student')) ?>
     <div class="dashboard-shell volunteer-form-shell">
         <div class="volunteer-form-heading"><span class="account-eyebrow">SHARE WHAT YOU KNOW</span><h1>Become a Volunteer</h1><p>Register as a peer volunteer to help other students.</p></div>
         <?php if ($errors): ?><div class="message message-error" role="alert"><?php foreach ($errors as $error): ?><div><?= e($error) ?></div><?php endforeach; ?></div><?php endif; ?>
@@ -93,10 +99,7 @@ foreach (array_slice(preg_split('/\s+/', trim($user['full_name'] ?? 'Student')),
                 <label for="volunteer_skills">Skills</label>
                 <input type="text" id="volunteer_skills" name="skills" maxlength="500" value="<?= e($skills) ?>" placeholder="e.g. Peer Mentoring, Listening...">
                 <fieldset class="volunteer-choice-fieldset"><legend>Preferred Days</legend><div class="volunteer-day-options"><?php foreach ($days as $option): ?><label class="volunteer-choice-pill"><input type="checkbox" name="preferred_days[]" value="<?= e($option) ?>" <?= in_array($option, $selectedDays, true) ? 'checked' : '' ?>><span><?= e(substr($option, 0, 3)) ?></span></label><?php endforeach; ?></div></fieldset>
-                <label for="start_time">Start Time</label>
-                <select id="start_time" name="start_time" required><?php foreach ($timeOptions as $value => $label): ?><option value="<?= e($value) ?>" <?= $startTime === $value ? 'selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?></select>
-                <label for="end_time">End Time</label>
-                <select id="end_time" name="end_time" required><?php foreach ($timeOptions as $value => $label): ?><option value="<?= e($value) ?>" <?= $endTime === $value ? 'selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?></select>
+                <fieldset class="volunteer-choice-fieldset"><legend>Availability by day</legend><div class="volunteer-day-times"><?php foreach ($days as $option): $selected = in_array($option, $selectedDays, true); $times = $dayTimes[$option] ?? ['start' => '', 'end' => '']; ?><div class="volunteer-day-time<?= $selected ? '' : ' is-hidden' ?>" data-day-time="<?= e($option) ?>"><strong><?= e($option) ?></strong><label>Start time<select name="availability[<?= e($option) ?>][start]" <?= $selected ? 'required' : 'disabled' ?>><option value="">Choose start time</option><?php foreach ($timeOptions as $value => $label): ?><option value="<?= e($value) ?>" <?= ($times['start'] ?? '') === $value ? 'selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?></select></label><label>End time<select name="availability[<?= e($option) ?>][end]" <?= $selected ? 'required' : 'disabled' ?>><option value="">Choose end time</option><?php foreach ($timeOptions as $value => $label): ?><option value="<?= e($value) ?>" <?= ($times['end'] ?? '') === $value ? 'selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?></select></label></div><?php endforeach; ?></div></fieldset>
                 <fieldset class="volunteer-choice-fieldset"><legend>Support Mode</legend><div class="volunteer-mode-options"><?php foreach (['Online' => 'Virtual','Face-to-face' => 'Face-to-Face'] as $value => $label): ?><label class="volunteer-choice-pill"><input type="radio" name="support_mode" value="<?= e($value) ?>" <?= $mode === $value ? 'checked' : '' ?>><span><?= e($label) ?></span></label><?php endforeach; ?></div></fieldset>
                 <label for="support_experience">Support Experience <span class="volunteer-optional">(optional)</span></label>
                 <textarea id="support_experience" name="support_experience" maxlength="1000" rows="3" placeholder="Briefly describe any volunteering, teaching, mentoring or counselling experience you have..."><?= e($experience) ?></textarea>
@@ -106,5 +109,17 @@ foreach (array_slice(preg_split('/\s+/', trim($user['full_name'] ?? 'Student')),
     </div>
 </main>
 </div>
+<script>
+document.querySelectorAll('input[name="preferred_days[]"]').forEach((checkbox) => {
+    const row = document.querySelector(`[data-day-time="${checkbox.value}"]`);
+    const selects = row.querySelectorAll('select');
+    const sync = () => {
+        row.classList.toggle('is-hidden', !checkbox.checked);
+        selects.forEach((select) => { select.disabled = !checkbox.checked; select.required = checkbox.checked; });
+    };
+    checkbox.addEventListener('change', sync);
+    sync();
+});
+</script>
 </body>
 </html>

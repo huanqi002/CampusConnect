@@ -1,15 +1,37 @@
 <?php
 require __DIR__ . '/../general/config.php';
-require __DIR__ . '/../general/db.php';     //inside request_management
+require __DIR__ . '/../general/db.php';
 require __DIR__ . '/../general/auth.php';
+require_once __DIR__ . '/functions.php';
 
 requireLogin();
 
 $user = currentUser();
+$userId = (int) $user['id'];
+$changeRequestId = (int) ($_POST['change_id'] ?? $_GET['change_id'] ?? 0);
+$changeRequest = null;
+
+if ($changeRequestId > 0) {
+    $changeStmt = $pdo->prepare('SELECT * FROM requests WHERE id = ? AND user_id = ?');
+    $changeStmt->execute([$changeRequestId, $userId]);
+    $changeRequest = $changeStmt->fetch();
+    $changeBaseTime = $changeRequest
+        ? ($changeRequest['notified_at'] ?: $changeRequest['created_at'])
+        : null;
+    $changeDeadlineExpired = $changeBaseTime !== null
+        && strtotime($changeBaseTime) + (7 * 24 * 3600) <= time();
+    $changeAllowed = $changeRequest
+        && (strtolower($changeRequest['status']) === 'rejected'
+            || (strtolower($changeRequest['status']) === 'pending' && $changeDeadlineExpired));
+
+    if (!$changeAllowed) {
+        header('Location: request.php?err=' . urlencode('This request cannot be assigned to a different volunteer.'));
+        exit;
+    }
+}
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $userId = $user['id'];
     $category = $_POST['category'] ?? '';
     $description = $_POST['description'] ?? '';
     $preferredDay = $_POST['preferred_day'] ?? '';
@@ -20,7 +42,79 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $volunteerId = !empty($_POST['selected_volunteer_id']) ? intval($_POST['selected_volunteer_id']) : null;
 
-    if (!empty($category) && !empty($description) && !empty($preferredDay) && !empty($startTime) && !empty($endTime) && $endTime > $startTime && !empty($supportMode)) {
+    if (
+        !empty($category) && !empty($description) && !empty($preferredDay) && !empty($startTime) && !empty($endTime) && $endTime > $startTime && !empty($supportMode)
+        && (!$changeRequestId || $volunteerId !== null)
+    ) {
+        if ($changeRequestId > 0) {
+            $matchingVolunteers = findMatchingVolunteers(
+                $pdo,
+                $preferredDay,
+                $startTime,
+                $endTime,
+                $supportMode,
+                $skills,
+                $userId,
+                (int) $changeRequest['volunteer_id']
+            );
+            $selectedVolunteerMatches = array_filter(
+                $matchingVolunteers,
+                static fn(array $volunteer): bool => (int) $volunteer['user_id'] === $volunteerId
+            );
+            if (!$selectedVolunteerMatches) {
+                header('Location: request.php?err=' . urlencode('Please select a volunteer who matches your preferences.'));
+                exit;
+            }
+
+            $updateStmt = $pdo->prepare("
+                UPDATE requests
+                SET volunteer_id = ?, category = ?, description = ?, preferred_day = ?,
+                    start_time = ?, end_time = ?, support_mode = ?, skills = ?,
+                    status = 'Pending', notified_at = NOW(), responded_at = NULL
+                WHERE id = ? AND user_id = ?
+                  AND (status = 'Rejected' OR
+                       (status = 'Pending' AND DATE_ADD(COALESCE(notified_at, created_at), INTERVAL 7 DAY) <= NOW()))
+            ");
+            $updateStmt->execute([
+                $volunteerId,
+                $category,
+                $description,
+                $preferredDay,
+                $startTime,
+                $endTime,
+                $supportMode,
+                $skills,
+                $changeRequestId,
+                $userId,
+            ]);
+            if ($updateStmt->rowCount() !== 1) {
+                header('Location: request.php?err=' . urlencode('This request is no longer available to change.'));
+                exit;
+            }
+
+            $volunteerNotifStmt = $pdo->prepare("
+                INSERT INTO notifications (user_id, message, notice_type, is_read, created_at)
+                VALUES (?, ?, 'Pending Request', 'N', NOW())
+            ");
+            $studentStmt = $pdo->prepare('SELECT full_name FROM users WHERE id = ?');
+            $studentStmt->execute([$userId]);
+            $studentName = (string) $studentStmt->fetchColumn();
+            $noticePrefix = "{$studentName} requested {$category} for ";
+            $noticeSuffix = '. Please click here for more details.';
+            $descriptionLimit = max(0, 500 - mb_strlen($noticePrefix) - mb_strlen($noticeSuffix));
+            $noticeDescription = mb_substr($description, 0, $descriptionLimit);
+            if (mb_strlen($description) > $descriptionLimit && $descriptionLimit > 0) {
+                $noticeDescription = mb_substr($noticeDescription, 0, $descriptionLimit - 1) . '…';
+            }
+            $volunteerNotifStmt->execute([
+                $volunteerId,
+                $noticePrefix . $noticeDescription . $noticeSuffix,
+            ]);
+
+            header('Location: request.php');
+            exit;
+        }
+
         // Insert into requests setting notified_at to NOW() so the 7-day response timer starts immediately
         $stmt = $pdo->prepare("
         INSERT INTO requests (
@@ -34,10 +128,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ");
         $notifStmt->execute([$userId, "Your {$category} request has been sent to volunteers. Response deadline timer has started."]);
 
-        header('Location: request.php');
+        if ($volunteerId !== null) {
+            $volunteerNotifStmt = $pdo->prepare("
+                INSERT INTO notifications (user_id, message, notice_type, is_read, created_at)
+                VALUES (?, ?, 'Pending Request', 'N', NOW())
+            ");
+            $studentStmt = $pdo->prepare('SELECT full_name FROM users WHERE id = ?');
+            $studentStmt->execute([$userId]);
+            $studentName = (string) $studentStmt->fetchColumn();
+            $noticePrefix = "{$studentName} requested {$category} for ";
+            $noticeSuffix = '. Please click here to view and respond to the request in Upcoming Requests.';
+            $descriptionLimit = max(0, 500 - mb_strlen($noticePrefix) - mb_strlen($noticeSuffix));
+            $noticeDescription = mb_substr($description, 0, $descriptionLimit);
+            if (mb_strlen($description) > $descriptionLimit && $descriptionLimit > 0) {
+                $noticeDescription = mb_substr($noticeDescription, 0, $descriptionLimit - 1) . '…';
+            }
+            $volunteerNotifStmt->execute([
+                $volunteerId,
+                $noticePrefix . $noticeDescription . $noticeSuffix,
+            ]);
+        }
+
+        header('Location: request.php?done=request_created');
         exit;
     }
 }
+$formCategory = $changeRequest['category'] ?? '';
+$formDescription = $changeRequest['description'] ?? '';
+$formPreferredDay = $changeRequest['preferred_day'] ?? '';
+$formStartTime = isset($changeRequest['start_time']) ? substr($changeRequest['start_time'], 0, 5) : '';
+$formEndTime = isset($changeRequest['end_time']) ? substr($changeRequest['end_time'], 0, 5) : '';
+$formSupportMode = $changeRequest['support_mode'] ?? '';
+$formSkills = $changeRequest['skills'] ?? '';
+$headerTitle = $changeRequestId > 0 ? 'Change Volunteer' : 'Create Support Request';
 include __DIR__ . '/../general/header.php';
 ?>
 <style>
@@ -130,6 +253,23 @@ include __DIR__ . '/../general/header.php';
         outline: none;
         border-color: #c62828;
         box-shadow: 0 0 0 3px rgba(198, 40, 40, 0.1);
+    }
+
+    .time-select {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1px solid #d6d6d6;
+        border-radius: 8px;
+        font-size: 15px;
+        font-family: inherit;
+        background: #ffffff;
+        box-sizing: border-box;
+    }
+
+    .time-note {
+        margin: 4px 0 20px 146px;
+        font-size: 12px;
+        color: #666666;
     }
 
     /* OK button and validation message */
@@ -447,6 +587,9 @@ include __DIR__ . '/../general/header.php';
 
 
     <form method="POST" action="request_create.php" id="requestForm">
+        <?php if ($changeRequestId > 0): ?>
+            <input type="hidden" name="change_id" value="<?= $changeRequestId ?>">
+        <?php endif; ?>
 
         <!-- Request details -->
         <div class="form-card">
@@ -456,10 +599,9 @@ include __DIR__ . '/../general/header.php';
 
                 <select name="category" id="category" required>
                     <option value="">-- Select a category --</option>
-                    <option value="Academic">Academic</option>
-                    <option value="Technology">Technology</option>
-                    <option value="New Student">New Student</option>
-                    <option value="General Student">General Student</option>
+                    <?php foreach (['Academic', 'Technology', 'New Student', 'General Student'] as $categoryOption): ?>
+                        <option value="<?= htmlspecialchars($categoryOption) ?>" <?= $formCategory === $categoryOption ? 'selected' : '' ?>><?= htmlspecialchars($categoryOption) ?></option>
+                    <?php endforeach; ?>
                 </select>
             </div>
 
@@ -467,7 +609,7 @@ include __DIR__ . '/../general/header.php';
                 <label for="description">Description:</label>
 
                 <textarea name="description" id="description" maxlength="500" required
-                    placeholder="Please describe the support you need..."></textarea>
+                    placeholder="Please describe the support you need..."><?= htmlspecialchars($formDescription) ?></textarea>
 
                 <div class="validation-actions">
                     <button type="button" class="ok-btn" id="validateRequest">
@@ -487,44 +629,49 @@ include __DIR__ . '/../general/header.php';
                     <label>Preferred Day:</label>
 
                     <div class="day-options">
-                        <button type="button" class="day-btn" data-day="Monday">Mon</button>
-                        <button type="button" class="day-btn" data-day="Tuesday">Tues</button>
-                        <button type="button" class="day-btn" data-day="Wednesday">Wed</button>
-                        <button type="button" class="day-btn" data-day="Thursday">Thurs</button>
-                        <button type="button" class="day-btn" data-day="Friday">Fri</button>
-                        <button type="button" class="day-btn" data-day="Saturday">Sat</button>
-                        <button type="button" class="day-btn" data-day="Sunday">Sun</button>
+                        <?php foreach (['Monday' => 'Mon', 'Tuesday' => 'Tues', 'Wednesday' => 'Wed', 'Thursday' => 'Thurs', 'Friday' => 'Fri', 'Saturday' => 'Sat', 'Sunday' => 'Sun'] as $dayValue => $dayLabel): ?>
+                            <button type="button" class="day-btn<?= $formPreferredDay === $dayValue ? ' selected' : '' ?>"
+                                data-day="<?= $dayValue ?>"><?= $dayLabel ?></button>
+                        <?php endforeach; ?>
                     </div>
                 </div>
 
-                <input type="hidden" name="preferred_day" id="preferred_day" value="">
+                <input type="hidden" name="preferred_day" id="preferred_day"
+                    value="<?= htmlspecialchars($formPreferredDay) ?>">
 
-                <!-- Preferred Time: start and end -->
                 <?php
-                $hourOptions = '';
-                for ($h = 0; $h < 24; $h++) {
-                    $hour = $h % 12 ?: 12;
-                    $hourOptions .= '<option value="' . sprintf('%02d:00', $h) . '">' . sprintf('%02d:00 %s', $hour, $h >= 12 ? 'PM' : 'AM') . '</option>';
+                $timeOptionRows = [];
+                for ($hour = 0; $hour < 24; $hour++) {
+                    foreach ([0, 30] as $minute) {
+                        $value = sprintf('%02d:%02d', $hour, $minute);
+                        $displayHour = $hour % 12 === 0 ? 12 : $hour % 12;
+                        $display = sprintf('%02d:%02d%s', $displayHour, $minute, $hour < 12 ? 'am' : 'pm');
+                        $timeOptionRows[] = [$value, $display];
+                    }
                 }
                 ?>
                 <div class="preference-row">
                     <label for="start_time">Start Time:</label>
-
                     <div class="preference-control">
                         <select name="start_time" id="start_time" class="time-select" required>
                             <option value="">-- Select a time --</option>
-                            <?= $hourOptions ?>
+                            <?php foreach ($timeOptionRows as [$value, $display]): ?>
+                                <option value="<?= $value ?>" <?= $formStartTime === $value ? 'selected' : '' ?>>
+                                    <?= $display ?></option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                 </div>
 
                 <div class="preference-row">
                     <label for="end_time">End Time:</label>
-
                     <div class="preference-control">
                         <select name="end_time" id="end_time" class="time-select" required>
                             <option value="">-- Select a time --</option>
-                            <?= $hourOptions ?>
+                            <?php foreach ($timeOptionRows as [$value, $display]): ?>
+                                <option value="<?= $value ?>" <?= $formEndTime === $value ? 'selected' : '' ?>><?= $display ?>
+                                </option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                 </div>
@@ -538,7 +685,7 @@ include __DIR__ . '/../general/header.php';
                             <input type="text" id="skillInput" class="skills-input-field"
                                 placeholder="Type skill and press Enter">
                         </div>
-                        <input type="hidden" name="skills" id="skills" value="">
+                        <input type="hidden" name="skills" id="skills" value="<?= htmlspecialchars($formSkills) ?>">
                     </div>
                 </div>
 
@@ -549,12 +696,13 @@ include __DIR__ . '/../general/header.php';
                     <div class="radio-group" id="modeGroup">
 
                         <label>
-                            <input type="radio" name="support_mode" value="Online">
+                            <input type="radio" name="support_mode" value="Online" <?= $formSupportMode === 'Online' ? 'checked' : '' ?>>
                             <span class="mode-btn">Virtual</span>
                         </label>
 
                         <label>
-                            <input type="radio" name="support_mode" value="Face-to-face">
+                            <input type="radio" name="support_mode" value="Face-to-face"
+                                <?= $formSupportMode === 'Face-to-face' ? 'checked' : '' ?>>
                             <span class="mode-btn">Face-2-Face</span>
                         </label>
 
@@ -597,6 +745,8 @@ include __DIR__ . '/../general/header.php';
 </div>
 
 <script>
+    const isChangingRequest = <?= $changeRequestId > 0 ? 'true' : 'false' ?>;
+    const excludedVolunteerId = <?= $changeRequestId > 0 ? (int) $changeRequest['volunteer_id'] : 'null' ?>;
     const okButton = document.getElementById('validateRequest');
     const category = document.getElementById('category');
     const description = document.getElementById('description');
@@ -737,6 +887,9 @@ include __DIR__ . '/../general/header.php';
         formData.append('end_time', endTime.value);
         formData.append('support_mode', selectedMode.value);
         formData.append('skills', skills.value);
+        if (excludedVolunteerId !== null) {
+            formData.append('exclude_volunteer_id', excludedVolunteerId);
+        }
 
         volunteerList.innerHTML = '<p class="empty-message">Searching for matching volunteers...</p>';
 
@@ -772,7 +925,7 @@ include __DIR__ . '/../general/header.php';
     const skillInput = document.getElementById('skillInput');
     const skillsContainer = document.getElementById('skillsContainer');
     const skillsHiddenInput = document.getElementById('skills');
-    let skillsArray = [];
+    let skillsArray = skillsHiddenInput.value.split(',').map(skill => skill.trim()).filter(Boolean);
 
     function updateSkillsHidden() {
         skillsHiddenInput.value = skillsArray.join(',');
@@ -810,6 +963,16 @@ include __DIR__ . '/../general/header.php';
             updateSkillsHidden();
         }
     });
+
+    if (isChangingRequest) {
+        okButton.click();
+        const selectedMode = document.querySelector('input[name="support_mode"]:checked');
+        if (selectedMode) {
+            selectedMode.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        renderTags();
+        findButton.click();
+    }
 
     // Live Countdown Timer Script
     function updateCountdowns() {

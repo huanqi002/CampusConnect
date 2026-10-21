@@ -1,6 +1,7 @@
 <?php
 require_once dirname(__DIR__) . '/general/account_functions.php';
 require_once dirname(__DIR__) . '/general/dashboard_header.php';
+require_once dirname(__DIR__) . '/general/notifications.php';
 require_login();
 $user = current_user();
 $isVolunteer = ($user['is_volunteer'] ?? 'N') === 'Y';
@@ -48,11 +49,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
-
-$initials = '';
-foreach (array_slice(preg_split('/\s+/', trim($user['full_name'] ?? 'Student')), 0, 2) as $part) {
-    $initials .= strtoupper(substr($part, 0, 1));
-}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -67,15 +63,14 @@ foreach (array_slice(preg_split('/\s+/', trim($user['full_name'] ?? 'Student')),
 <div class="photo-app">
     <?php include dirname(__DIR__) . '/general/account_sidebar.php'; ?>
     <main class="photo-main">
-        <?= renderDashboardHeader('My Profile', $user) ?>
+        <?= renderDashboardHeader('My Profile', $user, null, countUnreadNotifications($conn, (int)$user['id'], $isVolunteer ? 'volunteer' : 'student')) ?>
         <section class="photo-content">
             <div class="security-page-heading"><span class="account-eyebrow">YOUR PROFILE</span><h1>Edit profile picture</h1><p>Choose a clear photo so your campus community can recognize you.</p></div>
             <?php if ($error): ?><div class="message message-error photo-error" role="alert"><?= e($error) ?></div><?php endif; ?>
             <section class="photo-card">
                 <div class="photo-current-row">
                     <div class="photo-avatar" id="photoPreview">
-                        <?php if ($profilePicture): ?><img src="<?= e($profilePicture) ?>" alt="Current profile photo">
-                        <?php else: ?><span><?= e($initials) ?></span><?php endif; ?>
+                        <img src="<?= e($profilePicture ?: DEFAULT_PROFILE_PICTURE) ?>" alt="Current profile photo">
                     </div>
                     <div><h2>Current photo</h2><p>This photo is visible to other students and volunteers.</p></div>
                 </div>

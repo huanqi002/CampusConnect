@@ -42,5 +42,6 @@ $headerBack ??= [
 <?php include __DIR__ . '/navigation.php'; ?>
 <div class="layout-main">
 <?php $headerUserId = (int)($_SESSION['user_id'] ?? 0);
-echo renderDashboardHeader($headerTitle, dashboardHeaderUser($conn, $headerUserId), $headerBack, countUnreadNotifications($conn, $headerUserId)); ?>
+$headerRole = $_SESSION['role'] ?? null;
+echo renderDashboardHeader($headerTitle, dashboardHeaderUser($conn, $headerUserId), $headerBack, countUnreadNotifications($conn, $headerUserId, $headerRole)); ?>
 <main class="page">

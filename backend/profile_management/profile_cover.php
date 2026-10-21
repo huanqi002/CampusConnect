@@ -1,6 +1,7 @@
 <?php
 require_once dirname(__DIR__) . '/general/account_functions.php';
 require_once dirname(__DIR__) . '/general/dashboard_header.php';
+require_once dirname(__DIR__) . '/general/notifications.php';
 require_login();
 $user = current_user();
 $isVolunteer = ($user['is_volunteer'] ?? 'N') === 'Y';
@@ -60,13 +61,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="dashboard-app">
     <?php include dirname(__DIR__) . '/general/account_sidebar.php'; ?>
     <main class="dashboard-main">
-        <?= renderDashboardHeader('My Profile', $user) ?>
+        <?= renderDashboardHeader('My Profile', $user, null, countUnreadNotifications($conn, (int)$user['id'], $isVolunteer ? 'volunteer' : 'student')) ?>
         <div class="dashboard-shell cover-editor-shell">
             <div class="cover-editor-heading"><span class="account-eyebrow">YOUR PROFILE</span><h1>Edit cover photo</h1><p>Choose a wide photo that shows your campus story.</p></div>
             <?php if ($error): ?><div class="message message-error" role="alert"><?= e($error) ?></div><?php endif; ?>
             <section class="cover-editor-card">
                 <div class="cover-current-row">
-                    <div class="cover-current-preview"><?php if ($coverPhoto): ?><img src="<?= e($coverPhoto) ?>" alt=""><?php else: ?><img src="<?= BASE_URL ?>/frontend/images/help-university-building.png" alt=""><?php endif; ?></div>
+                    <div class="cover-current-preview"><img src="<?= e($coverPhoto ?: DEFAULT_COVER_PHOTO) ?>" alt=""></div>
                     <div><h2>Current cover photo</h2><p>This appears across the top of your profile.</p></div>
                 </div>
                 <form method="post" enctype="multipart/form-data" id="coverUploadForm">

@@ -19,6 +19,10 @@ define('DB_USER', $DB_USER);
 define('DB_PASS', $DB_PASS);
 define('BASE_URL', $BASE_URL);
 
+// Shown when a user has not uploaded their own photo.
+define('DEFAULT_PROFILE_PICTURE', BASE_URL . '/uploads/profile/profile_default.png');
+define('DEFAULT_COVER_PHOTO', BASE_URL . '/uploads/covers/cover_default.png');
+
 define('DEV_SHOW_OTP', false);
 
 $mailConfigFile = __DIR__ . '/mail_config.php';

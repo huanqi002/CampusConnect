@@ -1,14 +1,13 @@
 <?php
 require_once dirname(__DIR__) . '/general/account_functions.php';
 require_once dirname(__DIR__) . '/general/dashboard_header.php';
+require_once dirname(__DIR__) . '/general/notifications.php';
 require_login();
 $user = current_user();
 $isVolunteer = ($user['is_volunteer'] ?? 'N') === 'Y';
 $volunteerCheck = $pdo->prepare('SELECT id FROM volunteers WHERE user_id = ? LIMIT 1');
 $volunteerCheck->execute([$user['id']]);
 $volunteerProfileExists = (bool)$volunteerCheck->fetchColumn();
-$initials = '';
-foreach (array_slice(preg_split('/\s+/', trim($user['full_name'] ?? 'Student')), 0, 2) as $part) $initials .= strtoupper(substr($part, 0, 1));
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['role'] ?? '') === 'student') {
     check_csrf();
@@ -39,28 +38,29 @@ if ($isVolunteer) redirect('volunteer.php');
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Profile - Campus Connect</title>
     <link rel="stylesheet" href="<?= BASE_URL ?>/frontend/css/style.css">
+    <link rel="stylesheet" href="<?= BASE_URL ?>/frontend/css/navigation.css">
     <link rel="stylesheet" href="<?= BASE_URL ?>/frontend/css/profile.css">
 </head>
 <body class="account-page dashboard-page profile-view-page">
 <div class="dashboard-app">
 <?php include dirname(__DIR__) . '/general/account_sidebar.php'; ?>
 <main class="dashboard-main">
-    <?= renderDashboardHeader('My Profile', $user) ?>
+    <?= renderDashboardHeader('My Profile', $user, null, countUnreadNotifications($conn, (int)$user['id'], $isVolunteer ? 'volunteer' : 'student')) ?>
     <div class="dashboard-shell profile-dashboard-shell">
         <?php flash(); ?>
         <div class="profile-page-heading">
             <div><span class="account-eyebrow">YOUR CAMPUS CONNECT PROFILE</span><h1>Profile Dashboard</h1></div>
-            <?php if (!$isVolunteer && $volunteerProfileExists): ?><form method="post"><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="role" value="volunteer"><button class="btn btn-volunteer" type="submit">Switch to Volunteer</button></form><?php elseif (!$isVolunteer): ?><a class="btn btn-volunteer" href="<?= BASE_URL ?>/become_volunteer.php">Become a Volunteer</a><?php else: ?><a class="btn btn-volunteer" href="<?= BASE_URL ?>/volunteer.php">Volunteer Profile</a><?php endif; ?>
+            <?php if (!$isVolunteer && $volunteerProfileExists): ?><form method="post" data-confirm-title="Switch to Volunteer?" data-confirm-message="Your saved volunteer profile and availability will become active." data-confirm-submit="Switch role" data-confirm-icon="switch"><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="role" value="volunteer"><button class="btn btn-volunteer" type="submit">Switch to Volunteer</button></form><?php elseif (!$isVolunteer): ?><a class="btn btn-volunteer" href="<?= BASE_URL ?>/become_volunteer.php">Become a Volunteer</a><?php else: ?><a class="btn btn-volunteer" href="<?= BASE_URL ?>/volunteer.php">Volunteer Profile</a><?php endif; ?>
         </div>
         <section class="profile-showcase-card">
             <a class="profile-cover" href="<?= BASE_URL ?>/profile_cover.php" aria-label="<?= empty($user['cover_photo_url']) ? 'Add a cover photo' : 'Change cover photo' ?>">
-                <img class="profile-cover-image" src="<?= e($user['cover_photo_url'] ?: BASE_URL . '/frontend/images/help-university-building.png') ?>" alt="">
+                <img class="profile-cover-image" src="<?= e($user['cover_photo_url'] ?: DEFAULT_COVER_PHOTO) ?>" alt="">
                 <?php if (empty($user['cover_photo_url'])): ?><span class="profile-cover-prompt">Make this profile yours</span><?php endif; ?>
                 <span class="profile-cover-action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h3l1.4-2h7.2l1.4 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><?= empty($user['cover_photo_url']) ? 'Add cover photo' : 'Change cover photo' ?></span>
             </a>
             <div class="profile-identity-card">
                 <div class="profile-avatar-wrap">
-                    <a class="profile-identity-avatar<?= empty($user['picture_url']) ? ' is-empty' : '' ?>" href="<?= BASE_URL ?>/profile_picture.php" aria-label="<?= empty($user['picture_url']) ? 'Add a profile photo' : 'Change your profile photo' ?>"><?php if (!empty($user['picture_url'])): ?><img src="<?= e($user['picture_url']) ?>" alt=""><?php else: ?><span><?= e($initials) ?></span><?php endif; ?></a>
+                    <a class="profile-identity-avatar" href="<?= BASE_URL ?>/profile_picture.php" aria-label="<?= empty($user['picture_url']) ? 'Add a profile photo' : 'Change your profile photo' ?>"><img src="<?= e($user['picture_url'] ?: DEFAULT_PROFILE_PICTURE) ?>" alt=""></a>
                     <a class="profile-avatar-camera" href="<?= BASE_URL ?>/profile_picture.php" aria-label="Change profile photo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h3l1.4-2h7.2l1.4 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></a>
                     <a class="profile-photo-edit" href="<?= BASE_URL ?>/profile_picture.php"><?= empty($user['picture_url']) ? '＋ Add photo' : 'Edit photo' ?></a>
                 </div>
@@ -72,9 +72,10 @@ if ($isVolunteer) redirect('volunteer.php');
             <section class="profile-info-card"><span class="account-eyebrow">WHAT YOU KNOW</span><h2>Skills</h2><p class="profile-skill-hint">Tags and areas of expertise</p><div class="profile-skill-list"><?php foreach (array_filter(array_map('trim', explode(',', (string)($user['skills'] ?? '')))) as $skill): ?><span><?= e($skill) ?></span><?php endforeach; ?><?php if (empty(trim((string)($user['skills'] ?? '')))): ?><span class="profile-empty-skill">Add skills to help others find you.</span><?php endif; ?></div></section>
             <?php if ($isVolunteer && !empty($user['support_experience'])): ?><section class="profile-info-card profile-experience-card"><span class="account-eyebrow">VOLUNTEER EXPERIENCE</span><h2>Support Experience</h2><p><?= nl2br(e($user['support_experience'])) ?></p></section><?php endif; ?>
         </div>
-        <div class="profile-page-actions"><a class="btn btn-secondary" href="<?= BASE_URL ?>/edit_profile.php">Edit Profile</a><a class="profile-security-link" href="<?= BASE_URL ?>/change_password.php">Change password</a><?php if ($isVolunteer): ?><form method="post"><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="role" value="student"><button class="btn btn-plain" type="submit">Remain a Student</button></form><?php endif; ?></div>
+        <div class="profile-page-actions"><a class="btn btn-secondary" href="<?= BASE_URL ?>/edit_profile.php">Edit Profile</a><a class="profile-security-link" href="<?= BASE_URL ?>/change_password.php">Change password</a><?php if ($isVolunteer): ?><form method="post" data-confirm-title="Switch to Student?" data-confirm-message="You will stop appearing as available to students. Your volunteer profile and schedule will remain saved." data-confirm-submit="Switch to Student" data-confirm-icon="switch"><input type="hidden" name="csrf_token" value="<?= e(csrf_token()) ?>"><input type="hidden" name="role" value="student"><button class="btn btn-plain" type="submit">Switch to Student</button></form><?php endif; ?></div>
     </div>
 </main>
 </div>
+<script src="<?= BASE_URL ?>/frontend/js/navigation.js"></script>
 </body>
 </html>
