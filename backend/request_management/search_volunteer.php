@@ -31,7 +31,7 @@ foreach ($volunteers as $volunteer) {
     $vMode = htmlspecialchars((string) ($volunteer['support_mode'] ?? $mode), ENT_QUOTES, 'UTF-8');
     $picture = !empty($volunteer['picture_url'])
         ? htmlspecialchars((string) $volunteer['picture_url'], ENT_QUOTES, 'UTF-8')
-        : DEFAULT_PROFILE_PICTURE;
+        : BASE_URL . '/images/default-avatar.png';
 
     echo '
     <div class="volunteer-card-item" style="display: flex; align-items: center; justify-content: space-between; background: #fff; border: 1px solid #ddd; border-radius: 12px; padding: 12px 16px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
