@@ -1,7 +1,7 @@
 <?php
 require __DIR__ . '/../general/config.php';
 require __DIR__ . '/../general/auth.php';
-require __DIR__ . '/../session_management/result_modal.php';
+require __DIR__ . '/../request_management/result_modal.php';
 requireLogin();
 $user = currentUser();
 $userId = $user['id'];

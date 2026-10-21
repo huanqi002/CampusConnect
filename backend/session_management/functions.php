@@ -4,7 +4,7 @@ const SESSION_CATEGORIES = ['Academic', 'Technology', 'New Student', 'General St
 
 // Bookable hours on a volunteer's preferred day, in 30-minute slots.
 const SLOT_DAY_START = '08:00';
-const SLOT_DAY_END   = '20:00';
+const SLOT_DAY_END = '20:00';
 
 // Older sessions were saved without an end time; treat them as one hour long.
 const BUSY_END_SQL = "COALESCE(end_time, ADDTIME(start_time, '01:00:00'))";
@@ -12,8 +12,8 @@ const BUSY_END_SQL = "COALESCE(end_time, ADDTIME(start_time, '01:00:00'))";
 const BUSY_SESSIONS_SQL = "FROM sessions
                            WHERE volunteer_id = ? AND session_date = ? AND status IN ('Pending', 'Scheduled') AND id <> ?";
 
-const SESSION_WITH_NAMES_SQL = "SELECT s.*, us.full_name AS student_name, us.email AS student_email, us.personalemail AS student_personal_email,
-                                       uv.full_name AS volunteer_name, uv.email AS volunteer_email, uv.personalemail AS volunteer_personal_email
+const SESSION_WITH_NAMES_SQL = "SELECT s.*, us.full_name AS student_name, us.email AS student_email,
+                                       uv.full_name AS volunteer_name, uv.email AS volunteer_email
                                 FROM sessions s
                                 JOIN users us ON s.user_id = us.id
                                 JOIN users uv ON s.volunteer_id = uv.id";
@@ -26,7 +26,7 @@ function sessionRoleColumn(?string $role): string
 
 function isMySession(array $session, int $myId, ?string $role): bool
 {
-    return (int)$session[sessionRoleColumn($role)] === $myId;
+    return (int) $session[sessionRoleColumn($role)] === $myId;
 }
 
 function fetchActiveSessions(mysqli $conn, int $myId, ?string $role): mysqli_result
@@ -65,9 +65,15 @@ function findActiveSession(mysqli $conn, int $sessionId): ?array
     return $stmt->get_result()->fetch_assoc() ?: null;
 }
 
-function updatePendingSession(mysqli $conn, int $sessionId, string $description,
-                              string $date, string $start, string $end, string $mode): void
-{
+function updatePendingSession(
+    mysqli $conn,
+    int $sessionId,
+    string $description,
+    string $date,
+    string $start,
+    string $end,
+    string $mode
+): void {
     $stmt = $conn->prepare("UPDATE sessions SET description = ?, session_date = ?, start_time = ?, end_time = ?, support_mode = ?
                              WHERE id = ? AND status = 'Pending'");
     $stmt->bind_param('sssssi', $description, $date, $start, $end, $mode, $sessionId);
@@ -99,7 +105,7 @@ function getPreferredDays(mysqli $conn, int $volunteerId): array
 function getBusyTimes(mysqli $conn, int $volunteerId, string $date, int $excludeSessionId = 0): array
 {
     $stmt = $conn->prepare("SELECT TIME_FORMAT(start_time, '%H:%i') AS start, TIME_FORMAT(" . BUSY_END_SQL . ", '%H:%i') AS end "
-                         . BUSY_SESSIONS_SQL . " ORDER BY start_time");
+        . BUSY_SESSIONS_SQL . " ORDER BY start_time");
     $stmt->bind_param('isi', $volunteerId, $date, $excludeSessionId);
     $stmt->execute();
     return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
@@ -115,7 +121,7 @@ function isTimeRangeFree(mysqli $conn, int $volunteerId, string $date, string $s
 
 function isSlotTime(string $time): bool
 {
-    return (bool)preg_match('/^([01]\d|2[0-3]):(00|30)$/', $time)
+    return (bool) preg_match('/^([01]\d|2[0-3]):(00|30)$/', $time)
         && $time >= SLOT_DAY_START && $time <= SLOT_DAY_END;
 }
 
@@ -145,12 +151,12 @@ function validateSessionTime(mysqli $conn, int $volunteerId, string $date, strin
 
 function createUnscheduledSession(mysqli $conn, array $request): void
 {
-    $requestId   = (int)$request['id'];
-    $userId      = (int)$request['user_id'];
-    $volunteerId = (int)$request['volunteer_id'];
-    $category    = $request['category'];
+    $requestId = (int) $request['id'];
+    $userId = (int) $request['user_id'];
+    $volunteerId = (int) $request['volunteer_id'];
+    $category = $request['category'];
     $description = $request['description'];
-    $mode        = $request['support_mode'];
+    $mode = $request['support_mode'];
 
     $stmt = $conn->prepare("INSERT INTO sessions (request_id, user_id, volunteer_id, category, description, support_mode, status)
                              VALUES (?, ?, ?, ?, ?, ?, 'Unscheduled')");
@@ -242,22 +248,22 @@ function sessionCalendarDetails(array $session, ?int $viewerId = null): ?array
     if ($session['session_date'] === null || $session['start_time'] === null) {
         return null;
     }
-    $start  = strtotime($session['session_date'] . ' ' . $session['start_time']);
-    $end    = $session['end_time'] !== null
-            ? strtotime($session['session_date'] . ' ' . $session['end_time'])
-            : $start + 3600;
+    $start = strtotime($session['session_date'] . ' ' . $session['start_time']);
+    $end = $session['end_time'] !== null
+        ? strtotime($session['session_date'] . ' ' . $session['end_time'])
+        : $start + 3600;
     $online = $session['support_mode'] === 'Online';
-    $title  = $viewerId === null
-            ? 'CampusConnect: ' . $session['category'] . ' - ' . $session['student_name'] . ' & ' . $session['volunteer_name']
-            : 'CampusConnect: ' . $session['category'] . ' with '
-              . ((int)$session['volunteer_id'] === $viewerId ? $session['student_name'] : $session['volunteer_name']);
+    $title = $viewerId === null
+        ? 'CampusConnect: ' . $session['category'] . ' - ' . $session['student_name'] . ' & ' . $session['volunteer_name']
+        : 'CampusConnect: ' . $session['category'] . ' with '
+        . ((int) $session['volunteer_id'] === $viewerId ? $session['student_name'] : $session['volunteer_name']);
 
     return [
-        'title'       => $title,
-        'start'       => $start,
-        'end'         => $end,
+        'title' => $title,
+        'start' => $start,
+        'end' => $end,
         'description' => $session['description'] . "\n\nSupport mode: " . ($online ? 'Online' : 'Face-to-face'),
-        'location'    => $online ? 'Online' : 'Campus (face-to-face)',
+        'location' => $online ? 'Online' : 'Campus (face-to-face)',
     ];
 }
 
@@ -269,20 +275,22 @@ function googleCalendarUrl(array $session, int $myId): ?string
         return null;
     }
     return 'https://calendar.google.com/calendar/render?' . http_build_query([
-        'action'   => 'TEMPLATE',
-        'text'     => $event['title'],
-        'dates'    => date('Ymd\THis', $event['start']) . '/' . date('Ymd\THis', $event['end']),
-        'ctz'      => date_default_timezone_get(),
-        'details'  => $event['description'],
+        'action' => 'TEMPLATE',
+        'text' => $event['title'],
+        'dates' => date('Ymd\THis', $event['start']) . '/' . date('Ymd\THis', $event['end']),
+        'ctz' => date_default_timezone_get(),
+        'details' => $event['description'],
         'location' => $event['location'],
     ], '', '&', PHP_QUERY_RFC3986);
 }
 
 function sessionDisplayStatus(array $session): string
 {
-    if ($session['status'] === 'Scheduled'
+    if (
+        $session['status'] === 'Scheduled'
         && $session['session_date'] === date('Y-m-d')
-        && !hasSessionStarted($session)) {
+        && !hasSessionStarted($session)
+    ) {
         return 'Upcoming';
     }
     return $session['status'];

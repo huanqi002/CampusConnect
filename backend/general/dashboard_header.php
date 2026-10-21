@@ -22,14 +22,7 @@ function renderDashboardHeader(string $title, array $user, ?array $back = null, 
     $name        = $user['full_name'] ?? 'Student';
     $picture     = $isVolunteer ? ($user['volunteer_picture_url'] ?? '') : ($user['picture_url'] ?? '');
 
-    $initials = '';
-    foreach (array_slice(preg_split('/\s+/', trim($name)), 0, 2) as $part) {
-        $initials .= strtoupper(substr($part, 0, 1));
-    }
-
-    $avatar = $picture
-        ? '<img src="' . htmlspecialchars($picture) . '" alt="">'
-        : htmlspecialchars($initials);
+    $avatar = '<img src="' . htmlspecialchars($picture ?: DEFAULT_PROFILE_PICTURE) . '" alt="">';
 
     $scriptKey = basename(dirname($_SERVER['SCRIPT_NAME'] ?? '')) . '/' . basename($_SERVER['SCRIPT_NAME'] ?? '');
     $isNotificationsPage = $scriptKey === 'notification_management/notifications.php';

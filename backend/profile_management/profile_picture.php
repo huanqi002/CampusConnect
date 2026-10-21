@@ -49,11 +49,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
-
-$initials = '';
-foreach (array_slice(preg_split('/\s+/', trim($user['full_name'] ?? 'Student')), 0, 2) as $part) {
-    $initials .= strtoupper(substr($part, 0, 1));
-}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -75,8 +70,7 @@ foreach (array_slice(preg_split('/\s+/', trim($user['full_name'] ?? 'Student')),
             <section class="photo-card">
                 <div class="photo-current-row">
                     <div class="photo-avatar" id="photoPreview">
-                        <?php if ($profilePicture): ?><img src="<?= e($profilePicture) ?>" alt="Current profile photo">
-                        <?php else: ?><span><?= e($initials) ?></span><?php endif; ?>
+                        <img src="<?= e($profilePicture ?: DEFAULT_PROFILE_PICTURE) ?>" alt="Current profile photo">
                     </div>
                     <div><h2>Current photo</h2><p>This photo is visible to other students and volunteers.</p></div>
                 </div>

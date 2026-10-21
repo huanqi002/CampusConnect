@@ -4,6 +4,7 @@ const HISTORY_ENTRY_SQL = "SELECT h.final_status, h.completion_time, h.cancellat
                                   s.id AS session_id, s.user_id, s.volunteer_id, s.category, s.description,
                                   s.session_date, s.start_time, s.end_time, s.support_mode,
                                   us.full_name AS student_name, uv.full_name AS volunteer_name,
+                                  us.email AS student_email, uv.email AS volunteer_email,
                                   f.id AS feedback_id, f.rating, f.comments, f.submitted_at
                            FROM history h
                            JOIN sessions s ON s.id = h.session_id

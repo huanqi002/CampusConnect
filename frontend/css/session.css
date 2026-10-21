@@ -13,7 +13,7 @@
 
 /* Status pills on session pages: soft tint with coloured text */
 .pill-Pending     { background: #fff2e0; color: #c25e00; }
-.pill-Scheduled   { background: #e6f6ea; color: #1e7b34; }
+.pill-Scheduled   { background: #c8ead1; color: #166329; }
 .pill-Upcoming    { background: #e5f0fb; color: #1565c0; }
 .pill-Unscheduled { background: #efefef; color: #555; }
 
@@ -40,7 +40,7 @@
     content: "";
 }
 .card-list .info-card:has(.pill-Pending)   { --accent: #f7931e; }
-.card-list .info-card:has(.pill-Scheduled) { --accent: #2ebd59; }
+.card-list .info-card:has(.pill-Scheduled) { --accent: #1f9a47; }
 .card-list .info-card:has(.pill-Upcoming)  { --accent: #1e88e5; }
 .card-list .info-card.is-clickable:hover {
     border-color: #e2dcdb;
