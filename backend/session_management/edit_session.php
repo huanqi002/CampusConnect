@@ -48,9 +48,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $category = $session['category'];
             $when     = date('D, j M Y', strtotime($date)) . ', ' . formatTimeRange($start, $end);
             if ($myId === $volunteerId) {
-                addNotification($conn, (int)$session['user_id'], "{$me['name']} changed your $category session to $when.", 'Session Updated');
+                addNotification($conn, (int)$session['user_id'], "{$me['name']} changed your $category session to $when.", 'Session Updated', $sessionId);
             } else {
-                addNotification($conn, $volunteerId, "{$me['name']} changed the $category session to $when. Please accept or reject it in Session Request.", 'Session Updated');
+                addNotification($conn, $volunteerId, "{$me['name']} changed the $category session to $when. Please accept or reject it in Session Request.", 'Session Updated', $sessionId);
             }
             $conn->commit();
             header('Location: index.php?done=updated');
@@ -79,7 +79,7 @@ $scheduleConfig = [
 
 include __DIR__ . '/../general/header.php';
 ?>
-<link rel="stylesheet" href="../../frontend/css/session.css">
+<link rel="stylesheet" href="../../frontend/css/session.css?v=<?php echo filemtime(__DIR__ . '/../../frontend/css/session.css'); ?>">
 
 <?php if ($error): ?>
 <div class="message message-error"><?php echo htmlspecialchars($error); ?></div>

@@ -12,7 +12,7 @@ $myId      = (int)currentUser()['id'];
 $sessionId = isset($_GET['session_id']) ? (int)$_GET['session_id'] : 0;
 $entry     = findHistoryEntry($conn, $sessionId);
 
-if (!$entry || ($entry['user_id'] != $myId && $entry['volunteer_id'] != $myId)) {
+if (!$entry || !isMyHistoryEntry($entry, $myId, currentUser()['role'])) {
     header('Location: history.php?err=' . urlencode('History entry not found.'));
     exit;
 }
@@ -42,8 +42,8 @@ $overview = str_replace('</section><section class="view-when">', $outcomeNote . 
 
 include __DIR__ . '/../general/header.php';
 ?>
-<link rel="stylesheet" href="../../frontend/css/session.css">
-<link rel="stylesheet" href="../../frontend/css/history.css">
+<link rel="stylesheet" href="../../frontend/css/session.css?v=<?php echo filemtime(__DIR__ . '/../../frontend/css/session.css'); ?>">
+<link rel="stylesheet" href="../../frontend/css/history.css?v=<?php echo filemtime(__DIR__ . '/../../frontend/css/history.css'); ?>">
 
 <div class="schedule-card session-view history-view">
     <?php echo $overview; ?>

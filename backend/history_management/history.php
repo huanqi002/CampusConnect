@@ -9,12 +9,12 @@ require __DIR__ . '/functions.php';
 requireLogin();
 
 $myId    = currentUser()['id'];
-$entries = fetchHistory($conn, $myId);
+$entries = fetchHistory($conn, $myId, currentUser()['role']);
 
 include __DIR__ . '/../general/header.php';
 ?>
-<link rel="stylesheet" href="../../frontend/css/session.css">
-<link rel="stylesheet" href="../../frontend/css/history.css">
+<link rel="stylesheet" href="../../frontend/css/session.css?v=<?php echo filemtime(__DIR__ . '/../../frontend/css/session.css'); ?>">
+<link rel="stylesheet" href="../../frontend/css/history.css?v=<?php echo filemtime(__DIR__ . '/../../frontend/css/history.css'); ?>">
 
 <?php if (isset($_GET['msg'])): ?>
 <div class="message message-success"><?php echo htmlspecialchars($_GET['msg']); ?></div>
@@ -40,6 +40,11 @@ include __DIR__ . '/../general/header.php';
                  . '<span class="card-stars" aria-hidden="true">'
                  . str_repeat('<span class="is-on">&#9733;</span>', $rating) . str_repeat('<span>&#9733;</span>', 5 - $rating)
                  . '</span><strong>' . $rating . '/5</strong></span>';
+    } elseif ($e['final_status'] === 'Completed') {
+        // Volunteer view: the student has not rated this session yet.
+        $actions = '<span class="card-rating is-pending" title="The student has not rated this session yet">'
+                 . '<span class="card-stars" aria-hidden="true">' . str_repeat('<span>&#9733;</span>', 5) . '</span>'
+                 . '<strong>Not rated</strong></span>';
     } else {
         $actions = '';
     }
