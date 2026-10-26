@@ -79,16 +79,14 @@ function sessionOverviewHtml(array $session, string $status, int $myId, bool $on
     $minutes  = $isBooked && $session['end_time'] !== null
               ? (int)((strtotime($session['end_time']) - strtotime($session['start_time'])) / 60) : null;
 
-    // "Today", "Tomorrow", "In 3 days", "2 days ago" under the date.
+    // "Today" or "Tomorrow" next to the date; any other day gets no badge.
     $relative = '';
     if ($isBooked) {
         $days     = (int)round((strtotime($session['session_date']) - strtotime(date('Y-m-d'))) / 86400);
-        $relative = match (true) {
-            $days === 0  => 'Today',
-            $days === 1  => 'Tomorrow',
-            $days === -1 => 'Yesterday',
-            $days > 1    => 'In ' . $days . ' days',
-            default      => abs($days) . ' days ago',
+        $relative = match ($days) {
+            0       => 'Today',
+            1       => 'Tomorrow',
+            default => '',
         };
     }
 

@@ -1,11 +1,9 @@
 <?php
 require __DIR__ . '/../general/config.php';
+require __DIR__ . '/../general/auth.php';
 require __DIR__ . '/functions.php';
 
-if (empty($_SESSION['user_id'])) {
-    header('Location: ../user_management/select_user.php');
-    exit;
-}
+requireLogin();
 
 $sessionId = (int)($_POST['session_id'] ?? 0);
 $rating    = (int)($_POST['rating'] ?? 0);

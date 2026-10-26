@@ -42,8 +42,6 @@ $days = array_values(array_unique(array_column($slots, 'preferred_day')));
 $daySchedules = [];
 foreach ($slots as $slot) $daySchedules[$slot['preferred_day']] = date('g:i A', strtotime($slot['start_time'])) . ' - ' . date('g:i A', strtotime($slot['end_time']));
 $modes = array_values(array_unique(array_map(static fn($slot) => $slot['support_mode'] === 'Online' ? 'Virtual' : $slot['support_mode'], $slots)));
-$initials = '';
-foreach (array_slice(preg_split('/\s+/', trim($user['full_name'] ?? 'Student')), 0, 2) as $part) $initials .= strtoupper(substr($part, 0, 1));
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -64,12 +62,12 @@ foreach (array_slice(preg_split('/\s+/', trim($user['full_name'] ?? 'Student')),
         <div class="profile-page-heading volunteer-profile-heading"><div><span class="account-eyebrow">YOUR CAMPUS CONNECT PROFILE</span><h1>Profile Dashboard</h1></div><span class="volunteer-status <?= $available ? 'is-active' : 'is-paused' ?>"><?= $available ? 'Active' : 'Inactive' ?></span></div>
         <section class="profile-showcase-card">
             <a class="profile-cover" href="<?= BASE_URL ?>/profile_cover.php" aria-label="Change cover photo">
-                <img class="profile-cover-image" src="<?= e($coverPhoto ?: BASE_URL . '/frontend/images/help-university-building.png') ?>" alt="">
+                <img class="profile-cover-image" src="<?= e($coverPhoto ?: DEFAULT_COVER_PHOTO) ?>" alt="">
                 <span class="profile-cover-action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h3l1.4-2h7.2l1.4 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>Change cover photo</span>
             </a>
             <div class="profile-identity-card">
                 <div class="profile-avatar-wrap">
-                    <a class="profile-identity-avatar<?= empty($profilePicture) ? ' is-empty' : '' ?>" href="<?= BASE_URL ?>/profile_picture.php" aria-label="Change profile photo"><?php if ($profilePicture): ?><img src="<?= e($profilePicture) ?>" alt=""><?php else: ?><span><?= e($initials) ?></span><?php endif; ?></a>
+                    <a class="profile-identity-avatar" href="<?= BASE_URL ?>/profile_picture.php" aria-label="Change profile photo"><img src="<?= e($profilePicture ?: DEFAULT_PROFILE_PICTURE) ?>" alt=""></a>
                     <a class="profile-avatar-camera" href="<?= BASE_URL ?>/profile_picture.php" aria-label="Change profile photo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h3l1.4-2h7.2l1.4 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></a>
                     <a class="profile-photo-edit" href="<?= BASE_URL ?>/profile_picture.php">Edit photo</a>
                 </div>

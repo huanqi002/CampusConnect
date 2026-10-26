@@ -247,7 +247,7 @@ include __DIR__ . '/../general/header.php';
             <div class="preference-control">
                 <?php if (!empty($request['volunteer_name'])): ?>
                     <div class="volunteer-box">
-                        <img src="<?= !empty($request['volunteer_picture']) ? htmlspecialchars($request['volunteer_picture']) : BASE_URL . '/images/default-avatar.png' ?>"
+                        <img src="<?= !empty($request['volunteer_picture']) ? htmlspecialchars($request['volunteer_picture']) : DEFAULT_PROFILE_PICTURE ?>"
                             alt="Volunteer"
                             style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 1px solid #ccc;">
                         <div>

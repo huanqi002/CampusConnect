@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/notifications.php';
+require_once __DIR__ . '/nav_icons.php';
 
 $currentUserId = $_SESSION['user_id'] ?? null;
 $currentRole = $_SESSION['role'] ?? 'student';
@@ -22,7 +23,7 @@ $activeItem = [
 
 $navLink = static function (string $href, string $label, string $key, string $icon) use ($activeItem): string {
     $active = $key === $activeItem ? ' active' : '';
-    return '<a class="' . $active . '" href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '"><span class="side-nav-icon" aria-hidden="true">' . htmlspecialchars($icon, ENT_QUOTES, 'UTF-8') . '</span>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</a>';
+    return '<a class="' . $active . '" href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '"><span class="side-nav-icon" aria-hidden="true">' . navIcon($icon) . '</span>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</a>';
 };
 
 $isVolunteer = $currentRole === 'volunteer';
@@ -32,25 +33,25 @@ $openSessions = in_array($activeItem, ['dashboard', 'schedule', 'session_request
 
 $subLink = static function (string $href, string $label, string $key, string $icon) use ($activeItem): string {
     $active = $key === $activeItem ? ' active' : '';
-    return '<a class="' . $active . '" href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '"><span class="side-nav-icon" aria-hidden="true">' . htmlspecialchars($icon, ENT_QUOTES, 'UTF-8') . '</span>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</a>';
+    return '<a class="' . $active . '" href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8') . '"><span class="side-nav-icon" aria-hidden="true">' . navIcon($icon) . '</span>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</a>';
 };
 ?>
 <aside class="dashboard-sidebar">
     <a class="account-brand account-brand-light" href="../../profile.php" aria-label="Campus Connect home"><img
             class="account-brand-logo" src="../../frontend/images/campus-connect-logo.png" alt="Campus Connect"></a>
     <nav class="dashboard-side-nav" aria-label="Main navigation">
-        <?= $navLink('../../profile.php', 'My Profile', 'profile', 'P') ?>
-        <?= $navLink($requestHref, $requestLabel, $isVolunteer ? 'upcoming_request' : 'request', 'R') ?>
+        <?= $navLink('../../profile.php', 'My Profile', 'profile', 'profile') ?>
+        <?= $navLink($requestHref, $requestLabel, $isVolunteer ? 'upcoming_request' : 'request', 'request') ?>
         <details class="dashboard-side-group" <?= $openSessions ? 'open' : '' ?>>
-            <summary><span class="side-nav-icon" aria-hidden="true">S</span>Session</summary>
-            <?= $subLink('../session_management/index.php', 'Dashboard', 'dashboard', 'D') ?>
-            <?= $subLink('../session_management/schedule_list.php', 'Schedule', 'schedule', 'C') ?>
-            <?php if ($isVolunteer): ?>    <?= $subLink('../session_management/volunteer_requests.php', 'Request', 'session_requests', 'R') ?><?php endif; ?>
+            <summary><span class="side-nav-icon" aria-hidden="true"><?= navIcon('session') ?></span>Session</summary>
+            <?= $subLink('../session_management/index.php', 'Dashboard', 'dashboard', 'dashboard') ?>
+            <?= $subLink('../session_management/schedule_list.php', 'Schedule', 'schedule', 'schedule') ?>
+            <?php if ($isVolunteer): ?>    <?= $subLink('../session_management/volunteer_requests.php', 'Request', 'session_requests', 'inbox') ?><?php endif; ?>
         </details>
-        <?= $navLink('../history_management/history.php', 'History', 'history', 'H') ?>
+        <?= $navLink('../history_management/history.php', 'History', 'history', 'history') ?>
     </nav>
     <a class="dashboard-side-logout" href="../user_management/logout.php" data-logout-trigger><span class="side-nav-icon"
-            aria-hidden="true">↪</span>Log out</a>
+            aria-hidden="true"><?= navIcon('logout') ?></span>Log out</a>
 </aside>
 <div class="logout-confirm-backdrop" id="logoutConfirm" role="dialog" aria-modal="true" aria-labelledby="logoutConfirmTitle" hidden>
     <section class="logout-confirm-box">

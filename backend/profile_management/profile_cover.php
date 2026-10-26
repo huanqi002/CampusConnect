@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php if ($error): ?><div class="message message-error" role="alert"><?= e($error) ?></div><?php endif; ?>
             <section class="cover-editor-card">
                 <div class="cover-current-row">
-                    <div class="cover-current-preview"><?php if ($coverPhoto): ?><img src="<?= e($coverPhoto) ?>" alt=""><?php else: ?><img src="<?= BASE_URL ?>/frontend/images/help-university-building.png" alt=""><?php endif; ?></div>
+                    <div class="cover-current-preview"><img src="<?= e($coverPhoto ?: DEFAULT_COVER_PHOTO) ?>" alt=""></div>
                     <div><h2>Current cover photo</h2><p>This appears across the top of your profile.</p></div>
                 </div>
                 <form method="post" enctype="multipart/form-data" id="coverUploadForm">

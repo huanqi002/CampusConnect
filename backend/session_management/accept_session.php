@@ -22,7 +22,7 @@ try {
     acceptSessionRequest($conn, $sessionId);
     $when = date('D, j M Y', strtotime($session['session_date'])) . ' at ' . formatTime($session['start_time']);
     addNotification($conn, (int)$session['user_id'],
-        "{$me['name']} accepted your {$session['category']} session on $when.", 'Session Scheduled');
+        "{$me['name']} accepted your {$session['category']} session on $when.", 'Session Scheduled', $sessionId);
     $conn->commit();
 } catch (Exception $e) {
     $conn->rollback();

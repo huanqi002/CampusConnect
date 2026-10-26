@@ -9,7 +9,13 @@ require __DIR__ . '/../history_management/functions.php';
 requireLogin();
 
 $sessionId = (int)($_POST['session_id'] ?? 0);
+$reason    = mb_substr(trim((string)($_POST['reason'] ?? '')), 0, 500);
 $me        = currentUser();
+
+if ($reason === '') {
+    header('Location: volunteer_requests.php?err=' . urlencode('Please give a reason for rejecting the session.'));
+    exit;
+}
 $session   = findSessionRequest($conn, $sessionId, (int)$me['id']);
 
 if (!$session) {
@@ -20,10 +26,10 @@ if (!$session) {
 $conn->begin_transaction();
 try {
     rejectSessionRequest($conn, $sessionId);
-    recordHistory($conn, $session, 'Rejected');
+    recordHistory($conn, $session, 'Rejected', $reason);
     $when = date('D, j M Y', strtotime($session['session_date'])) . ' at ' . formatTime($session['start_time']);
     addNotification($conn, (int)$session['user_id'],
-        "{$me['name']} rejected your {$session['category']} session on $when.", 'Session Rejected');
+        "{$me['name']} rejected your {$session['category']} session on $when. Reason: $reason", 'Session Rejected', $sessionId);
     $conn->commit();
     header('Location: volunteer_requests.php?done=rejected');
 } catch (Exception $e) {

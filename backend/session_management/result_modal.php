@@ -31,9 +31,16 @@ const RESULT_MODAL_ICONS = [
 
 // Confirmation shown before submitting each action form, keyed by the form's action.
 const CONFIRM_MODALS = [
-    'cancel_session.php' => ['warning', 'Cancel Session', 'Are you sure you want to cancel this session?', 'Yes, Cancel Session', 'danger'],
+    // A 6th item asks for a required reason, posted as "reason": [label, quick reasons, notification word].
+    'cancel_session.php' => ['warning', 'Cancel Session', 'Are you sure you want to cancel this session?', 'Yes, Cancel Session', 'danger',
+                             ['Reason for cancelling', ['Schedule conflict', 'Feeling unwell', 'Emergency'], 'cancellation']],
     'accept_session.php' => ['check', 'Accept', 'Are you sure you want to accept this?', 'Yes, Accept', 'success'],
+<<<<<<< HEAD
     'reject_session.php' => ['warning', 'Reject', 'Are you sure you want to reject this?', 'Yes, Reject', 'danger'],
+=======
+    'reject_session.php' => ['warning', 'Reject', 'Are you sure you want to reject this?', 'Yes, Reject', 'danger',
+                             ['Reason for rejecting', ['Not available', 'Outside my expertise', 'Schedule conflict'], 'rejection']],
+>>>>>>> main
     'mark_completed.php' => ['check', 'Mark as Complete', 'Are you sure you want to mark this session as complete?', 'Yes, Complete', 'success'],
 ];
 
@@ -104,8 +111,14 @@ function renderResultModal(string $icon, string $title, string $message, string 
 function renderConfirmModal(): string
 {
     $configs = [];
-    foreach (CONFIRM_MODALS as $action => [$icon, $title, $message, $yes, $tone]) {
-        $configs[$action] = ['icon' => RESULT_MODAL_ICONS[$icon], 'title' => $title, 'message' => $message, 'yes' => $yes, 'tone' => $tone];
+    foreach (CONFIRM_MODALS as $action => $item) {
+        [$icon, $title, $message, $yes, $tone] = $item;
+        $configs[$action] = ['icon' => RESULT_MODAL_ICONS[$icon], 'title' => $title, 'message' => $message, 'yes' => $yes, 'tone' => $tone, 'reason' => null];
+        if (!empty($item[5])) {
+            [$label, $chips, $word] = $item[5];
+            $configs[$action]['reason'] = ['label' => $label, 'chips' => $chips,
+                'hint' => "This reason will be included in the $word notification.", 'error' => 'Please give a reason before continuing.'];
+        }
     }
 
     return '<div class="modal-backdrop" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle" hidden>'
@@ -113,6 +126,16 @@ function renderConfirmModal(): string
          . '<div class="modal-icon-top" id="confirmModalIcon"></div>'
          . '<h2 class="modal-confirm-title" id="confirmModalTitle"></h2>'
          . '<p id="confirmModalMessage"></p>'
+<<<<<<< HEAD
+=======
+         . '<div class="modal-reason" id="confirmModalReasonWrap" hidden>'
+         . '<div class="modal-reason-head"><label for="confirmModalReason"><span id="confirmModalReasonLabel"></span> <span aria-hidden="true">*</span></label>'
+         . '<small class="modal-reason-count"><span id="confirmModalReasonCount">0</span>/500</small></div>'
+         . '<div class="modal-reason-chips" id="confirmModalReasonChips"></div>'
+         . '<textarea id="confirmModalReason" maxlength="500" rows="3" placeholder="Let the other person know why"></textarea>'
+         . '<small class="modal-reason-hint" id="confirmModalReasonHint"></small>'
+         . '</div>'
+>>>>>>> main
          . '<div class="modal-buttons">'
          . '<button type="button" class="modal-close" id="confirmModalNo">No</button>'
          . '<button type="button" class="modal-yes" id="confirmModalYes"></button>'
@@ -121,8 +144,26 @@ function renderConfirmModal(): string
          . 'var configs = ' . json_encode($configs) . ';'
          . 'var modal = document.getElementById("confirmModal");'
          . 'var yes = document.getElementById("confirmModalYes");'
+<<<<<<< HEAD
          . 'var pending = null;'
          . 'function close() { modal.hidden = true; pending = null; }'
+=======
+         . 'var pending = null, needReason = false, reasonCfg = null;'
+         . 'var reasonWrap = document.getElementById("confirmModalReasonWrap");'
+         . 'var reason = document.getElementById("confirmModalReason");'
+         . 'var hint = document.getElementById("confirmModalReasonHint");'
+         . 'var count = document.getElementById("confirmModalReasonCount");'
+         . 'function syncYes() { yes.disabled = needReason && reason.value.trim() === ""; count.textContent = reason.value.length;'
+         . '  if (reason.value.trim() !== "") { reasonWrap.classList.remove("is-error"); hint.textContent = reasonCfg.hint; } }'
+         . 'document.getElementById("confirmModalReasonChips").addEventListener("click", function (e) {'
+         . '  var chip = e.target.closest("button"); if (!chip) { return; }'
+         . '  reason.value = chip.textContent; reason.focus(); syncYes();'
+         . '});'
+         . 'reason.addEventListener("blur", function () { if (needReason && !modal.hidden && reason.value.trim() === "" && document.activeElement !== yes) {'
+         . '  reasonWrap.classList.add("is-error"); hint.textContent = reasonCfg.error; } });'
+         . 'function close() { modal.hidden = true; pending = null; }'
+         . 'reason.addEventListener("input", syncYes);'
+>>>>>>> main
          . 'document.addEventListener("submit", function (e) {'
          . '  var cfg = configs[e.target.getAttribute("action")];'
          . '  if (!cfg) { return; }'
@@ -133,9 +174,34 @@ function renderConfirmModal(): string
          . '  document.getElementById("confirmModalMessage").textContent = cfg.message;'
          . '  yes.textContent = cfg.yes;'
          . '  yes.className = "modal-yes is-" + cfg.tone;'
+<<<<<<< HEAD
          . '  modal.hidden = false;'
          . '});'
          . 'yes.addEventListener("click", function () { var form = pending; close(); if (form) { form.submit(); } });'
+=======
+         . '  reasonCfg = cfg.reason; needReason = !!reasonCfg;'
+         . '  reasonWrap.hidden = !needReason;'
+         . '  if (needReason) {'
+         . '    document.getElementById("confirmModalReasonLabel").textContent = reasonCfg.label;'
+         . '    hint.textContent = reasonCfg.hint;'
+         . '    var chips = document.getElementById("confirmModalReasonChips"); chips.textContent = "";'
+         . '    reasonCfg.chips.forEach(function (text) { chips.appendChild(Object.assign(document.createElement("button"), { type: "button", textContent: text })); });'
+         . '  }'
+         . '  reason.value = ""; reasonWrap.classList.remove("is-error");'
+         . '  syncYes();'
+         . '  modal.hidden = false;'
+         . '  if (needReason) { reason.focus(); }'
+         . '});'
+         . 'yes.addEventListener("click", function () {'
+         . '  var form = pending;'
+         . '  if (!form || (needReason && reason.value.trim() === "")) { return; }'
+         . '  if (needReason) {'
+         . '    var input = form.querySelector("input[name=reason]") || form.appendChild(Object.assign(document.createElement("input"), { type: "hidden", name: "reason" }));'
+         . '    input.value = reason.value.trim();'
+         . '  }'
+         . '  close(); form.submit();'
+         . '});'
+>>>>>>> main
          . 'document.getElementById("confirmModalNo").addEventListener("click", close);'
          . 'modal.addEventListener("click", function (e) { if (e.target === modal) { close(); } });'
          . 'document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !modal.hidden) { close(); } });'

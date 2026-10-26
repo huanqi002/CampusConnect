@@ -30,7 +30,7 @@ $scheduleConfig = [
 
 include __DIR__ . '/../general/header.php';
 ?>
-<link rel="stylesheet" href="../../frontend/css/session.css">
+<link rel="stylesheet" href="../../frontend/css/session.css?v=<?php echo filemtime(__DIR__ . '/../../frontend/css/session.css'); ?>">
 
 <?php if (isset($_GET['err'])): ?>
 <div class="message message-error"><?php echo htmlspecialchars($_GET['err']); ?></div>

@@ -42,7 +42,7 @@ try {
     $message = $session['volunteer_id'] == $myId
         ? "You picked $when for the {$session['category']} session. Please accept or reject it in Session Request."
         : currentUser()['name'] . " requested a {$session['category']} session on $when. Please accept or reject it in Session Request.";
-    addNotification($conn, (int)$session['volunteer_id'], $message, 'Session Requested');
+    addNotification($conn, (int)$session['volunteer_id'], $message, 'Session Requested', $sessionId);
     $conn->commit();
     header('Location: schedule_list.php?scheduled=1');
 } catch (Exception $e) {

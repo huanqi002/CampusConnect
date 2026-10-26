@@ -1,0 +1,186 @@
+/* History list (history.php). Loaded after session.css, which provides the card layout. */
+
+/* Status pills: soft tint with coloured text */
+.pill-Completed { background: #c8ead1; color: #166329; }
+.pill-Cancelled { background: #efefef; color: #55585f; }
+.pill-Rejected  { background: #fdecec; color: #c62828; }
+
+/* Left accent bar matches the status */
+.card-list .info-card:has(.pill-Completed) { --accent: #1f9a47; }
+.card-list .info-card:has(.pill-Cancelled) { --accent: #b3b5bb; }
+.card-list .info-card:has(.pill-Rejected)  { --accent: #c62828; }
+
+/* Right column: status pill, then a thin divider, then Rate Now or the rating.
+   Fixed width so the pills line up on every card, even when the column is empty. */
+.history-list .card-actions {
+    justify-content: center;
+    width: 150px;
+    min-height: 32px;
+    padding-left: 18px;
+    border-left: 1px solid #f0ecec;
+}
+.history-list .card-actions:empty { border-left-color: transparent; }
+
+/* Rate Now and the rating share one chip shape, the same height as the status pill */
+.page .history-list .btn-rate,
+.history-list .card-rating {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* Rate Now: solid amber call to action (History list and History Details) */
+.page .btn-rate {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border: 0;
+    background: #f59e0b;
+    color: #fff;
+    box-shadow: 0 3px 8px rgba(245, 158, 11, 0.28);
+}
+.page .btn-rate span { font-size: 13px; line-height: 1; }
+.page .btn-rate:hover { background: #d97706; box-shadow: 0 5px 12px rgba(217, 119, 6, 0.32); }
+
+/* Given rating: five stars (filled ones amber) and the score on one line */
+.history-list .card-rating { background: #fff8eb; color: #92400e; }
+.card-stars { display: inline-flex; gap: 1px; color: #e8d9bd; font-size: 13px; line-height: 1; letter-spacing: 0; }
+.card-stars .is-on { color: #f59e0b; }
+.history-list .card-rating strong { font-size: 12px; }
+/* Completed but the student has not rated it yet (volunteer view) */
+.history-list .card-rating.is-pending { border: 1px dashed #dcd7d6; background: #fff; color: #8a8d96; }
+.history-list .card-rating.is-pending .card-stars { color: #e3e0dc; }
+.history-list .card-rating.is-pending strong { font-weight: 600; }
+
+/* History Details (history_details.php): outcome note and Feedback section */
+.history-view .tile-sub { display: none; }   /* "In 5 days" / "2 days ago" is not useful for a finished session */
+.status-note-Completed { background: #eaf7ee; color: #166329; }
+.status-note-Cancelled { background: #f3f3f4; color: #55585f; }
+.status-note-Rejected  { background: #fdecec; color: #c62828; }
+
+.feedback-card {
+    padding: 14px 18px;
+    border: 1px solid #f3e6cc;
+    border-radius: 12px;
+    background: #fffaf0;
+}
+.feedback-score { display: flex; align-items: baseline; gap: 8px; }
+.feedback-score .card-stars { align-self: center; font-size: 20px; }
+.feedback-score strong { color: #20232c; font-size: 18px; }
+.feedback-out-of { color: #8a8d96; font-size: 13px; }
+.feedback-comment {
+    margin: 10px 0 0;
+    padding-left: 12px;
+    border-left: 3px solid #f5c870;
+    color: #373943;
+    font-size: 14px;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+}
+.feedback-comment.is-empty { color: #8a8d96; font-style: italic; }
+.feedback-meta { margin: 10px 0 0; color: #8a8d96; font-size: 12px; }
+.feedback-empty {
+    margin: 0;
+    padding: 12px 16px;
+    border: 1px dashed #e3dfde;
+    border-radius: 12px;
+    color: #6b6e78;
+    font-size: 13px;
+}
+
+/* Rate Your Session (feedback.php) */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+.rate-view { max-width: 760px; margin: 0 auto; }
+.rate-view .view-title { margin-bottom: 0; }
+.rate-view > .status-note { margin-top: 14px; }
+
+/* Volunteer and session summary: a soft tinted header */
+.rate-head { padding: 16px 18px; border: 1px solid #efebea; border-radius: 14px; background: #fbfaf9; }
+.rate-summary { display: flex; align-items: center; gap: 12px; }
+.rate-summary .sc-avatar { flex-basis: 46px; width: 46px; height: 46px; font-size: 15px; }
+.rate-summary-body { display: grid; flex: 1; gap: 1px; min-width: 0; }
+.rate-summary-body strong { color: #20232c; font-size: 16px; }
+.rate-topic { margin: 12px 0 0; color: #20232c; font-size: 15px; font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; }
+.rate-summary-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; margin: 8px 0 0; color: #6b6e78; font-size: 12px; }
+.rate-summary-meta > span { display: inline-flex; align-items: center; gap: 5px; }
+.rate-summary-meta svg { width: 14px; height: 14px; fill: none; stroke: #9a9ca4; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Star picker: big stars, hovering previews, the chosen ones stay amber */
+.rate-stars-section { margin-top: 26px; text-align: center; }
+.star-picker { display: inline-flex; gap: 8px; margin: 20px 0 0; padding: 0; border: 0; }
+.star-picker input { position: absolute; opacity: 0; pointer-events: none; }
+.star-picker .star { display: grid; place-items: center; margin: 0; padding: 4px; border-radius: 12px; color: #e6e2dd; cursor: pointer; transition: color 0.12s, transform 0.15s; }
+.star-picker svg { width: 48px; height: 48px; fill: currentColor; }
+.star-picker input:checked + .star,
+.star-picker .star:has(~ input:checked) { color: #f59e0b; filter: drop-shadow(0 3px 6px rgba(245, 158, 11, 0.3)); }
+.star-picker:hover .star { color: #e6e2dd; filter: none; }
+.star-picker .star:hover,
+.star-picker .star:has(~ .star:hover) { color: #fbbf24; }
+.star-picker .star:hover { transform: scale(1.15); }
+.star-picker input:checked + .star { animation: star-pop 0.25s ease; }
+.star-picker input:focus-visible + .star { outline: 2px solid #1565c0; outline-offset: 2px; }
+@keyframes star-pop { 50% { transform: scale(1.25); } }
+.star-scale { display: flex; justify-content: space-between; width: 300px; max-width: 100%; margin: 6px auto 0; color: #b6b8bf; font-size: 11px; }
+.star-caption {
+    display: inline-block;
+    min-height: 30px;
+    margin: 14px 0 0;
+    padding: 6px 16px;
+    border-radius: 999px;
+    background: #f3f3f4;
+    color: #8a8d96;
+    font-size: 13px;
+    font-weight: 600;
+}
+.star-caption.is-set { background: #fff4dc; color: #b45309; }
+.star-caption.is-1, .star-caption.is-2 { background: #fdecec; color: #c62828; }
+
+/* Comments: quick phrase chips, text box and character count */
+.rate-view label.view-label { display: block; margin: 0 0 10px; font-weight: 700; }
+.rate-optional { color: #b6b8bf; font-weight: 600; letter-spacing: 0; text-transform: none; }
+.rate-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.rate-tag {
+    padding: 6px 14px;
+    border: 1px solid #e3dfde;
+    border-radius: 999px;
+    background: #fff;
+    color: #484a52;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.rate-tag:hover { border-color: #f5c870; background: #fffaf0; }
+.rate-tag[aria-pressed="true"] { border-color: #f59e0b; background: #fff4dc; color: #b45309; }
+.rate-tag[aria-pressed="true"]::before { content: "\2713"; margin-right: 5px; }
+.rate-view .topic-input:focus { border-color: #f59e0b; box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15); }
+.rate-count { margin: 6px 0 0; color: #b6b8bf; font-size: 11px; text-align: right; }
+
+.rate-actions { padding-top: 20px; border-top: 1px solid #f0ecec; }
+.page .btn-rate:disabled { opacity: 0.45; box-shadow: none; cursor: not-allowed; transform: none; }
+
+@media (max-width: 760px) {
+    .star-picker svg { width: 38px; height: 38px; }
+    .rate-summary { flex-wrap: wrap; }
+    .history-list .card-actions { width: auto; padding-left: 0; border-left: 0; }
+    .history-list .card-actions:empty { display: none; }
+    .page .history-list .btn-rate,
+    .history-list .card-rating { width: auto; }
+}

@@ -12,7 +12,54 @@ $currentUser = currentUser();
 $myId = (int) $currentUser['id'];
 $role = $currentUser['role'];
 $notifications = listNotifications($conn, $myId, $role)->fetch_all(MYSQLI_ASSOC);
+foreach ($notifications as &$n) {
+    [$n['message'], $n['session_id']] = splitNotificationMessage($n['message']);   // hidden [session:12] tag
+}
+unset($n);
 markAllNotificationsRead($conn, $myId, $role);   // Keep hidden other-role notices unread for that role's view.
+
+// Where each notice leads: the session's details when it is linked to one, else the closest list page.
+$sessionIds = array_values(array_unique(array_filter(array_map(static fn(array $n): int => (int)($n['session_id'] ?? 0), $notifications))));
+$linkedSessions = [];
+if ($sessionIds !== []) {
+    $stmt = $conn->prepare('SELECT id, status, user_id, volunteer_id FROM sessions WHERE id IN (' . implode(',', array_fill(0, count($sessionIds), '?')) . ')');
+    $stmt->bind_param(str_repeat('i', count($sessionIds)), ...$sessionIds);
+    $stmt->execute();
+    foreach ($stmt->get_result() as $row) {
+        $linkedSessions[(int)$row['id']] = $row;
+    }
+}
+
+function noticeHref(array $n, array $linkedSessions, int $myId, ?string $role): ?string
+{
+    $session = $linkedSessions[(int)($n['session_id'] ?? 0)] ?? null;
+    // Detail pages only open a session from the side of the current role (student or volunteer),
+    // so a notice about a session from the other role stays unlinked instead of leading to "not found".
+    if ($session && (int)$session[$role === 'volunteer' ? 'volunteer_id' : 'user_id'] !== $myId) {
+        return null;
+    }
+    if ($session) {
+        $id = (int)$session['id'];
+        if (in_array($session['status'], ['Completed', 'Cancelled', 'Rejected'], true)) {
+            return "../history_management/history_details.php?session_id=$id";
+        }
+        if ($session['status'] === 'Pending' && $role === 'volunteer' && (int)$session['volunteer_id'] === $myId) {
+            return "../session_management/session_request_details.php?session_id=$id";
+        }
+        return "../session_management/session_details.php?session_id=$id";
+    }
+
+    // Older notices without a session: open the page where that item now lives.
+    return match ($n['notice_type']) {
+        'Pending Request'                       => $role === 'volunteer' ? '../request_management/upcoming_request.php' : null,
+        'Request Response', 'Status Update'     => $role === 'student' ? '../request_management/request.php' : null,
+        'Session Requested', 'Session Updated'  => $role === 'volunteer' ? '../session_management/volunteer_requests.php' : '../session_management/index.php',
+        'Session Scheduled'                     => '../session_management/index.php',
+        'Session Cancelled', 'Session Rejected',
+        'Session Completed', 'Feedback Received', 'Feedback Reminder' => '../history_management/history.php',
+        default                                 => null,
+    };
+}
 
 $unread = count(array_filter($notifications, static fn(array $n): bool => $n['is_read'] === 'N'));
 
@@ -220,15 +267,13 @@ echo renderNotificationSummary($conn, (int) $myId, currentUser()['role']);
         <div class="notice-list">
             <?php foreach ($items as $n):
                 [$iconPaths, $tone] = noticeStyle($n['notice_type']);
-                $isPendingRequest = $n['notice_type'] === 'Pending Request' && $role === 'volunteer';
-                $isStudentRequestResponse = in_array($n['notice_type'], ['Request Response', 'Status Update'], true) && $role === 'student';
-                $isActionable = $isPendingRequest || $isStudentRequestResponse; ?>
+                $href = noticeHref($n, $linkedSessions, $myId, $role);
+                $isActionable = $href !== null; ?>
                 <article
                     class="notice notice-<?php echo $tone; ?><?php echo $n['is_read'] === 'N' ? ' is-new' : ''; ?><?php echo $isActionable ? ' is-actionable' : ''; ?>">
                     <span class="notice-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><?php echo $iconPaths; ?></svg></span>
                     <?php if ($isActionable): ?>
-                        <a class="notice-body notice-link"
-                            href="../../backend/request_management/<?php echo $isPendingRequest ? 'upcoming_request.php' : 'request.php'; ?>">
+                        <a class="notice-body notice-link" href="<?php echo htmlspecialchars($href); ?>">
                         <?php else: ?>
                             <div class="notice-body">
                             <?php endif; ?>
@@ -249,6 +294,13 @@ echo renderNotificationSummary($conn, (int) $myId, currentUser()['role']);
     <?php endforeach; ?>
 <?php endif; ?>
 <style>
+    .notice-link::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 14px;
+    }
+
     .notice-link {
         display: block;
         color: inherit;

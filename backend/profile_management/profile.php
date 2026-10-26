@@ -8,8 +8,6 @@ $isVolunteer = ($user['is_volunteer'] ?? 'N') === 'Y';
 $volunteerCheck = $pdo->prepare('SELECT id FROM volunteers WHERE user_id = ? LIMIT 1');
 $volunteerCheck->execute([$user['id']]);
 $volunteerProfileExists = (bool)$volunteerCheck->fetchColumn();
-$initials = '';
-foreach (array_slice(preg_split('/\s+/', trim($user['full_name'] ?? 'Student')), 0, 2) as $part) $initials .= strtoupper(substr($part, 0, 1));
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['role'] ?? '') === 'student') {
     check_csrf();
@@ -56,13 +54,13 @@ if ($isVolunteer) redirect('volunteer.php');
         </div>
         <section class="profile-showcase-card">
             <a class="profile-cover" href="<?= BASE_URL ?>/profile_cover.php" aria-label="<?= empty($user['cover_photo_url']) ? 'Add a cover photo' : 'Change cover photo' ?>">
-                <img class="profile-cover-image" src="<?= e($user['cover_photo_url'] ?: BASE_URL . '/frontend/images/help-university-building.png') ?>" alt="">
+                <img class="profile-cover-image" src="<?= e($user['cover_photo_url'] ?: DEFAULT_COVER_PHOTO) ?>" alt="">
                 <?php if (empty($user['cover_photo_url'])): ?><span class="profile-cover-prompt">Make this profile yours</span><?php endif; ?>
                 <span class="profile-cover-action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h3l1.4-2h7.2l1.4 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><?= empty($user['cover_photo_url']) ? 'Add cover photo' : 'Change cover photo' ?></span>
             </a>
             <div class="profile-identity-card">
                 <div class="profile-avatar-wrap">
-                    <a class="profile-identity-avatar<?= empty($user['picture_url']) ? ' is-empty' : '' ?>" href="<?= BASE_URL ?>/profile_picture.php" aria-label="<?= empty($user['picture_url']) ? 'Add a profile photo' : 'Change your profile photo' ?>"><?php if (!empty($user['picture_url'])): ?><img src="<?= e($user['picture_url']) ?>" alt=""><?php else: ?><span><?= e($initials) ?></span><?php endif; ?></a>
+                    <a class="profile-identity-avatar" href="<?= BASE_URL ?>/profile_picture.php" aria-label="<?= empty($user['picture_url']) ? 'Add a profile photo' : 'Change your profile photo' ?>"><img src="<?= e($user['picture_url'] ?: DEFAULT_PROFILE_PICTURE) ?>" alt=""></a>
                     <a class="profile-avatar-camera" href="<?= BASE_URL ?>/profile_picture.php" aria-label="Change profile photo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h3l1.4-2h7.2l1.4 2h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></a>
                     <a class="profile-photo-edit" href="<?= BASE_URL ?>/profile_picture.php"><?= empty($user['picture_url']) ? '＋ Add photo' : 'Edit photo' ?></a>
                 </div>
