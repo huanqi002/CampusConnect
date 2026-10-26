@@ -25,7 +25,7 @@ $calendarUrl = $session['status'] === 'Scheduled' && !hasSessionEnded($session)
 
 include __DIR__ . '/../general/header.php';
 ?>
-<link rel="stylesheet" href="../../frontend/css/session.css">
+<link rel="stylesheet" href="../../frontend/css/session.css?v=<?php echo filemtime(__DIR__ . '/../../frontend/css/session.css'); ?>">
 
 <div class="schedule-card session-view">
     <?php echo sessionOverviewHtml($session, $status, (int)$myId); ?>

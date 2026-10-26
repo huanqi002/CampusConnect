@@ -1,14 +1,12 @@
 <?php
 require __DIR__ . '/../general/config.php';
+require __DIR__ . '/../general/auth.php';
 require __DIR__ . '/../general/card_template.php';
 require __DIR__ . '/../general/format.php';
 require __DIR__ . '/../session_management/session_card.php';
 require __DIR__ . '/functions.php';
 
-if (empty($_SESSION['user_id'])) {
-    header('Location: ../user_management/select_user.php');
-    exit;
-}
+requireLogin();
 
 $sessionId = isset($_GET['session_id']) ? (int)$_GET['session_id'] : 0;
 
@@ -27,8 +25,8 @@ if (!$session || $session['user_id'] != $_SESSION['user_id']) {
 
 include __DIR__ . '/../general/header.php';
 ?>
-<link rel="stylesheet" href="../../frontend/css/session.css">
-<link rel="stylesheet" href="../../frontend/css/history.css">
+<link rel="stylesheet" href="../../frontend/css/session.css?v=<?php echo filemtime(__DIR__ . '/../../frontend/css/session.css'); ?>">
+<link rel="stylesheet" href="../../frontend/css/history.css?v=<?php echo filemtime(__DIR__ . '/../../frontend/css/history.css'); ?>">
 
 <?php if ($blocked): [$tone, $title, $message] = $blocked; ?>
 <div class="schedule-card session-view rate-view">
@@ -50,25 +48,27 @@ include __DIR__ . '/../general/header.php';
     <input type="hidden" name="session_id" value="<?php echo (int)$session['id']; ?>">
 
     <!-- Who and what is being rated -->
-    <div class="rate-summary">
-        <?php echo personAvatar($volunteer); ?>
-        <div class="rate-summary-body">
-            <span class="person-role">Your volunteer</span>
-            <strong><?php echo htmlspecialchars($volunteer); ?></strong>
-            <p class="rate-summary-meta">
-                <?php echo categoryChip($session['category']); ?>
-                <?php if ($session['session_date'] !== null): ?>
-                <span><?php echo SESSION_CARD_ICONS['calendar'] . htmlspecialchars(date('D, j M Y', strtotime($session['session_date']))); ?></span>
-                <span><?php echo SESSION_CARD_ICONS['clock'] . htmlspecialchars(formatTimeRange($session['start_time'], $session['end_time'])); ?></span>
-                <?php endif; ?>
-                <span><?php echo SESSION_CARD_ICONS[$isOnline ? 'online' : 'inperson'] . ($isOnline ? 'Online' : 'Face-to-face'); ?></span>
-            </p>
+    <div class="rate-head">
+        <div class="rate-summary">
+            <?php echo personAvatar($volunteer); ?>
+            <div class="rate-summary-body">
+                <span class="person-role">Your volunteer</span>
+                <strong><?php echo htmlspecialchars($volunteer); ?></strong>
+            </div>
+            <?php echo categoryChip($session['category']); ?>
         </div>
+        <p class="rate-topic"><?php echo htmlspecialchars($session['description']); ?></p>
+        <p class="rate-summary-meta">
+            <?php if ($session['session_date'] !== null): ?>
+            <span><?php echo SESSION_CARD_ICONS['calendar'] . htmlspecialchars(date('D, j M Y', strtotime($session['session_date']))); ?></span>
+            <span><?php echo SESSION_CARD_ICONS['clock'] . htmlspecialchars(formatTimeRange($session['start_time'], $session['end_time'])); ?></span>
+            <?php endif; ?>
+            <span><?php echo SESSION_CARD_ICONS[$isOnline ? 'online' : 'inperson'] . ($isOnline ? 'Online' : 'Face-to-face'); ?></span>
+        </p>
     </div>
-    <p class="rate-topic"><?php echo htmlspecialchars($session['description']); ?></p>
 
     <!-- Star rating -->
-    <section class="view-when rate-stars-section">
+    <section class="rate-stars-section">
         <h2 class="view-title">How helpful was this session?</h2>
         <p class="view-desc">Your rating helps <?php echo htmlspecialchars($volunteer); ?> and other students.</p>
 
@@ -76,22 +76,29 @@ include __DIR__ . '/../general/header.php';
             <legend class="visually-hidden">Rating from 1 to 5 stars</legend>
             <?php for ($i = 1; $i <= 5; $i++): ?>
             <input type="radio" id="rating<?php echo $i; ?>" name="rating" value="<?php echo $i; ?>" required>
-            <label for="rating<?php echo $i; ?>" title="<?php echo $i; ?> star<?php echo $i > 1 ? 's' : ''; ?>">
+            <label class="star" for="rating<?php echo $i; ?>" title="<?php echo $i; ?> star<?php echo $i > 1 ? 's' : ''; ?>">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.84 5.76 6.36.92-4.6 4.48 1.09 6.33L12 17.3l-5.69 2.99 1.09-6.33-4.6-4.48 6.36-.92z"/></svg>
                 <span class="visually-hidden"><?php echo $i; ?> star<?php echo $i > 1 ? 's' : ''; ?></span>
             </label>
             <?php endfor; ?>
         </fieldset>
+        <div class="star-scale" aria-hidden="true"><span>Not helpful</span><span>Very helpful</span></div>
         <p class="star-caption" id="starCaption" aria-live="polite">Tap a star to rate</p>
     </section>
 
-    <!-- Comments -->
+    <!-- Comments with quick phrases -->
     <section class="view-when">
-        <label class="view-label" for="comments">Comments <span class="rate-optional">(optional)</span></label>
-        <textarea class="topic-input" id="comments" name="comments" rows="4" placeholder="What went well? What could be better?"></textarea>
+        <label class="view-label" for="comments">Tell us more <span class="rate-optional">(optional)</span></label>
+        <div class="rate-tags" id="rateTags" aria-label="Quick phrases">
+            <?php foreach (['Explained clearly', 'Patient', 'Well prepared', 'On time', 'Friendly', 'Solved my problem'] as $tag): ?>
+            <button type="button" class="rate-tag" aria-pressed="false"><?php echo $tag; ?></button>
+            <?php endforeach; ?>
+        </div>
+        <textarea class="topic-input" id="comments" name="comments" rows="4" maxlength="500" placeholder="What went well? What could be better?"></textarea>
+        <p class="rate-count"><span id="commentCount">0</span> / 500</p>
     </section>
 
-    <div class="schedule-actions">
+    <div class="schedule-actions rate-actions">
         <a class="btn btn-plain" href="history.php"><?php echo cardIcon('back'); ?>Cancel</a>
         <button type="submit" class="btn btn-rate" id="rateSubmit"><span aria-hidden="true">&#9733;</span>Submit feedback</button>
     </div>
@@ -103,12 +110,14 @@ include __DIR__ . '/../general/header.php';
     var caption = document.getElementById('starCaption');
     var submit = document.getElementById('rateSubmit');
     var picker = document.getElementById('starPicker');
+    var comments = document.getElementById('comments');
+    var count = document.getElementById('commentCount');
     var checked = picker.querySelector('input:checked');
     submit.disabled = !checked;
 
     function show(value) {
-        caption.textContent = value ? value + ' / 5 · ' + words[value] : words[0];
-        caption.classList.toggle('is-set', !!value);
+        caption.textContent = value ? value + '/5 · ' + words[value] : words[0];
+        caption.className = 'star-caption' + (value ? ' is-set is-' + value : '');
     }
     show(checked ? +checked.value : 0);
 
@@ -116,6 +125,22 @@ include __DIR__ . '/../general/header.php';
         show(+event.target.value);
         submit.disabled = false;
     });
+
+    // Quick phrases add or remove "Phrase." in the comment box.
+    function updateCount() { count.textContent = comments.value.length; }
+    document.getElementById('rateTags').addEventListener('click', function (event) {
+        var tag = event.target.closest('.rate-tag');
+        if (!tag) return;
+        var phrase = tag.textContent.trim() + '.';
+        var on = tag.getAttribute('aria-pressed') !== 'true';
+        var text = comments.value.replace(phrase, '').replace(/\s{2,}/g, ' ').trim();
+        if (on) text = (text ? text + ' ' : '') + phrase;
+        comments.value = text.slice(0, 500);
+        tag.setAttribute('aria-pressed', on ? 'true' : 'false');
+        updateCount();
+    });
+    comments.addEventListener('input', updateCount);
+    updateCount();
 })();
 </script>
 <?php endif; ?>

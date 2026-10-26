@@ -24,7 +24,7 @@ $resultModal = $done === 'request_created'
 
 include __DIR__ . '/../general/header.php';
 ?>
-<link rel="stylesheet" href="../../frontend/css/session.css">
+<link rel="stylesheet" href="../../frontend/css/session.css?v=<?php echo filemtime(__DIR__ . '/../../frontend/css/session.css'); ?>">
 <style>
     .page-title {
         text-align: center;

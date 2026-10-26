@@ -12,11 +12,23 @@ const HISTORY_ENTRY_SQL = "SELECT h.final_status, h.completion_time, h.cancellat
                            JOIN users uv ON uv.id = s.volunteer_id
                            LEFT JOIN feedbacks f ON f.session_id = s.id";
 
-function fetchHistory(mysqli $conn, int $myId): mysqli_result
+// History follows the current role, like the session pages: students see the sessions they joined
+// as the student, volunteers only the sessions they gave as the volunteer.
+function historyRoleColumn(?string $role): string
 {
-    $stmt = $conn->prepare(HISTORY_ENTRY_SQL . " WHERE s.user_id = ? OR s.volunteer_id = ?
+    return $role === 'volunteer' ? 'volunteer_id' : 'user_id';
+}
+
+function isMyHistoryEntry(array $entry, int $myId, ?string $role): bool
+{
+    return (int)$entry[historyRoleColumn($role)] === $myId;
+}
+
+function fetchHistory(mysqli $conn, int $myId, ?string $role): mysqli_result
+{
+    $stmt = $conn->prepare(HISTORY_ENTRY_SQL . " WHERE s." . historyRoleColumn($role) . " = ?
                                                 ORDER BY h.completion_time DESC, h.id DESC");
-    $stmt->bind_param('ii', $myId, $myId);
+    $stmt->bind_param('i', $myId);
     $stmt->execute();
     return $stmt->get_result();
 }

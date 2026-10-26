@@ -597,3 +597,50 @@
 @media (max-width: 760px) {
     .detail-actions .btn { flex: 1 1 140px; }
 }
+
+/* Required reason box in the Cancel Session popup (renderConfirmModal).
+   The popup itself keeps the shared grey modal look; only the reason area is added. */
+.modal-box:has(.modal-reason:not([hidden])) { width: min(460px, 100%); }
+
+.modal-reason { margin: 0 0 20px; text-align: left; }
+.modal-reason-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
+.modal-reason-head label { margin: 0; color: #111; font-size: 13px; font-weight: 700; }
+.modal-reason-head label span { color: #d9545c; }
+.modal-reason-count { color: #6b6e78; font-size: 11px; }
+.modal-reason-chips { display: flex; flex-wrap: nowrap; gap: 6px; margin-bottom: 10px; }
+.modal-reason-chips button {
+    padding: 5px 12px;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.7);
+    color: #484a52;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+.modal-reason-chips button:hover { background: #fff; color: #c2414b; }
+.modal-box .modal-reason textarea {
+    display: block;
+    width: 100%;
+    min-height: 84px;
+    margin: 0;
+    padding: 11px 13px;
+    border: 1px solid transparent;
+    border-radius: 14px;
+    background: #fff;
+    color: #20232c;
+    font-family: inherit;
+    font-size: 13px;
+    line-height: 1.5;
+    resize: vertical;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.modal-box .modal-reason textarea::placeholder { color: #a9abb2; }
+.modal-box .modal-reason textarea:focus { border-color: #f0b4b8; outline: none; box-shadow: 0 0 0 3px rgba(229, 115, 122, 0.15); }
+.modal-reason-hint { display: block; margin-top: 6px; color: #5f626b; font-size: 11px; }
+.modal-reason.is-error textarea { border-color: #eaa2a7; }
+.modal-reason.is-error .modal-reason-hint { color: #c2414b; font-weight: 600; }
+.modal-yes:disabled,
+.modal-yes:disabled:hover { opacity: 0.5; box-shadow: none; cursor: not-allowed; transform: none; }

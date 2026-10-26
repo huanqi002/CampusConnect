@@ -37,7 +37,7 @@ $headerTitle = 'Upcoming Details';
 $headerBack = ['upcoming_request.php', 'Back to upcoming requests'];
 include __DIR__ . '/../general/header.php';
 ?>
-<link rel="stylesheet" href="../../frontend/css/session.css">
+<link rel="stylesheet" href="../../frontend/css/session.css?v=<?php echo filemtime(__DIR__ . '/../../frontend/css/session.css'); ?>">
 <style>
     .request-detail-page {
         max-width: 900px;

@@ -9,7 +9,14 @@ require __DIR__ . '/../history_management/functions.php';
 requireLogin();
 
 $sessionId = (int)($_POST['session_id'] ?? 0);
+$reason    = trim((string)($_POST['reason'] ?? ''));
 $me        = currentUser();
+
+if ($reason === '') {
+    header('Location: index.php?err=' . urlencode('Please give a reason for cancelling the session.'));
+    exit;
+}
+$reason = mb_substr($reason, 0, 500);
 
 $session = findActiveSession($conn, $sessionId);
 
@@ -21,7 +28,7 @@ if (!$session || !isMySession($session, (int)$me['id'], $me['role'])) {
 $conn->begin_transaction();
 try {
     updateSessionStatus($conn, $sessionId, 'Cancelled');
-    recordHistory($conn, $session, 'Cancelled');
+    recordHistory($conn, $session, 'Cancelled', $reason);
 
     $category = $session['category'];
     $participants = [
@@ -31,8 +38,8 @@ try {
     foreach ($participants as $userId => $otherName) {
         $message = $userId == $me['id']
             ? "You cancelled your $category session with $otherName."
-            : "{$me['name']} cancelled your $category session.";
-        addNotification($conn, $userId, $message, 'Session Cancelled');
+            : "{$me['name']} cancelled your $category session. Reason: $reason";
+        addNotification($conn, $userId, mb_strimwidth($message, 0, 500, "..."), 'Session Cancelled', $sessionId);
     }
 
     $conn->commit();
