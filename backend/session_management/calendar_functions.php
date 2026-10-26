@@ -6,25 +6,54 @@
 // Needs functions.php (sessionCalendarDetails). Credentials live in general/google_config.php (not in Git).
 // Calendar problems are logged and never stop a booking, accept or cancel.
 
-const GOOGLE_AUTH_URL   = 'https://accounts.google.com/o/oauth2/v2/auth';
-const GOOGLE_TOKEN_URL  = 'https://oauth2.googleapis.com/token';
+const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
+const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const GOOGLE_REVOKE_URL = 'https://oauth2.googleapis.com/revoke';
 const GOOGLE_EVENTS_URL = 'https://www.googleapis.com/calendar/v3/calendars/primary/events';
-const GOOGLE_SCOPE      = 'https://www.googleapis.com/auth/calendar.events';
+const GOOGLE_SCOPE = 'https://www.googleapis.com/auth/calendar.events';
 
 // ['client_id', 'client_secret', 'redirect_uri', 'organizer_user_id'], or null when google_config.php is missing or incomplete.
 function googleCalendarConfig(): ?array
 {
     static $config = false;
     if ($config === false) {
-        $file   = __DIR__ . '/../general/google_config.php';
+        $file = __DIR__ . '/../general/google_config.php';
         $config = is_file($file) ? require $file : null;
-        if (!is_array($config) || empty($config['client_id']) || empty($config['client_secret']) || empty($config['redirect_uri']) || empty($config['organizer_user_id'])
-            || str_starts_with((string)$config['client_secret'], 'PASTE')) {
+        if (
+            !is_array($config) || empty($config['client_id']) || empty($config['client_secret']) || empty($config['redirect_uri']) || empty($config['organizer_user_id'])
+            || str_starts_with((string) $config['client_secret'], 'PASTE')
+        ) {
             $config = null;
         }
     }
     return $config;
+}
+
+// Why calendar sync is not working on this machine, in plain words, or null when nothing is wrong for this user.
+// Shown on the Session Dashboard so a teammate can see what is missing instead of guessing.
+function calendarSetupHint(mysqli $conn, int $userId): ?string
+{
+    $file = __DIR__ . '/../general/google_config.php';
+    if (!is_file($file)) {
+        return 'Google Calendar sync is off: backend/general/google_config.php was not found.';
+    }
+    $config = require $file;
+    $missing = [];
+    foreach (['client_id', 'client_secret', 'redirect_uri', 'organizer_user_id'] as $key) {
+        $value = is_array($config) ? ($config[$key] ?? '') : '';
+        if (empty($value) || (is_string($value) && str_starts_with($value, 'PASTE'))) {
+            $missing[] = $key;
+        }
+    }
+    if ($missing !== []) {
+        return 'Google Calendar sync is off: google_config.php is missing ' . implode(', ', $missing) . '.';
+    }
+
+    $organizerId = calendarOrganizerId();
+    if ($userId !== $organizerId && !isCalendarConnected($conn, $organizerId)) {
+        return "Google Calendar sync is waiting for the organizer (user #$organizerId) to log in and click Connect Google Calendar.";
+    }
+    return null;
 }
 
 // One HTTP call. Returns [status code, decoded JSON body or []]; status 0 means the request itself failed.
@@ -32,10 +61,10 @@ function googleRequest(string $method, string $url, array $headers = [], ?string
 {
     $ch = curl_init($url);
     curl_setopt_array($ch, [
-        CURLOPT_CUSTOMREQUEST  => $method,
+        CURLOPT_CUSTOMREQUEST => $method,
         CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT        => 10,
-        CURLOPT_HTTPHEADER     => $headers,
+        CURLOPT_TIMEOUT => 10,
+        CURLOPT_HTTPHEADER => $headers,
     ]);
     if ($body !== null) {
         curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
@@ -45,7 +74,7 @@ function googleRequest(string $method, string $url, array $headers = [], ?string
         error_log('Google Calendar request failed: ' . curl_error($ch));
         return [0, []];
     }
-    $status = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+    $status = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
     if ($status >= 400) {
         error_log("Google Calendar $method $url returned $status: " . substr($response, 0, 300));
     }
@@ -61,13 +90,13 @@ function googleCalendarAuthUrl(string $state): string
 {
     $config = googleCalendarConfig();
     return GOOGLE_AUTH_URL . '?' . http_build_query([
-        'client_id'     => $config['client_id'],
-        'redirect_uri'  => $config['redirect_uri'],
+        'client_id' => $config['client_id'],
+        'redirect_uri' => $config['redirect_uri'],
         'response_type' => 'code',
-        'scope'         => GOOGLE_SCOPE,
-        'access_type'   => 'offline',   // we need a refresh token to act later, while the user is away
-        'prompt'        => 'consent',   // always return the refresh token, even on a reconnect
-        'state'         => $state,
+        'scope' => GOOGLE_SCOPE,
+        'access_type' => 'offline',   // we need a refresh token to act later, while the user is away
+        'prompt' => 'consent',   // always return the refresh token, even on a reconnect
+        'state' => $state,
     ]);
 }
 
@@ -76,11 +105,11 @@ function googleCalendarExchangeCode(string $code): ?string
 {
     $config = googleCalendarConfig();
     [$status, $data] = googleFormPost(GOOGLE_TOKEN_URL, [
-        'code'          => $code,
-        'client_id'     => $config['client_id'],
+        'code' => $code,
+        'client_id' => $config['client_id'],
         'client_secret' => $config['client_secret'],
-        'redirect_uri'  => $config['redirect_uri'],
-        'grant_type'    => 'authorization_code',
+        'redirect_uri' => $config['redirect_uri'],
+        'grant_type' => 'authorization_code',
     ]);
     return $status === 200 && !empty($data['refresh_token']) ? $data['refresh_token'] : null;
 }
@@ -117,6 +146,21 @@ function isCalendarConnected(mysqli $conn, int $userId): bool
     return googleCalendarConfig() !== null && findCalendarToken($conn, $userId) !== null;
 }
 
+// True when this user's Google connection was made today (by the database's date). No row at all, or a connection made
+// on an earlier day, gives false, and the Connect button is enabled again; today's connection means the calendar is working.
+function wasCalendarConnectedToday(mysqli $conn, int $userId): bool
+{
+    try {
+        $stmt = $conn->prepare("SELECT DATE(connected_at) = CURDATE() FROM calendar_tokens WHERE user_id = ?");
+        $stmt->bind_param('i', $userId);
+        $stmt->execute();
+        $row = $stmt->get_result()->fetch_row();
+        return $row !== null && (int) $row[0] === 1;
+    } catch (mysqli_sql_exception $e) {   // table not created yet
+        return false;
+    }
+}
+
 function revokeCalendarToken(string $refreshToken): void
 {
     googleFormPost(GOOGLE_REVOKE_URL, ['token' => $refreshToken]);
@@ -125,16 +169,16 @@ function revokeCalendarToken(string $refreshToken): void
 // Short-lived access token for the user's calendar, or null when they are not connected or Google refuses.
 function googleAccessToken(mysqli $conn, int $userId): ?string
 {
-    $config  = googleCalendarConfig();
+    $config = googleCalendarConfig();
     $refresh = $config !== null ? findCalendarToken($conn, $userId) : null;
     if ($refresh === null) {
         return null;
     }
     [$status, $data] = googleFormPost(GOOGLE_TOKEN_URL, [
-        'client_id'     => $config['client_id'],
+        'client_id' => $config['client_id'],
         'client_secret' => $config['client_secret'],
         'refresh_token' => $refresh,
-        'grant_type'    => 'refresh_token',
+        'grant_type' => 'refresh_token',
     ]);
     if ($status === 400 && ($data['error'] ?? '') === 'invalid_grant') {   // user revoked access in their Google account
         deleteCalendarToken($conn, $userId);
@@ -146,27 +190,26 @@ function googleAccessToken(mysqli $conn, int $userId): ?string
 function calendarOrganizerId(): ?int
 {
     $config = googleCalendarConfig();
-    return $config !== null ? (int)$config['organizer_user_id'] : null;
+    return $config !== null ? (int) $config['organizer_user_id'] : null;
 }
 
 function googleEventPayload(array $event, array $session): string
 {
-    $zone      = date_default_timezone_get();
+    $zone = date_default_timezone_get();
     $attendees = [];
-    // Invite each person at their personal email (e.g. a Gmail that has a Google Calendar), else their CampusConnect email.
-    foreach ([['student', $session['student_name']], ['volunteer', $session['volunteer_name']]] as [$role, $name]) {
-        $email = trim((string)($session[$role . '_personal_email'] ?? '')) ?: (string)($session[$role . '_email'] ?? '');
+    // Invite the student and the volunteer at the email they registered with.
+    foreach ([[$session['student_email'] ?? '', $session['student_name']], [$session['volunteer_email'] ?? '', $session['volunteer_name']]] as [$email, $name]) {
         if ($email !== '') {
             $attendees[] = ['email' => $email, 'displayName' => $name];
         }
     }
     return json_encode([
-        'summary'     => $event['title'],
+        'summary' => $event['title'],
         'description' => $event['description'],
-        'location'    => $event['location'],
-        'start'       => ['dateTime' => date('Y-m-d\TH:i:s', $event['start']), 'timeZone' => $zone],
-        'end'         => ['dateTime' => date('Y-m-d\TH:i:s', $event['end']),   'timeZone' => $zone],
-        'attendees'   => $attendees,
+        'location' => $event['location'],
+        'start' => ['dateTime' => date('Y-m-d\TH:i:s', $event['start']), 'timeZone' => $zone],
+        'end' => ['dateTime' => date('Y-m-d\TH:i:s', $event['end']), 'timeZone' => $zone],
+        'attendees' => $attendees,
     ]);
 }
 
@@ -185,7 +228,7 @@ function googleEventRequest(string $method, string $token, string $eventId = '',
 // from the session id instead of stored: session 42 => "ccsession42".
 function calendarEventId(array $session): string
 {
-    return 'ccsession' . (int)$session['id'];
+    return 'ccsession' . (int) $session['id'];
 }
 
 // Access token for the organizer's calendar, or null when sync is off or the organizer has not connected.
@@ -195,8 +238,9 @@ function organizerAccessToken(mysqli $conn): ?string
     return $organizerId !== null ? googleAccessToken($conn, $organizerId) : null;
 }
 
-// Creates the event and invites both people. Returns the event's Google Calendar link, '' when it already existed
-// (409, nothing new to link to), or null when it could not be created.
+// Creates the event and invites both people. Returns the event's Google Calendar link, or null when it could not be created.
+// Event ids are built from the session id, so after a database reset (session ids start again at 1) the id may already exist
+// on the calendar, even as a deleted/cancelled event. Google answers 409 then, and the event is brought back and updated instead.
 function createCalendarEvent(mysqli $conn, array $session): ?string
 {
     $event = sessionCalendarDetails($session);
@@ -204,13 +248,12 @@ function createCalendarEvent(mysqli $conn, array $session): ?string
     if ($token === null) {
         return null;
     }
-    $payload       = json_decode(googleEventPayload($event, $session), true);
-    $payload['id'] = calendarEventId($session);
-    [$status, $data] = googleEventRequest('POST', $token, '', json_encode($payload));
+    $payload = json_decode(googleEventPayload($event, $session), true);
+    [$status, $data] = googleEventRequest('POST', $token, '', json_encode($payload + ['id' => calendarEventId($session)]));
     if ($status === 409) {
-        return '';
+        [$status, $data] = googleEventRequest('PATCH', $token, calendarEventId($session), json_encode($payload + ['status' => 'confirmed']));
     }
-    return $status === 200 ? (string)($data['htmlLink'] ?? '') : null;
+    return $status === 200 ? (string) ($data['htmlLink'] ?? '') : null;
 }
 
 // Moves/renames the event after the session changed. Returns true when Google accepted it.

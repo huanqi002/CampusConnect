@@ -3,7 +3,7 @@ require __DIR__ . '/../general/config.php';
 require __DIR__ . '/../general/auth.php';
 require __DIR__ . '/../general/card_template.php';
 require __DIR__ . '/../general/format.php';
-require __DIR__ . '/../session_management/result_modal.php';
+require __DIR__ . '/../request_management/result_modal.php';
 
 requireLogin();
 
@@ -109,8 +109,13 @@ include __DIR__ . '/../general/header.php';
         font-weight: 600;
     }
 
-    .request-status.is-accepted { background: #7bdc82; }
-    .request-status.is-rejected { background: #e53935; }
+    .request-status.is-accepted {
+        background: #7bdc82;
+    }
+
+    .request-status.is-rejected {
+        background: #e53935;
+    }
 
     .request-detail-actions {
         display: flex;
@@ -122,7 +127,9 @@ include __DIR__ . '/../general/header.php';
         border-top: 1px solid #d9d9d9;
     }
 
-    .request-detail-actions form { margin: 0; }
+    .request-detail-actions form {
+        margin: 0;
+    }
 
     .request-detail-actions .btn {
         display: inline-flex;
@@ -139,16 +146,46 @@ include __DIR__ . '/../general/header.php';
         cursor: pointer;
     }
 
-    .request-detail-actions .btn svg { width: 16px; height: 16px; }
-    .request-detail-actions .btn-back { border: 1px solid #ddd; background: #efefef; color: #1f1f1f; }
+    .request-detail-actions .btn svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .request-detail-actions .btn-back {
+        border: 1px solid #ddd;
+        background: #efefef;
+        color: #1f1f1f;
+    }
 
     @media (max-width: 600px) {
-        .request-detail-page { padding: 20px 12px 40px; }
-        .request-detail-card { padding: 24px 18px; border-radius: 24px; }
-        .request-detail-row { grid-template-columns: 1fr; gap: 10px; margin: 20px 0; }
-        .request-detail-actions { justify-content: stretch; }
-        .request-detail-actions form, .request-detail-actions > a { flex: 1 1 100%; }
-        .request-detail-actions .btn { width: 100%; box-sizing: border-box; }
+        .request-detail-page {
+            padding: 20px 12px 40px;
+        }
+
+        .request-detail-card {
+            padding: 24px 18px;
+            border-radius: 24px;
+        }
+
+        .request-detail-row {
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .request-detail-actions {
+            justify-content: stretch;
+        }
+
+        .request-detail-actions form,
+        .request-detail-actions>a {
+            flex: 1 1 100%;
+        }
+
+        .request-detail-actions .btn {
+            width: 100%;
+            box-sizing: border-box;
+        }
     }
 </style>
 
@@ -175,7 +212,8 @@ include __DIR__ . '/../general/header.php';
         </div>
         <div class="request-detail-row" style="align-items: flex-start;">
             <h3 class="request-detail-label">Description:</h3>
-            <div class="request-detail-value request-description"><?php echo nl2br(htmlspecialchars($request['description'])); ?></div>
+            <div class="request-detail-value request-description">
+                <?php echo nl2br(htmlspecialchars($request['description'])); ?></div>
         </div>
         <div class="request-detail-row">
             <h3 class="request-detail-label">Preferred Day:</h3>
@@ -183,7 +221,8 @@ include __DIR__ . '/../general/header.php';
         </div>
         <div class="request-detail-row">
             <h3 class="request-detail-label">Preferred Time:</h3>
-            <div class="request-detail-value"><?php echo htmlspecialchars(formatTimeRange($request['start_time'], $request['end_time'])); ?></div>
+            <div class="request-detail-value">
+                <?php echo htmlspecialchars(formatTimeRange($request['start_time'], $request['end_time'])); ?></div>
         </div>
         <div class="request-detail-row">
             <h3 class="request-detail-label">Support Mode:</h3>
@@ -192,7 +231,8 @@ include __DIR__ . '/../general/header.php';
         <div class="request-detail-row" style="margin-bottom: 0;">
             <h3 class="request-detail-label">Status:</h3>
             <div class="request-detail-value">
-                <span class="request-status is-<?php echo strtolower(htmlspecialchars($request['status'])); ?>"><?php echo htmlspecialchars($request['status']); ?></span>
+                <span
+                    class="request-status is-<?php echo strtolower(htmlspecialchars($request['status'])); ?>"><?php echo htmlspecialchars($request['status']); ?></span>
             </div>
         </div>
 
