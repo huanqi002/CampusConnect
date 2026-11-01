@@ -252,7 +252,7 @@ function sessionCalendarDetails(array $session, ?int $viewerId = null): ?array
     $end = $session['end_time'] !== null
         ? strtotime($session['session_date'] . ' ' . $session['end_time'])
         : $start + 3600;
-    $online = $session['support_mode'] === 'Online';
+    $virtual = $session['support_mode'] === 'Virtual';
     $title = $viewerId === null
         ? 'CampusConnect: ' . $session['category'] . ' - ' . $session['student_name'] . ' & ' . $session['volunteer_name']
         : 'CampusConnect: ' . $session['category'] . ' with '
@@ -262,8 +262,8 @@ function sessionCalendarDetails(array $session, ?int $viewerId = null): ?array
         'title' => $title,
         'start' => $start,
         'end' => $end,
-        'description' => $session['description'] . "\n\nSupport mode: " . ($online ? 'Online' : 'Face-to-face'),
-        'location' => $online ? 'Online' : 'Campus (face-to-face)',
+        'description' => $session['description'] . "\n\nSupport mode: " . ($virtual ? 'Virtual' : 'Face-2-Face'),
+        'location' => $virtual ? 'Virtual' : 'Campus (Face-2-Face)',
     ];
 }
 

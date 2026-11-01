@@ -41,6 +41,7 @@ function countUnreadNotifications(mysqli $conn, int $userId, ?string $role = nul
 // The session a notice is about is kept as a hidden "[session:12]" tag at the end of the message
 // (no extra database column). splitNotificationMessage() reads it back and removes it for display.
 const NOTIFICATION_SESSION_TAG = '/\s*\[session:(\d+)\]$/';
+const NOTIFICATION_REQUEST_TAG = '/\s*\[request:(\d+)\]$/';
 
 // $sessionId: the session this notice is about, so clicking it opens that session's details.
 function addNotification(mysqli $conn, int $userId, string $message, string $noticeType, ?int $sessionId = null): void
@@ -54,13 +55,19 @@ function addNotification(mysqli $conn, int $userId, string $message, string $not
     $stmt->execute();
 }
 
-// [message without the tag, session id or null]
+// [message without hidden tags, session id or null, request id or null]
 function splitNotificationMessage(string $message): array
 {
-    if (preg_match(NOTIFICATION_SESSION_TAG, $message, $m)) {
-        return [preg_replace(NOTIFICATION_SESSION_TAG, '', $message), (int)$m[1]];
+    $requestId = null;
+    if (preg_match(NOTIFICATION_REQUEST_TAG, $message, $m)) {
+        $message = preg_replace(NOTIFICATION_REQUEST_TAG, '', $message);
+        $requestId = (int)$m[1];
     }
-    return [$message, null];
+
+    if (preg_match(NOTIFICATION_SESSION_TAG, $message, $m)) {
+        return [preg_replace(NOTIFICATION_SESSION_TAG, '', $message), (int)$m[1], $requestId];
+    }
+    return [$message, null, $requestId];
 }
 
 function listNotifications(mysqli $conn, int $userId, ?string $role = null): mysqli_result
