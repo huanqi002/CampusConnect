@@ -273,7 +273,7 @@ function initScheduleForm(config) {
     form.querySelectorAll('input[name="mode"]').forEach(function (radio) {
         radio.addEventListener('change', function () {
             if (modeDisplay && radio.checked) {
-                modeDisplay.value = radio.value === 'Online' ? 'Virtual' : 'Face-to-face';
+                modeDisplay.value = radio.value === 'Virtual' ? 'Virtual' : 'Face-2-Face';
             }
         });
     });

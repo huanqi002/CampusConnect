@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($description === '' || mb_strlen($description) > 500) {
         $error = 'Please enter a description of up to 500 characters.';
-    } elseif (!in_array($mode, ['Online', 'Face-to-face'], true) || !$date || !$start || !$end) {
+    } elseif (!in_array($mode, ['Virtual', 'Face-2-Face'], true) || !$date || !$start || !$end) {
         $error = 'Please choose a date, a start and end time, and a support mode.';
     } else {
         $error = validateSessionTime($conn, $volunteerId, $date, $start, $end, $sessionId);

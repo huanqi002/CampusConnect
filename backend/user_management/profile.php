@@ -33,7 +33,6 @@ if ($user['is_volunteer'] === 'Y') {
         <div class="detail-card">
             <div class="card" style="margin-bottom:16px;">
                 <h2><?= e($user['full_name']) ?></h2>
-                <p class="meta">Student ID: <?= e($user['student_id']) ?></p>
                 <p class="meta">Email: <?= e($user['email']) ?></p>
                 <p class="meta">University: <?= e($user['university_name']) ?></p>
                 <?php if ($user['is_volunteer'] === 'Y'): ?>

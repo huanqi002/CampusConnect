@@ -4,7 +4,7 @@ require_once dirname(__DIR__) . '/general/card_template.php';
 require_login();
 
 $id = (int)($_GET['id'] ?? 0);
-$stmt = $pdo->prepare('SELECT id, student_id, full_name, email, university_name, picture_url, education, skills, support_experience, is_volunteer FROM users WHERE id = ?');
+$stmt = $pdo->prepare('SELECT id, full_name, email, university_name, picture_url, education, skills, support_experience, is_volunteer FROM users WHERE id = ?');
 $stmt->execute([$id]);
 $user = $stmt->fetch();
 
@@ -27,7 +27,6 @@ if (!$user) {
 
     <div class="detail-card">
         <h2><?= e($user['full_name']) ?></h2>
-        <p class="meta">Student ID: <?= e($user['student_id']) ?></p>
         <p class="meta">University: <?= e($user['university_name']) ?></p>
         <?php if ($user['is_volunteer'] === 'Y'): ?><span class="role-tag">Volunteer</span><?php endif; ?>
 

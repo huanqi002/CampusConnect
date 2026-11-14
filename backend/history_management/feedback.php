@@ -38,7 +38,7 @@ include __DIR__ . '/../general/header.php';
 </div>
 <?php else:
     $volunteer = $session['volunteer_name'];
-    $isOnline  = $session['support_mode'] === 'Online';
+    $isVirtual  = $session['support_mode'] === 'Virtual';
 ?>
 <?php if (isset($_GET['err'])): ?>
 <div class="message message-error"><?php echo htmlspecialchars($_GET['err']); ?></div>
@@ -63,7 +63,7 @@ include __DIR__ . '/../general/header.php';
             <span><?php echo SESSION_CARD_ICONS['calendar'] . htmlspecialchars(date('D, j M Y', strtotime($session['session_date']))); ?></span>
             <span><?php echo SESSION_CARD_ICONS['clock'] . htmlspecialchars(formatTimeRange($session['start_time'], $session['end_time'])); ?></span>
             <?php endif; ?>
-            <span><?php echo SESSION_CARD_ICONS[$isOnline ? 'online' : 'inperson'] . ($isOnline ? 'Online' : 'Face-to-face'); ?></span>
+            <span><?php echo SESSION_CARD_ICONS[$isVirtual ? 'online' : 'inperson'] . ($isVirtual ? 'Virtual' : 'Face-2-Face'); ?></span>
         </p>
     </div>
 

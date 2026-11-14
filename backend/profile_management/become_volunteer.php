@@ -17,7 +17,7 @@ $skills = (string)($user['skills'] ?? '');
 $experience = (string)($user['support_experience'] ?? '');
 $selectedDays = ['Monday'];
 $dayTimes = ['Monday' => ['start' => '10:00', 'end' => '12:00']];
-$mode = 'Online';
+$mode = 'Virtual';
 $timeOptions = [];
 for ($hour = 0; $hour < 24; $hour++) {
     foreach ([0, 30] as $minute) {
@@ -35,7 +35,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $dayTimes = (array)($_POST['availability'] ?? []);
     $mode = $_POST['support_mode'] ?? '';
 
-    $validModes = ['Online','Face-to-face'];
+    $validModes = ['Virtual', 'Face-2-Face'];
     if (!in_array($category, $categories, true)) $errors[] = 'Please choose a valid support category.';
     if (!$selectedDays || array_diff($selectedDays, $days)) $errors[] = 'Choose at least one valid preferred day.';
     foreach ($selectedDays as $selectedDay) {
@@ -100,7 +100,7 @@ foreach (array_slice(preg_split('/\s+/', trim($user['full_name'] ?? 'Student')),
                 <input type="text" id="volunteer_skills" name="skills" maxlength="500" value="<?= e($skills) ?>" placeholder="e.g. Peer Mentoring, Listening...">
                 <fieldset class="volunteer-choice-fieldset"><legend>Preferred Days</legend><div class="volunteer-day-options"><?php foreach ($days as $option): ?><label class="volunteer-choice-pill"><input type="checkbox" name="preferred_days[]" value="<?= e($option) ?>" <?= in_array($option, $selectedDays, true) ? 'checked' : '' ?>><span><?= e(substr($option, 0, 3)) ?></span></label><?php endforeach; ?></div></fieldset>
                 <fieldset class="volunteer-choice-fieldset"><legend>Availability by day</legend><div class="volunteer-day-times"><?php foreach ($days as $option): $selected = in_array($option, $selectedDays, true); $times = $dayTimes[$option] ?? ['start' => '', 'end' => '']; ?><div class="volunteer-day-time<?= $selected ? '' : ' is-hidden' ?>" data-day-time="<?= e($option) ?>"><strong><?= e($option) ?></strong><label>Start time<select name="availability[<?= e($option) ?>][start]" <?= $selected ? 'required' : 'disabled' ?>><option value="">Choose start time</option><?php foreach ($timeOptions as $value => $label): ?><option value="<?= e($value) ?>" <?= ($times['start'] ?? '') === $value ? 'selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?></select></label><label>End time<select name="availability[<?= e($option) ?>][end]" <?= $selected ? 'required' : 'disabled' ?>><option value="">Choose end time</option><?php foreach ($timeOptions as $value => $label): ?><option value="<?= e($value) ?>" <?= ($times['end'] ?? '') === $value ? 'selected' : '' ?>><?= e($label) ?></option><?php endforeach; ?></select></label></div><?php endforeach; ?></div></fieldset>
-                <fieldset class="volunteer-choice-fieldset"><legend>Support Mode</legend><div class="volunteer-mode-options"><?php foreach (['Online' => 'Virtual','Face-to-face' => 'Face-to-Face'] as $value => $label): ?><label class="volunteer-choice-pill"><input type="radio" name="support_mode" value="<?= e($value) ?>" <?= $mode === $value ? 'checked' : '' ?>><span><?= e($label) ?></span></label><?php endforeach; ?></div></fieldset>
+                <fieldset class="volunteer-choice-fieldset"><legend>Support Mode</legend><div class="volunteer-mode-options"><?php foreach (['Virtual' => 'Virtual', 'Face-2-Face' => 'Face-2-Face'] as $value => $label): ?><label class="volunteer-choice-pill"><input type="radio" name="support_mode" value="<?= e($value) ?>" <?= $mode === $value ? 'checked' : '' ?>><span><?= e($label) ?></span></label><?php endforeach; ?></div></fieldset>
                 <label for="support_experience">Support Experience <span class="volunteer-optional">(optional)</span></label>
                 <textarea id="support_experience" name="support_experience" maxlength="1000" rows="3" placeholder="Briefly describe any volunteering, teaching, mentoring or counselling experience you have..."><?= e($experience) ?></textarea>
                 <div class="volunteer-form-actions"><a class="btn btn-secondary" href="<?= BASE_URL ?>/profile.php">Cancel</a><button class="btn btn-primary" type="submit">Register</button></div>

@@ -30,7 +30,7 @@ function sessionCardText(array $session, int $myId, string $emptyWhen = 'Not sch
     $isStudent = (int)$session['user_id'] === $myId;
     $name      = $isStudent ? $session['volunteer_name'] : $session['student_name'];
     $role      = $isStudent ? 'Volunteer' : 'Student';
-    $isOnline      = $session['support_mode'] === 'Online';
+    $isVirtual      = $session['support_mode'] === 'Virtual';
 
     if ($session['session_date'] !== null) {
         $when = '<span>' . SESSION_CARD_ICONS['calendar'] . htmlspecialchars(date('D, j M Y', strtotime($session['session_date']))) . '</span>'
@@ -45,7 +45,7 @@ function sessionCardText(array $session, int $myId, string $emptyWhen = 'Not sch
          . '<p class="sc-title">' . htmlspecialchars($name) . '<span class="sc-role">' . $role . '</span></p>'
          . '<p class="sc-desc" title="' . htmlspecialchars($session['description']) . '">' . htmlspecialchars($session['description']) . '</p>'
          . '<p class="sc-meta">' . categoryChip($session['category'])
-         . '<span class="sc-mode">' . SESSION_CARD_ICONS[$isOnline ? 'online' : 'inperson'] . ($isOnline ? 'Online' : 'Face-to-face') . '</span>'
+         . '<span class="sc-mode">' . SESSION_CARD_ICONS[$isVirtual ? 'online' : 'inperson'] . ($isVirtual ? 'Virtual' : 'Face-2-Face') . '</span>'
          . '<span class="sc-dot" aria-hidden="true"></span>'
          . '<span class="sc-when">' . $when . '</span></p>'
          . '</div></div>';

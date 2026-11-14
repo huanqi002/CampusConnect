@@ -75,7 +75,7 @@ function sessionStatusNote(array $session, string $status, int $myId, bool $onRe
 function sessionOverviewHtml(array $session, string $status, int $myId, bool $onRequestPage = false): string
 {
     $isBooked = $session['session_date'] !== null;
-    $isOnline = $session['support_mode'] === 'Online';
+    $isVirtual = $session['support_mode'] === 'Virtual';
     $minutes  = $isBooked && $session['end_time'] !== null
               ? (int)((strtotime($session['end_time']) - strtotime($session['start_time'])) / 60) : null;
 
@@ -94,7 +94,7 @@ function sessionOverviewHtml(array $session, string $status, int $myId, bool $on
         ['Date', 'calendar', $isBooked ? date('D, j M Y', strtotime($session['session_date'])) : null],
         ['Time', 'clock', $isBooked ? str_replace(' - ', ' – ', formatTimeRange($session['start_time'], $session['end_time'])) : null],
         ['Duration', 'duration', $minutes !== null ? formatDuration($minutes) : null],
-        ['Support mode', $isOnline ? 'online' : 'inperson', $isOnline ? 'Virtual' : 'Face-to-face'],
+        ['Support mode', $isVirtual ? 'online' : 'inperson', $isVirtual ? 'Virtual' : 'Face-2-Face'],
     ];
     $tileHtml = '';
     foreach ($tiles as [$label, $icon, $value]) {
@@ -119,14 +119,14 @@ function sessionOverviewHtml(array $session, string $status, int $myId, bool $on
 // Calendar (step 1), time grid (step 2), support mode (step 3) and the review summary (step 4).
 function bookingPickerHtml(string $mode): string
 {
-    $online  = $mode !== 'Face-to-face';
+    $virtual = $mode === 'Virtual';
     $options = [
-        ['Online', 'Virtual', 'Meet online', 'online'],
-        ['Face-to-face', 'Face-to-face', 'Meet on campus', 'inperson'],
+        ['Virtual', 'Virtual', 'Meet online', 'online'],
+        ['Face-2-Face', 'Face-2-Face', 'Meet on campus', 'inperson'],
     ];
     $modeCards = '';
     foreach ($options as [$value, $label, $hint, $icon]) {
-        $checked    = ($value === 'Online') === $online;
+        $checked    = ($value === 'Virtual') === $virtual;
         $modeCards .= '<label class="mode-card"><input type="radio" name="mode" value="' . $value . '"' . ($checked ? ' checked' : '') . '>'
                     . '<span class="mode-card-body">' . SESSION_CARD_ICONS[$icon]
                     . '<span><strong>' . $label . '</strong><small>' . $hint . '</small></span></span></label>';
@@ -157,7 +157,7 @@ function bookingPickerHtml(string $mode): string
          . '<label class="summary-item" for="selectedDate"><span>Date</span><input type="text" id="selectedDate" placeholder="Not chosen" readonly tabindex="-1"></label>'
          . '<label class="summary-item" for="timeDisplay"><span>Time</span><input type="text" id="timeDisplay" placeholder="Not chosen" readonly tabindex="-1"></label>'
          . '<label class="summary-item" for="durationDisplay"><span>Duration</span><input type="text" id="durationDisplay" placeholder="--" readonly tabindex="-1"></label>'
-         . '<label class="summary-item" for="modeDisplay"><span>Support mode</span><input type="text" id="modeDisplay" value="' . ($online ? 'Virtual' : 'Face-to-face') . '" readonly tabindex="-1"></label>'
+         . '<label class="summary-item" for="modeDisplay"><span>Support mode</span><input type="text" id="modeDisplay" value="' . ($virtual ? 'Virtual' : 'Face-2-Face') . '" readonly tabindex="-1"></label>'
          . '</div>'
          . '</section>';
 }

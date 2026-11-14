@@ -41,7 +41,7 @@ $skills = array_filter(array_map('trim', explode(',', (string)($user['skills'] ?
 $days = array_values(array_unique(array_column($slots, 'preferred_day')));
 $daySchedules = [];
 foreach ($slots as $slot) $daySchedules[$slot['preferred_day']] = date('g:i A', strtotime($slot['start_time'])) . ' - ' . date('g:i A', strtotime($slot['end_time']));
-$modes = array_values(array_unique(array_map(static fn($slot) => $slot['support_mode'] === 'Online' ? 'Virtual' : $slot['support_mode'], $slots)));
+$modes = array_values(array_unique(array_column($slots, 'support_mode')));
 ?>
 <!DOCTYPE html>
 <html lang="en">

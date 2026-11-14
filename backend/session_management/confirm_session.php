@@ -19,7 +19,7 @@ $backToForm = static function (string $error) use ($sessionId): never {
     exit;
 };
 
-if (!$sessionId || !$date || !$start || !$end || !in_array($mode, ['Online', 'Face-to-face'], true)) {
+if (!$sessionId || !$date || !$start || !$end || !in_array($mode, ['Virtual', 'Face-2-Face'], true)) {
     $backToForm('Please choose a date, a start and end time, and a support mode.');
 }
 

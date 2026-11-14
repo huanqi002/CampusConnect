@@ -44,6 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (
         !empty($category) && !empty($description) && !empty($preferredDay) && !empty($startTime) && !empty($endTime) && $endTime > $startTime && !empty($supportMode)
+        && in_array($supportMode, ['Virtual', 'Face-2-Face'], true)
         && (!$changeRequestId || $volunteerId !== null)
     ) {
         if ($changeRequestId > 0) {
@@ -101,14 +102,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $studentName = (string) $studentStmt->fetchColumn();
             $noticePrefix = "{$studentName} requested {$category} for ";
             $noticeSuffix = '. Please click here for more details.';
-            $descriptionLimit = max(0, 500 - mb_strlen($noticePrefix) - mb_strlen($noticeSuffix));
+            $requestTag = ' [request:' . $changeRequestId . ']';
+            $descriptionLimit = max(0, 500 - mb_strlen($noticePrefix) - mb_strlen($noticeSuffix) - strlen($requestTag));
             $noticeDescription = mb_substr($description, 0, $descriptionLimit);
             if (mb_strlen($description) > $descriptionLimit && $descriptionLimit > 0) {
                 $noticeDescription = mb_substr($noticeDescription, 0, $descriptionLimit - 1) . '…';
             }
             $volunteerNotifStmt->execute([
                 $volunteerId,
-                $noticePrefix . $noticeDescription . $noticeSuffix,
+                $noticePrefix . $noticeDescription . $noticeSuffix . $requestTag,
             ]);
 
             header('Location: request.php');
@@ -120,6 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         INSERT INTO requests (
         user_id, volunteer_id, category, description, preferred_day, start_time, end_time, support_mode, skills, status, notified_at, created_at)            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending', NOW(), NOW())");
         $stmt->execute([$userId, $volunteerId, $category, $description, $preferredDay, $startTime, $endTime, $supportMode, $skills]);
+        $requestId = (int) $pdo->lastInsertId();
 
         // Automatically create an in-app notification for the student
         $notifStmt = $pdo->prepare("
@@ -138,14 +141,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $studentName = (string) $studentStmt->fetchColumn();
             $noticePrefix = "{$studentName} requested {$category} for ";
             $noticeSuffix = '. Please click here to view and respond to the request in Upcoming Requests.';
-            $descriptionLimit = max(0, 500 - mb_strlen($noticePrefix) - mb_strlen($noticeSuffix));
+            $requestTag = ' [request:' . $requestId . ']';
+            $descriptionLimit = max(0, 500 - mb_strlen($noticePrefix) - mb_strlen($noticeSuffix) - strlen($requestTag));
             $noticeDescription = mb_substr($description, 0, $descriptionLimit);
             if (mb_strlen($description) > $descriptionLimit && $descriptionLimit > 0) {
                 $noticeDescription = mb_substr($noticeDescription, 0, $descriptionLimit - 1) . '…';
             }
             $volunteerNotifStmt->execute([
                 $volunteerId,
-                $noticePrefix . $noticeDescription . $noticeSuffix,
+                $noticePrefix . $noticeDescription . $noticeSuffix . $requestTag,
             ]);
         }
 
@@ -696,13 +700,13 @@ include __DIR__ . '/../general/header.php';
                     <div class="radio-group" id="modeGroup">
 
                         <label>
-                            <input type="radio" name="support_mode" value="Online" <?= $formSupportMode === 'Online' ? 'checked' : '' ?>>
+                            <input type="radio" name="support_mode" value="Virtual" <?= $formSupportMode === 'Virtual' ? 'checked' : '' ?>>
                             <span class="mode-btn">Virtual</span>
                         </label>
 
                         <label>
-                            <input type="radio" name="support_mode" value="Face-to-face"
-                                <?= $formSupportMode === 'Face-to-face' ? 'checked' : '' ?>>
+                            <input type="radio" name="support_mode" value="Face-2-Face"
+                                <?= $formSupportMode === 'Face-2-Face' ? 'checked' : '' ?>>
                             <span class="mode-btn">Face-2-Face</span>
                         </label>
 

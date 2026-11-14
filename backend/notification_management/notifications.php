@@ -13,7 +13,7 @@ $myId = (int) $currentUser['id'];
 $role = $currentUser['role'];
 $notifications = listNotifications($conn, $myId, $role)->fetch_all(MYSQLI_ASSOC);
 foreach ($notifications as &$n) {
-    [$n['message'], $n['session_id']] = splitNotificationMessage($n['message']);   // hidden [session:12] tag
+    [$n['message'], $n['session_id'], $n['request_id']] = splitNotificationMessage($n['message']);
 }
 unset($n);
 markAllNotificationsRead($conn, $myId, $role);   // Keep hidden other-role notices unread for that role's view.
@@ -49,10 +49,18 @@ function noticeHref(array $n, array $linkedSessions, int $myId, ?string $role): 
         return "../session_management/session_details.php?session_id=$id";
     }
 
-    // Older notices without a session: open the page where that item now lives.
+    // Older notices without a request tag fall back to their role's request list.
     return match ($n['notice_type']) {
-        'Pending Request'                       => $role === 'volunteer' ? '../request_management/upcoming_request.php' : null,
-        'Request Response', 'Status Update'     => $role === 'student' ? '../request_management/request.php' : null,
+        'Pending Request'                       => $role === 'volunteer'
+            ? (!empty($n['request_id'])
+                ? '../request_management/upcoming_request_details.php?id=' . (int)$n['request_id']
+                : '../request_management/upcoming_request.php')
+            : null,
+        'Request Response', 'Status Update'     => $role === 'student'
+            ? (!empty($n['request_id'])
+                ? '../request_management/request_review.php?id=' . (int)$n['request_id']
+                : '../request_management/request.php')
+            : null,
         'Session Requested', 'Session Updated'  => $role === 'volunteer' ? '../session_management/volunteer_requests.php' : '../session_management/index.php',
         'Session Scheduled'                     => '../session_management/index.php',
         'Session Cancelled', 'Session Rejected',

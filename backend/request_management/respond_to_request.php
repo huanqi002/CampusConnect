@@ -56,7 +56,8 @@ try {
     $statusSuffix = $response === 'Rejected' ? "\nPlease re-select another volunteer." : '';
     $noticeType = 'Status Update';
     $prefix = "Your {$request['category']} request for “";
-    $suffix = "” has been {$outcome} by volunteer {$volunteerName}.{$statusSuffix}";
+    $requestTag = ' [request:' . $requestId . ']';
+    $suffix = "” has been {$outcome} by volunteer {$volunteerName}.{$statusSuffix}" . $requestTag;
     $notification = $conn->prepare("INSERT INTO notifications (user_id, message, notice_type, is_read, created_at) VALUES (?, ?, ?, 'N', NOW())");
     $descriptionLimit = max(0, 500 - mb_strlen($prefix) - mb_strlen($suffix));
     $noticeDescription = mb_substr($description, 0, $descriptionLimit);
