@@ -1,17 +1,19 @@
-CREATE DATABASE IF NOT EXISTS CampusConnect
+-- Campus Connect - Database Schema
+-- Creates the users / volunteers / requests / sessions / feedbacks / history / notifications tables,
+-- then loads sample data. Re-importing drops every table and its data and starts fresh.
+--
+-- Google Calendar's refresh token is NOT stored here - it lives in backend/general/calendar_tokens.php
+-- (a plain file, gitignored), so it survives independently of this database.
+
+CREATE DATABASE IF NOT EXISTS `CampusConnect`
     CHARACTER SET utf8mb4
     COLLATE utf8mb4_unicode_ci;
-USE CampusConnect;
+USE `CampusConnect`;
 
-DROP TABLE IF EXISTS calendar_tokens;
-DROP TABLE IF EXISTS notifications;
-DROP TABLE IF EXISTS history;
-DROP TABLE IF EXISTS feedbacks;
-DROP TABLE IF EXISTS sessions;
-DROP TABLE IF EXISTS requests;
-DROP TABLE IF EXISTS volunteers;
-DROP TABLE IF EXISTS users;
+SET NAMES utf8mb4;
+SET time_zone = '+00:00';
 
+<<<<<<< Updated upstream
 CREATE TABLE users (
     id                        INT AUTO_INCREMENT PRIMARY KEY,
     student_id                VARCHAR(30)   NOT NULL,
@@ -110,59 +112,116 @@ CREATE TABLE sessions (
     CONSTRAINT fk_sessions_user      FOREIGN KEY (user_id)      REFERENCES users (id),
     CONSTRAINT fk_sessions_volunteer FOREIGN KEY (volunteer_id) REFERENCES users (id)
 );
+=======
+DROP TABLE IF EXISTS `notifications`;
+DROP TABLE IF EXISTS `history`;
+DROP TABLE IF EXISTS `feedbacks`;
+DROP TABLE IF EXISTS `sessions`;
+DROP TABLE IF EXISTS `requests`;
+DROP TABLE IF EXISTS `volunteers`;
+DROP TABLE IF EXISTS `users`;
 
-CREATE TABLE feedbacks (
-    id           INT AUTO_INCREMENT PRIMARY KEY,
-    session_id   INT          NOT NULL,
-    user_id      INT          NOT NULL, 
-    volunteer_id INT          NOT NULL, 
-    rating       TINYINT      NOT NULL, 
-    comments     VARCHAR(500) NULL,
-    submitted_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT uq_feedbacks_session   UNIQUE (session_id),
-    CONSTRAINT chk_feedbacks_rating   CHECK (rating BETWEEN 1 AND 5),
-    CONSTRAINT fk_feedbacks_session   FOREIGN KEY (session_id)   REFERENCES sessions (id),
-    CONSTRAINT fk_feedbacks_user      FOREIGN KEY (user_id)      REFERENCES users (id),
-    CONSTRAINT fk_feedbacks_volunteer FOREIGN KEY (volunteer_id) REFERENCES users (id)
-);
+-- --------------------------------------------------------
 
-CREATE TABLE history (
-    id                  INT AUTO_INCREMENT PRIMARY KEY,
-    session_id          INT          NOT NULL,
-    user_id             INT          NOT NULL,
-    volunteer_id        INT          NOT NULL,
-    feedback_id         INT          NULL,
-    final_status        VARCHAR(20)  NOT NULL,
-    completion_time     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    cancellation_reason VARCHAR(500) NULL,
-    CONSTRAINT uq_history_session   UNIQUE (session_id),
-    CONSTRAINT fk_history_session   FOREIGN KEY (session_id)   REFERENCES sessions (id),
-    CONSTRAINT fk_history_user      FOREIGN KEY (user_id)      REFERENCES users (id),
-    CONSTRAINT fk_history_volunteer FOREIGN KEY (volunteer_id) REFERENCES users (id),
-    CONSTRAINT fk_history_feedback  FOREIGN KEY (feedback_id)  REFERENCES feedbacks (id)
-);
+-- Every account. A user is a volunteer when is_volunteer = 'Y'; the volunteer_* columns are only
+-- used for that side of their profile. is_active = 'Y' once they've verified their email.
+CREATE TABLE `users` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `email` varchar(150) NOT NULL,
+  `full_name` varchar(100) NOT NULL,
+  `university_name` varchar(100) NOT NULL,
+  `password_hash` varchar(255) NOT NULL,
+  `picture_url` varchar(255) DEFAULT NULL,
+  `cover_photo_url` varchar(255) DEFAULT NULL,
+  `volunteer_picture_url` varchar(255) DEFAULT NULL,
+  `volunteer_cover_photo_url` varchar(255) DEFAULT NULL,
+  `education` varchar(500) DEFAULT NULL,
+  `skills` varchar(500) DEFAULT NULL,
+  `support_experience` varchar(1000) DEFAULT NULL,
+  `tfa_code` varchar(255) DEFAULT NULL,
+  `tfa_expiry` datetime DEFAULT NULL,
+  `failed_attempts` int(11) NOT NULL DEFAULT 0,
+  `locked_until` datetime DEFAULT NULL,
+  `remember_token_hash` char(64) DEFAULT NULL,
+  `remember_expires` datetime DEFAULT NULL,
+  `reset_code` varchar(6) DEFAULT NULL,
+  `reset_expiry` datetime DEFAULT NULL,
+  `is_volunteer` char(1) NOT NULL DEFAULT 'N',
+  `is_active` char(1) NOT NULL DEFAULT 'N',
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_users_email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE notifications (
-    id          INT AUTO_INCREMENT PRIMARY KEY,
-    user_id     INT          NOT NULL,
-    message     VARCHAR(500) NOT NULL,
-    notice_type VARCHAR(50)  NOT NULL,
-    is_read     CHAR(1)      NOT NULL DEFAULT 'N',
-    created_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    INDEX idx_notifications_unread (user_id, is_read),
-    CONSTRAINT chk_notifications_read CHECK (is_read IN ('Y', 'N')),
-    CONSTRAINT fk_notifications_user  FOREIGN KEY (user_id) REFERENCES users (id)
-);
+INSERT INTO `users` (`id`, `email`, `full_name`, `university_name`, `password_hash`, `picture_url`, `cover_photo_url`, `volunteer_picture_url`, `volunteer_cover_photo_url`, `education`, `skills`, `support_experience`, `tfa_code`, `tfa_expiry`, `failed_attempts`, `locked_until`, `remember_token_hash`, `remember_expires`, `reset_code`, `reset_expiry`, `is_volunteer`, `is_active`, `created_at`) VALUES
+(1, 'b123@helplive.edu.my', 'Sarah Lim', 'HELP University', '$2y$10$1Y1GcuDG6D2ofr20THDxNeLmOlsAMDeAjHWRcrbBR6kAvf.2kan6W', '/CampusConnect/uploads/profile/user_1_3727c725ae733a19bcaa0083.png', NULL, NULL, NULL, 'Bachelor of Psychology', NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 'N', 'Y', '2026-09-02 10:14:22'),
+(2, 'b2300554@helplive.edu.my', 'Low Huan Qi', 'HELP University', '$2y$10$5zYWMviLaGOgYJb7a7fLpuCqN5AEyaQlzvwi9z1ZjnWpL5aj7Izz.', '/CampusConnect/uploads/profile/user_2_2d10f77f9b1e099f8addf2c8.png', NULL, '/CampusConnect/uploads/profile/user_2_2cfd0014fe9c37a6a55725fe.png', NULL, 'Bachelor of Computer Science', 'PHP, MySQL, JavaScript, CSS', 'Helped classmates debug PHP and MySQL projects in the Web Programming course.', NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 'Y', 'Y', '2026-09-01 20:41:05'),
+(3, 'melvin@helplive.edu.my', 'Melvin Chan', 'HELP University', '$2y$10$ilRV9CW9s.7DbKu7c6lwTOcsUNW70NiCn3qzyp5A8fAUlstcrX9ei', NULL, NULL, NULL, NULL, 'Bachelor of Business', 'Time management, Campus orientation, Peer guidance', 'Orientation week student mentor for two semesters.', NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 'Y', 'Y', '2026-09-03 09:22:47'),
+(4, 'b23@helplive.edu.my', 'Chan Zhao Lun', 'HELP University', '$2y$10$r6Nv01Spqz3/qIOTkIvOceCcvczPDquO8m0FYkjjHqIUy0ecCz.PG', NULL, NULL, NULL, NULL, 'Bachelor of Software Engineering', 'PHP, HTML, CSS, JavaScript', 'Tutors first-year students in front-end web development.', NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 'Y', 'Y', '2026-09-04 16:05:11'),
+(5, 'b2301876@helplive.edu.my', 'Aisyah Rahman', 'HELP University', '$2y$10$5zYWMviLaGOgYJb7a7fLpuCqN5AEyaQlzvwi9z1ZjnWpL5aj7Izz.', NULL, NULL, NULL, NULL, 'Bachelor of Business (Marketing)', NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 'N', 'Y', '2026-09-08 11:37:59'),
+(6, 'b2302214@helplive.edu.my', 'Daniel Wong', 'HELP University', '$2y$10$5zYWMviLaGOgYJb7a7fLpuCqN5AEyaQlzvwi9z1ZjnWpL5aj7Izz.', NULL, NULL, NULL, NULL, 'Bachelor of Mechanical Engineering', NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 'N', 'Y', '2026-09-09 14:02:31'),
+(7, 'b2302031@helplive.edu.my', 'Priya Nair', 'HELP University', '$2y$10$5zYWMviLaGOgYJb7a7fLpuCqN5AEyaQlzvwi9z1ZjnWpL5aj7Izz.', NULL, NULL, NULL, NULL, 'Bachelor of Biomedical Science', NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 'N', 'Y', '2026-09-15 19:48:06'),
+(8, 'yukielian952@gmail.com', 'Yukie Lian', 'HELP University', '$2y$10$ZQ8NpyYeFin8aUjM0QkDL.qfvkzXBKd4gywrpddMAtk.9QvKYxgpC', NULL, NULL, '/CampusConnect/uploads/profile/user_8_ab013d19a9b940a0927fde79.png', NULL, 'Bachelor of Information Technology', 'HTML, PHP', 'Helped new students set up their first web pages.', NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 'N', 'Y', '2026-09-05 13:26:40'),
+(9, 'averytan001@gmail.com', 'Avery Tan', 'HELP University', '$2y$10$6b2uYYQ9mZ18ij15vrQ8kuJHa0TS8t18mLhayxOGynY2rN.DBleVS', NULL, NULL, NULL, NULL, 'Bachelor of Computer Science', 'HTML, CSS, JavaScript, Agile, Web Development', 'Helps peers debug web projects and understand programming basics.', NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 'Y', 'Y', '2026-09-10 10:12:45'),
+(10, 'jonnylian123@gmail.com', 'Jonas Lian', 'HELP University', '$2y$10$tErkgkugHDCu/9uE.rdF9.odLCiUo541PXzdIC6cC8O45tv0OFE56', NULL, NULL, NULL, NULL, 'Bachelor of Information Technology', 'Database Design, MySQL, SQL', 'Enjoys explaining database concepts and helping students troubleshoot queries.', NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 'Y', 'Y', '2026-09-11 15:30:02'),
+(11, 'yingpeilian@gmail.com', 'Jansis Lian', 'HELP University', '$2y$10$JsEqxJuFF.1kuvb8cl0X5u2.68JLqYTkzHV29wdVzLOtaKuQ/4MW6', NULL, NULL, NULL, NULL, 'Bachelor of Interactive Design', 'Web Development, UI/UX', 'Supports students with website layouts and user-friendly design.', NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 'Y', 'Y', '2026-09-14 09:55:18'),
+(12, 'haolian666@gmail.com', 'JianHao Lian', 'HELP University', '$2y$10$V.JxaavCUYNL/csR41UaEupnJzbIoUhtQL2SZVmtrdsNZZjF2IyzS', NULL, NULL, NULL, NULL, 'Bachelor of Software Engineering', 'Software Testing, WordPress', 'Has helped classmates build and test WordPress sites.', NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 'Y', 'Y', '2026-09-16 17:21:37'),
+(13, 'weejing911@gmail.com', 'Wee Jing', 'HELP University', '$2y$10$LtHRHPjDZ9ZAFK7CXoD4nezcVu0R9Q1ng7wOmoJAdPOzuALTBYlxW', NULL, NULL, NULL, NULL, 'Bachelor of Communication', 'Leadership, Public speaking, Presentation skills', 'Debate club president who coaches students on presentations.', NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 'Y', 'Y', '2026-09-18 12:40:55'),
+(14, 'jeiweytan00@gmail.com', 'Tan Jei Wey', 'HELP University', '$2y$10$0GQr4smsDRVBIewFyBq77utfzDVY/VMXr.6bA9FnnQcrODP8Xx.Qu', NULL, NULL, NULL, NULL, 'Bachelor of Computer Science', 'API Integration, PHP, JavaScript', 'Enjoys helping students connect websites to databases and APIs.', NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 'Y', 'Y', '2026-09-21 20:03:29'),
+(15, 'b2304417@helplive.edu.my', 'Kevin Ong', 'HELP University', '$2y$10$5zYWMviLaGOgYJb7a7fLpuCqN5AEyaQlzvwi9z1ZjnWpL5aj7Izz.', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 'N', 'N', '2026-11-16 22:47:10'),
+(16, 'b2207732@helplive.edu.my', 'Nurul Huda', 'HELP University', '$2y$10$5zYWMviLaGOgYJb7a7fLpuCqN5AEyaQlzvwi9z1ZjnWpL5aj7Izz.', NULL, NULL, NULL, NULL, 'Bachelor of Actuarial Science', 'Mathematics, Statistics, Academic writing', 'Peer tutor for Statistics and Calculus at the HELP Learning Centre.', NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, 'Y', 'Y', '2026-09-07 08:58:13');
+>>>>>>> Stashed changes
 
--- Google Calendar: the organizer account (organizer_user_id in general/google_config.php) connects once and its
--- refresh token is stored here. Tokens come from the OAuth sign-in on each machine, so none are seeded.
-CREATE TABLE calendar_tokens (
-    user_id       INT PRIMARY KEY,
-    refresh_token TEXT NOT NULL,
-    connected_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_calendar_tokens_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
-);
+-- --------------------------------------------------------
 
+-- A volunteer's weekly office hours: one row per day/category/time range they're willing to help in.
+CREATE TABLE `volunteers` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `category` varchar(50) NOT NULL,
+  `preferred_day` varchar(10) NOT NULL,
+  `start_time` time NOT NULL,
+  `end_time` time NOT NULL,
+  `skills` varchar(255) DEFAULT NULL,
+  `support_mode` varchar(20) NOT NULL,
+  `is_available` char(1) NOT NULL DEFAULT 'N',
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_volunteers_slot` (`user_id`,`preferred_day`,`start_time`,`end_time`),
+  CONSTRAINT `fk_volunteers_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO `volunteers` (`id`, `user_id`, `category`, `preferred_day`, `start_time`, `end_time`, `skills`, `support_mode`, `is_available`, `created_at`) VALUES
+(1, 2, 'Technology', 'Monday', '10:00:00', '13:00:00', 'PHP, MySQL, JavaScript, CSS', 'Virtual', 'Y', '2026-09-01 21:05:12'),
+(2, 2, 'Technology', 'Wednesday', '14:00:00', '17:00:00', 'PHP, MySQL, JavaScript, CSS', 'Virtual', 'Y', '2026-09-01 21:05:12'),
+(3, 2, 'Technology', 'Thursday', '09:00:00', '12:00:00', 'PHP, MySQL, JavaScript, CSS', 'Face-2-Face', 'Y', '2026-09-01 21:05:12'),
+(4, 2, 'Technology', 'Saturday', '10:00:00', '13:00:00', 'PHP, MySQL, JavaScript, CSS', 'Virtual', 'Y', '2026-09-01 21:05:12'),
+(5, 3, 'New Student', 'Tuesday', '09:00:00', '12:00:00', 'Time management, Campus orientation, Peer guidance', 'Face-2-Face', 'Y', '2026-09-03 09:40:31'),
+(6, 3, 'General Student', 'Wednesday', '13:00:00', '16:00:00', 'Time management, Campus orientation, Peer guidance', 'Virtual', 'Y', '2026-09-03 09:40:31'),
+(7, 3, 'General Student', 'Friday', '10:00:00', '13:00:00', 'Time management, Campus orientation, Peer guidance', 'Face-2-Face', 'Y', '2026-09-03 09:40:31'),
+(8, 4, 'Technology', 'Tuesday', '14:00:00', '17:00:00', 'PHP, HTML, CSS, JavaScript', 'Virtual', 'Y', '2026-09-04 16:30:48'),
+(9, 4, 'Technology', 'Friday', '14:00:00', '17:00:00', 'PHP, HTML, CSS, JavaScript', 'Virtual', 'Y', '2026-09-04 16:30:48'),
+(10, 8, 'Technology', 'Monday', '14:00:00', '16:00:00', 'HTML, PHP', 'Face-2-Face', 'N', '2026-09-06 10:18:26'),
+(11, 8, 'Technology', 'Thursday', '14:00:00', '16:00:00', 'HTML, PHP', 'Virtual', 'N', '2026-09-06 10:18:26'),
+(12, 9, 'Technology', 'Monday', '15:00:00', '18:00:00', 'HTML, CSS, JavaScript, Agile, Web Development', 'Virtual', 'Y', '2026-09-10 10:40:09'),
+(13, 9, 'Technology', 'Wednesday', '10:00:00', '12:00:00', 'HTML, CSS, JavaScript, Agile, Web Development', 'Virtual', 'Y', '2026-09-10 10:40:09'),
+(14, 10, 'Technology', 'Tuesday', '10:00:00', '13:00:00', 'Database Design, MySQL, SQL', 'Virtual', 'Y', '2026-09-11 15:52:44'),
+(15, 10, 'Technology', 'Thursday', '15:00:00', '18:00:00', 'Database Design, MySQL, SQL', 'Virtual', 'Y', '2026-09-11 15:52:44'),
+(16, 11, 'Technology', 'Wednesday', '09:00:00', '11:00:00', 'Web Development, UI/UX', 'Face-2-Face', 'Y', '2026-09-14 10:21:37'),
+(17, 11, 'Technology', 'Friday', '13:00:00', '16:00:00', 'Web Development, UI/UX', 'Virtual', 'Y', '2026-09-14 10:21:37'),
+(18, 12, 'Technology', 'Monday', '09:00:00', '11:00:00', 'Software Testing, WordPress', 'Virtual', 'Y', '2026-09-16 17:45:02'),
+(19, 12, 'Technology', 'Saturday', '09:00:00', '12:00:00', 'Software Testing, WordPress', 'Virtual', 'Y', '2026-09-16 17:45:02'),
+(20, 13, 'General Student', 'Tuesday', '16:00:00', '18:00:00', 'Leadership, Public speaking, Presentation skills', 'Face-2-Face', 'Y', '2026-09-18 13:05:19'),
+(21, 13, 'General Student', 'Thursday', '10:00:00', '12:00:00', 'Leadership, Public speaking, Presentation skills', 'Virtual', 'Y', '2026-09-18 13:05:19'),
+(22, 14, 'Technology', 'Wednesday', '16:00:00', '19:00:00', 'API Integration, PHP, JavaScript', 'Virtual', 'Y', '2026-09-21 20:28:51'),
+(23, 14, 'Technology', 'Saturday', '13:00:00', '15:00:00', 'API Integration, PHP, JavaScript', 'Virtual', 'Y', '2026-09-21 20:28:51'),
+(24, 16, 'Academic', 'Monday', '09:00:00', '12:00:00', 'Mathematics, Statistics, Academic writing', 'Virtual', 'Y', '2026-09-07 09:20:36'),
+(25, 16, 'Academic', 'Wednesday', '09:00:00', '12:00:00', 'Mathematics, Statistics, Academic writing', 'Face-2-Face', 'Y', '2026-09-07 09:20:36'),
+(26, 16, 'Academic', 'Friday', '09:00:00', '11:00:00', 'Mathematics, Statistics, Academic writing', 'Virtual', 'Y', '2026-09-07 09:20:36');
+
+-- --------------------------------------------------------
+
+<<<<<<< Updated upstream
 -- personalemail is where calendar invitations are sent (falls back to email when empty).
 INSERT INTO users (id, student_id, email, personalemail, full_name, university_name, password_hash, education, skills, support_experience, is_volunteer, is_active, created_at) VALUES
 (1, 'B123',     'b123@helplive.edu.my',     'yukielian06@hotmail.com',    'Yukie Lian',  'HELP University', '$2y$10$1Y1GcuDG6D2ofr20THDxNeLmOlsAMDeAjHWRcrbBR6kAvf.2kan6W', 'Bachelor of Psychology',          'Mathematics, Statistics, Academic writing', 'Peer tutor for first-year students.',     'Y', 'Y', '2026-10-14 14:54:22'),
@@ -239,44 +298,461 @@ INSERT INTO sessions (id, request_id, user_id, volunteer_id, category, descripti
 (19, 19, 1, 3, 'General Student', 'Advice on managing my study timetable',      CURDATE() - INTERVAL 12 DAY, '10:00:00', '11:00:00', 'Online',       'Completed',   'Y', 'Y', NOW() - INTERVAL 13 DAY),
 (20, 20, 2, 3, 'General Student', 'Preparing slides for my presentation',       CURDATE() - INTERVAL 15 DAY, '09:00:00', '10:00:00', 'Online',       'Completed',   'Y', 'Y', NOW() - INTERVAL 16 DAY),
 (21, 21, 1, 3, 'New Student',     'Registering for next semester''s courses',   NULL,                        NULL,       NULL,       'Face-to-face', 'Cancelled',   'N', 'N', NOW() - INTERVAL 5 DAY);
+=======
+-- A support request raised by a student, optionally pointed at one volunteer.
+CREATE TABLE `requests` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `volunteer_id` int(11) DEFAULT NULL,
+  `category` varchar(50) NOT NULL,
+  `description` varchar(500) NOT NULL,
+  `preferred_day` varchar(10) NOT NULL,
+  `start_time` time NOT NULL,
+  `end_time` time NOT NULL,
+  `skills` varchar(255) DEFAULT NULL,
+  `support_mode` varchar(20) NOT NULL,
+  `status` varchar(20) NOT NULL DEFAULT 'Pending',
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `notified_at` datetime DEFAULT NULL,
+  `responded_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_requests_status` (`status`),
+  KEY `fk_requests_user` (`user_id`),
+  KEY `fk_requests_volunteer` (`volunteer_id`),
+  CONSTRAINT `fk_requests_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `fk_requests_volunteer` FOREIGN KEY (`volunteer_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Feedback (session 13 is left unrated so Low Huan Qi can rate it) -----------
-INSERT INTO feedbacks (id, session_id, user_id, volunteer_id, rating, comments, submitted_at) VALUES
-(1, 7,  1, 2, 5, 'Huan Qi explained SQL joins really clearly.',       NOW() - INTERVAL 9 DAY),
-(2, 19, 1, 3, 4, 'Melvin gave practical tips for planning my week.',  NOW() - INTERVAL 11 DAY),
-(3, 20, 2, 3, 5, 'Great presentation advice, thank you Melvin!',      NOW() - INTERVAL 14 DAY);
+INSERT INTO `requests` (`id`, `user_id`, `volunteer_id`, `category`, `description`, `preferred_day`, `start_time`, `end_time`, `skills`, `support_mode`, `status`, `created_at`, `notified_at`, `responded_at`) VALUES
+(1, 1, 16, 'Academic', 'Understanding p-values for my Psychology statistics assignment', 'Monday', '09:00:00', '12:00:00', 'Statistics', 'Virtual', 'Accepted', '2026-09-17 21:14:08', '2026-09-17 21:14:08', '2026-09-18 08:32:10'),
+(2, 6, 2, 'Technology', 'Setting up XAMPP and connecting PHP to MySQL', 'Monday', '10:00:00', '13:00:00', 'PHP, MySQL', 'Virtual', 'Accepted', '2026-09-22 22:03:51', '2026-09-22 22:03:51', '2026-09-23 09:15:44'),
+(3, 7, 8, 'Technology', 'Building my first HTML page for a lab report site', 'Monday', '14:00:00', '16:00:00', 'HTML', 'Face-2-Face', 'Accepted', '2026-09-23 18:20:37', '2026-09-23 18:20:37', '2026-09-24 10:05:21'),
+(4, 8, 16, 'Academic', 'Revising probability for my Statistics quiz', 'Wednesday', '09:00:00', '12:00:00', 'Statistics', 'Face-2-Face', 'Accepted', '2026-09-24 20:45:13', '2026-09-24 20:45:13', '2026-09-25 09:02:37'),
+(5, 5, 3, 'New Student', 'Finding my way around campus and registering for electives', 'Tuesday', '09:00:00', '12:00:00', 'Campus orientation', 'Face-2-Face', 'Accepted', '2026-09-25 11:30:42', '2026-09-25 11:30:42', '2026-09-25 16:48:02'),
+(6, 6, 8, 'Technology', 'Fixing broken links and images on my portfolio site', 'Thursday', '14:00:00', '16:00:00', 'HTML', 'Virtual', 'Accepted', '2026-10-01 19:12:26', '2026-10-01 19:12:26', '2026-10-02 08:40:15'),
+(7, 8, 2, 'Technology', 'Understanding PHP sessions for my login page', 'Wednesday', '14:00:00', '17:00:00', 'PHP', 'Virtual', 'Accepted', '2026-10-05 21:40:09', '2026-10-05 21:40:09', '2026-10-06 09:12:48'),
+(8, 1, 2, 'Technology', 'Making my survey website mobile friendly with CSS', 'Saturday', '10:00:00', '13:00:00', 'CSS', 'Virtual', 'Accepted', '2026-10-06 14:22:55', '2026-10-06 14:22:55', '2026-10-06 20:10:33'),
+(9, 7, 13, 'General Student', 'Preparing for my first group presentation', 'Tuesday', '16:00:00', '18:00:00', 'Presentation skills', 'Face-2-Face', 'Accepted', '2026-10-07 10:05:31', '2026-10-07 10:05:31', '2026-10-07 18:30:06'),
+(10, 5, 8, 'Technology', 'Creating a simple landing page for my marketing project', 'Thursday', '14:00:00', '16:00:00', 'HTML', 'Virtual', 'Accepted', '2026-10-08 13:15:47', '2026-10-08 13:15:47', '2026-10-08 21:02:19'),
+(11, 8, 10, 'Technology', 'Designing tables for my group\'s inventory database', 'Tuesday', '10:00:00', '13:00:00', 'Database Design', 'Virtual', 'Accepted', '2026-10-12 20:30:18', '2026-10-12 20:30:18', '2026-10-13 09:45:52'),
+(12, 8, 10, 'Technology', 'Designing tables for my group\'s inventory database', 'Thursday', '15:00:00', '18:00:00', 'Database Design', 'Virtual', 'Accepted', '2026-10-14 08:50:04', '2026-10-14 08:50:04', '2026-10-14 12:30:27'),
+(13, 6, 4, 'Technology', 'Adding JavaScript form validation to my booking form', 'Tuesday', '14:00:00', '17:00:00', 'JavaScript', 'Virtual', 'Accepted', '2026-10-14 17:40:22', '2026-10-14 17:40:22', '2026-10-15 10:20:41'),
+(14, 2, 16, 'Academic', 'Help with Discrete Maths proofs before the midterm', 'Friday', '09:00:00', '11:00:00', 'Mathematics', 'Virtual', 'Accepted', '2026-10-16 22:10:35', '2026-10-16 22:10:35', '2026-10-17 08:55:09'),
+(15, 7, 2, 'Technology', 'Debugging a MySQL query that returns duplicate rows', 'Thursday', '09:00:00', '12:00:00', 'MySQL', 'Face-2-Face', 'Accepted', '2026-10-19 11:05:49', '2026-10-19 11:05:49', '2026-10-19 19:30:14'),
+(16, 7, 2, 'Technology', 'Debugging a MySQL query that returns duplicate rows', 'Monday', '10:00:00', '13:00:00', 'MySQL', 'Virtual', 'Accepted', '2026-10-21 21:00:17', '2026-10-21 21:00:17', '2026-10-22 09:00:38'),
+(17, 1, 3, 'General Student', 'Planning a weekly study timetable for four subjects', 'Wednesday', '13:00:00', '16:00:00', 'Time management', 'Virtual', 'Accepted', '2026-10-26 16:30:44', '2026-10-26 16:30:44', '2026-10-27 09:10:55'),
+(18, 8, 4, 'Technology', 'Debugging JavaScript errors in my quiz game', 'Friday', '14:00:00', '17:00:00', 'JavaScript', 'Virtual', 'Accepted', '2026-10-26 20:00:12', '2026-10-26 20:00:12', '2026-10-27 10:30:12'),
+(19, 5, 2, 'Technology', 'Connecting a contact form to a database', 'Saturday', '10:00:00', '13:00:00', 'PHP, MySQL', 'Virtual', 'Rejected', '2026-10-28 20:45:30', '2026-10-28 20:45:30', '2026-10-29 08:30:16'),
+(20, 5, 14, 'Technology', 'Connecting a contact form to a database', 'Saturday', '13:00:00', '15:00:00', 'PHP', 'Virtual', 'Accepted', '2026-10-29 12:00:07', '2026-10-29 12:00:07', '2026-10-29 18:40:26'),
+(21, 6, 2, 'Technology', 'Understanding PHP arrays and loops', 'Thursday', '09:00:00', '12:00:00', 'PHP', 'Face-2-Face', 'Accepted', '2026-11-01 20:10:33', '2026-11-01 20:10:33', '2026-11-02 09:00:47'),
+(22, 8, 2, 'Technology', 'Uploading profile pictures safely in PHP', 'Wednesday', '14:00:00', '17:00:00', 'PHP', 'Virtual', 'Accepted', '2026-11-02 19:20:58', '2026-11-02 19:20:58', '2026-11-03 09:05:30'),
+(23, 6, 16, 'Academic', 'Solving differential equations for Engineering Maths', 'Monday', '09:00:00', '12:00:00', 'Mathematics', 'Virtual', 'Accepted', '2026-11-03 21:10:41', '2026-11-03 21:10:41', '2026-11-04 09:30:18'),
+(24, 8, 9, 'Technology', 'Styling my e-commerce prototype with Flexbox', 'Monday', '15:00:00', '18:00:00', 'CSS', 'Virtual', 'Accepted', '2026-11-05 18:40:26', '2026-11-05 18:40:26', '2026-11-06 10:15:03'),
+(25, 5, 14, 'Technology', 'Connecting my marketing site to a weather API', 'Saturday', '13:00:00', '15:00:00', 'API Integration', 'Virtual', 'Pending', '2026-11-09 11:00:52', '2026-11-09 11:00:52', NULL),
+(26, 2, 16, 'Academic', 'Analysing survey results for my final year project', 'Wednesday', '09:00:00', '12:00:00', 'Statistics', 'Face-2-Face', 'Accepted', '2026-11-09 20:00:39', '2026-11-09 20:00:39', '2026-11-10 08:40:29'),
+(27, 1, 2, 'Technology', 'Adding a search feature to my survey website', 'Thursday', '09:00:00', '12:00:00', 'PHP', 'Face-2-Face', 'Accepted', '2026-11-10 14:20:15', '2026-11-10 14:20:15', '2026-11-10 20:05:44'),
+(28, 8, 11, 'Technology', 'Improving the user flow of my booking app prototype', 'Wednesday', '09:00:00', '11:00:00', 'UI/UX', 'Face-2-Face', 'Rejected', '2026-11-10 18:30:23', '2026-11-10 18:30:23', '2026-11-11 09:40:12'),
+(29, 1, 13, 'General Student', 'Practising for my final-year presentation', 'Thursday', '10:00:00', '12:00:00', 'Public speaking', 'Virtual', 'Accepted', '2026-11-11 12:30:48', '2026-11-11 12:30:48', '2026-11-11 19:00:21'),
+(30, 6, 2, 'Technology', 'Building a login system with password hashing', 'Monday', '10:00:00', '13:00:00', 'PHP', 'Virtual', 'Accepted', '2026-11-11 21:30:09', '2026-11-11 21:30:09', '2026-11-12 08:50:36'),
+(31, 7, 2, 'Technology', 'Displaying database records in an HTML table', 'Monday', '10:00:00', '13:00:00', 'PHP, MySQL', 'Virtual', 'Accepted', '2026-11-12 16:00:34', '2026-11-12 16:00:34', '2026-11-12 20:30:08'),
+(32, 8, 2, 'Technology', 'Sending email notifications from PHP', 'Wednesday', '14:00:00', '17:00:00', 'PHP', 'Virtual', 'Accepted', '2026-11-12 19:45:16', '2026-11-12 19:45:16', '2026-11-13 08:30:51'),
+(33, 5, 2, 'Technology', 'Fixing layout issues on my marketing campaign page', 'Saturday', '10:00:00', '13:00:00', 'CSS', 'Virtual', 'Accepted', '2026-11-13 10:30:27', '2026-11-13 10:30:27', '2026-11-13 18:20:17'),
+(34, 8, 3, 'General Student', 'Managing deadlines across five assignments this month', 'Friday', '10:00:00', '13:00:00', 'Time management', 'Face-2-Face', 'Accepted', '2026-11-13 21:00:45', '2026-11-13 21:00:45', '2026-11-14 09:30:40'),
+(35, 1, 2, 'Technology', 'Exporting survey results to a CSV file', 'Thursday', '09:00:00', '12:00:00', 'PHP', 'Face-2-Face', 'Accepted', '2026-11-14 15:10:38', '2026-11-14 15:10:38', '2026-11-15 10:00:12'),
+(36, 8, 9, 'Technology', 'Adding a dark mode toggle with CSS and JavaScript', 'Monday', '15:00:00', '18:00:00', 'CSS, JavaScript', 'Virtual', 'Accepted', '2026-11-15 20:40:57', '2026-11-15 20:40:57', '2026-11-16 09:20:58'),
+(37, 6, 2, 'Technology', 'Using sessions to keep users logged in', 'Wednesday', '14:00:00', '17:00:00', 'PHP', 'Virtual', 'Accepted', '2026-11-16 13:15:22', '2026-11-16 13:15:22', '2026-11-16 20:30:25'),
+(38, 7, 2, 'Technology', 'Paginating search results in PHP', 'Thursday', '09:00:00', '12:00:00', 'PHP', 'Face-2-Face', 'Pending', '2026-11-17 10:15:46', '2026-11-17 10:15:46', NULL),
+(39, 8, 10, 'Technology', 'Writing JOIN queries for my sales report page', 'Tuesday', '10:00:00', '13:00:00', 'MySQL, SQL', 'Virtual', 'Pending', '2026-11-17 19:30:03', '2026-11-17 19:30:03', NULL);
 
--- History for every finished session -----------------------------------------
-INSERT INTO history (session_id, user_id, volunteer_id, feedback_id, final_status, completion_time, cancellation_reason) VALUES
-(7,  1, 2, 1,    'Completed', NOW() - INTERVAL 10 DAY, NULL),
-(8,  3, 2, NULL, 'Cancelled', NOW() - INTERVAL 5 DAY,  'Volunteer had a clash with a lecture.'),
-(13, 2, 1, NULL, 'Completed', NOW() - INTERVAL 7 DAY,  NULL),
-(14, 3, 1, NULL, 'Rejected',  NOW() - INTERVAL 1 DAY,  NULL),
-(19, 1, 3, 2,    'Completed', NOW() - INTERVAL 12 DAY, NULL),
-(20, 2, 3, 3,    'Completed', NOW() - INTERVAL 15 DAY, NULL),
-(21, 1, 3, NULL, 'Cancelled', NOW() - INTERVAL 2 DAY,  'Student no longer needs help.');
+-- --------------------------------------------------------
 
--- Notifications ---------------------------------------------------------------
-INSERT INTO notifications (user_id, message, notice_type, is_read, created_at) VALUES
-(2, 'Yukie Lian requested a Technology session with you. Please accept or reject it in Session Request.', 'Session Requested', 'N', NOW() - INTERVAL 5 DAY),
-(2, 'Melvin requested a Technology session with you. Please accept or reject it in Session Request.',     'Session Requested', 'N', NOW() - INTERVAL 5 DAY),
-(2, 'Yukie Lian rated your Technology session 5/5.',                                                       'Feedback Received', 'Y', NOW() - INTERVAL 9 DAY),
-(2, 'Melvin accepted your General Student session.',                                                       'Session Scheduled', 'N', NOW() - INTERVAL 4 DAY),
-(2, 'Your Academic session is completed. Please leave feedback.',                                          'Feedback Reminder', 'N', NOW() - INTERVAL 7 DAY),
-(1, 'Low Huan Qi accepted your Technology session.',                                                       'Session Scheduled', 'Y', NOW() - INTERVAL 6 DAY),
-(1, 'Low Huan Qi requested an Academic session with you. Please accept or reject it in Session Request.', 'Session Requested', 'N', NOW() - INTERVAL 4 DAY),
-(1, 'Melvin cancelled your New Student session.',                                                          'Session Cancelled', 'Y', NOW() - INTERVAL 2 DAY),
-(1, 'Your Technology request has been sent to volunteers.',                                                'Request Submitted', 'Y', NOW() - INTERVAL 1 DAY),
-(3, 'Yukie Lian requested a General Student session with you. Please accept or reject it in Session Request.', 'Session Requested', 'N', NOW() - INTERVAL 2 DAY),
-(3, 'Yukie Lian rejected your Academic session.',                                                          'Session Rejected',  'N', NOW() - INTERVAL 1 DAY),
-(3, 'Low Huan Qi rated your General Student session 5/5.',                                                 'Feedback Received', 'Y', NOW() - INTERVAL 14 DAY),
--- More variety: every notice type, spread over today, yesterday and earlier so the page shows its day groups
-(2, 'Your Technology request has been sent to volunteers.',                                                'Request Submitted', 'N', NOW() - INTERVAL 20 MINUTE),
-(2, 'Yukie Lian changed your Academic session to Sat, 24 Oct 2026, 9:00 AM - 10:00 AM.',                   'Session Updated',   'N', NOW() - INTERVAL 3 HOUR),
-(2, 'You cancelled your Technology session with Melvin.',                                                  'Session Cancelled', 'N', NOW() - INTERVAL 1 DAY),
-(2, 'Melvin rejected your General Student session on Fri, 23 Oct 2026 at 10:00 AM.',                       'Session Rejected',  'Y', NOW() - INTERVAL 2 DAY),
-(2, 'Yukie Lian rated your Academic session 4/5.',                                                         'Feedback Received', 'Y', NOW() - INTERVAL 3 DAY),
-(1, 'Low Huan Qi changed the Academic session to Sat, 24 Oct 2026, 9:00 AM - 10:00 AM. Please accept or reject it in Session Request.', 'Session Updated', 'N', NOW() - INTERVAL 40 MINUTE),
-(1, 'Your Academic session is completed. Please leave feedback.',                                           'Feedback Reminder', 'N', NOW() - INTERVAL 1 DAY),
-(3, 'Melvin, you have a new Technology request waiting for a volunteer.',                                  'Request Submitted', 'N', NOW() - INTERVAL 2 HOUR),
-(3, 'Low Huan Qi accepted your Technology session.',                                                       'Session Scheduled', 'N', NOW() - INTERVAL 1 DAY);
+-- A booked (or still-unscheduled) meeting tied to one request. category/description start as a
+-- copy of the request's and can be edited until the session is scheduled.
+CREATE TABLE `sessions` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `request_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `volunteer_id` int(11) NOT NULL,
+  `category` varchar(50) NOT NULL,
+  `description` varchar(500) NOT NULL,
+  `session_date` date DEFAULT NULL,
+  `start_time` time DEFAULT NULL,
+  `end_time` time DEFAULT NULL,
+  `support_mode` varchar(20) NOT NULL,
+  `status` varchar(20) NOT NULL DEFAULT 'Unscheduled',
+  `conf_student` char(1) NOT NULL DEFAULT 'N',
+  `conf_volunteer` char(1) NOT NULL DEFAULT 'N',
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `fk_sessions_request` (`request_id`),
+  KEY `fk_sessions_user` (`user_id`),
+  KEY `fk_sessions_volunteer` (`volunteer_id`),
+  CONSTRAINT `fk_sessions_request` FOREIGN KEY (`request_id`) REFERENCES `requests` (`id`),
+  CONSTRAINT `fk_sessions_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `fk_sessions_volunteer` FOREIGN KEY (`volunteer_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+>>>>>>> Stashed changes
+
+INSERT INTO `sessions` (`id`, `request_id`, `user_id`, `volunteer_id`, `category`, `description`, `session_date`, `start_time`, `end_time`, `support_mode`, `status`, `conf_student`, `conf_volunteer`, `created_at`) VALUES
+(1, 1, 1, 16, 'Academic', 'Understanding p-values for my Psychology statistics assignment', '2026-09-21', '10:00:00', '11:00:00', 'Virtual', 'Completed', 'N', 'Y', '2026-09-18 08:32:10'),
+(2, 2, 6, 2, 'Technology', 'Setting up XAMPP and connecting PHP to MySQL', '2026-09-28', '10:30:00', '11:30:00', 'Virtual', 'Completed', 'N', 'Y', '2026-09-23 09:15:44'),
+(3, 3, 7, 8, 'Technology', 'Building my first HTML page for a lab report site', '2026-09-28', '14:00:00', '15:00:00', 'Face-2-Face', 'Completed', 'N', 'Y', '2026-09-24 10:05:21'),
+(4, 4, 8, 16, 'Academic', 'Revising probability for my Statistics quiz', '2026-09-30', '10:00:00', '11:00:00', 'Face-2-Face', 'Completed', 'N', 'Y', '2026-09-25 09:02:37'),
+(5, 5, 5, 3, 'New Student', 'Finding my way around campus and registering for electives', '2026-09-29', '09:30:00', '10:30:00', 'Face-2-Face', 'Completed', 'N', 'Y', '2026-09-25 16:48:02'),
+(6, 6, 6, 8, 'Technology', 'Fixing broken links and images on my portfolio site', '2026-10-08', '14:00:00', '15:00:00', 'Virtual', 'Completed', 'N', 'Y', '2026-10-02 08:40:15'),
+(7, 7, 8, 2, 'Technology', 'Understanding PHP sessions for my login page', '2026-10-07', '15:00:00', '16:00:00', 'Virtual', 'Completed', 'N', 'Y', '2026-10-06 09:12:48'),
+(8, 8, 1, 2, 'Technology', 'Making my survey website mobile friendly with CSS', '2026-10-10', '10:00:00', '11:00:00', 'Virtual', 'Completed', 'N', 'Y', '2026-10-06 20:10:33'),
+(9, 9, 7, 13, 'General Student', 'Preparing for my first group presentation', '2026-10-13', '16:00:00', '17:00:00', 'Face-2-Face', 'Completed', 'N', 'Y', '2026-10-07 18:30:06'),
+(10, 10, 5, 8, 'Technology', 'Creating a simple landing page for my marketing project', '2026-10-15', '14:00:00', '15:30:00', 'Virtual', 'Cancelled', 'N', 'Y', '2026-10-08 21:02:19'),
+(11, 11, 8, 10, 'Technology', 'Designing tables for my group\'s inventory database', '2026-10-20', '10:00:00', '11:00:00', 'Virtual', 'Rejected', 'N', 'N', '2026-10-13 09:45:52'),
+(12, 12, 8, 10, 'Technology', 'Designing tables for my group\'s inventory database', '2026-10-22', '15:00:00', '16:30:00', 'Virtual', 'Completed', 'N', 'Y', '2026-10-14 12:30:27'),
+(13, 13, 6, 4, 'Technology', 'Adding JavaScript form validation to my booking form', '2026-10-20', '14:00:00', '15:00:00', 'Virtual', 'Completed', 'N', 'Y', '2026-10-15 10:20:41'),
+(14, 14, 2, 16, 'Academic', 'Help with Discrete Maths proofs before the midterm', '2026-10-23', '09:00:00', '10:00:00', 'Virtual', 'Completed', 'N', 'Y', '2026-10-17 08:55:09'),
+(15, 15, 7, 2, 'Technology', 'Debugging a MySQL query that returns duplicate rows', '2026-10-22', '10:00:00', '11:00:00', 'Face-2-Face', 'Cancelled', 'N', 'Y', '2026-10-19 19:30:14'),
+(16, 16, 7, 2, 'Technology', 'Debugging a MySQL query that returns duplicate rows', '2026-10-26', '11:00:00', '12:00:00', 'Virtual', 'Completed', 'N', 'Y', '2026-10-22 09:00:38'),
+(17, 17, 1, 3, 'General Student', 'Planning a weekly study timetable for four subjects', '2026-11-04', '13:00:00', '14:00:00', 'Virtual', 'Completed', 'N', 'Y', '2026-10-27 09:10:55'),
+(18, 18, 8, 4, 'Technology', 'Debugging JavaScript errors in my quiz game', '2026-10-30', '14:00:00', '15:00:00', 'Virtual', 'Cancelled', 'N', 'Y', '2026-10-27 10:30:12'),
+(19, 20, 5, 14, 'Technology', 'Connecting a contact form to a database', '2026-10-31', '13:00:00', '14:00:00', 'Virtual', 'Completed', 'N', 'Y', '2026-10-29 18:40:26'),
+(20, 21, 6, 2, 'Technology', 'Understanding PHP arrays and loops', '2026-11-05', '09:00:00', '10:00:00', 'Face-2-Face', 'Rejected', 'N', 'N', '2026-11-02 09:00:47'),
+(21, 22, 8, 2, 'Technology', 'Uploading profile pictures safely in PHP', '2026-11-04', '15:00:00', '16:00:00', 'Virtual', 'Completed', 'N', 'Y', '2026-11-03 09:05:30'),
+(22, 23, 6, 16, 'Academic', 'Solving differential equations for Engineering Maths', '2026-11-09', '09:30:00', '10:30:00', 'Virtual', 'Completed', 'N', 'Y', '2026-11-04 09:30:18'),
+(23, 24, 8, 9, 'Technology', 'Styling my e-commerce prototype with Flexbox', '2026-11-09', '15:00:00', '16:00:00', 'Virtual', 'Completed', 'N', 'Y', '2026-11-06 10:15:03'),
+(24, 26, 2, 16, 'Academic', 'Analysing survey results for my final year project', '2026-11-25', '10:00:00', '11:00:00', 'Face-2-Face', 'Scheduled', 'N', 'Y', '2026-11-10 08:40:29'),
+(25, 27, 1, 2, 'Technology', 'Adding a search feature to my survey website', '2026-11-12', '10:00:00', '11:00:00', 'Face-2-Face', 'Completed', 'N', 'Y', '2026-11-10 20:05:44'),
+(26, 29, 1, 13, 'General Student', 'Practising for my final-year presentation', '2026-11-19', '10:00:00', '11:00:00', 'Virtual', 'Scheduled', 'N', 'Y', '2026-11-11 19:00:21'),
+(27, 30, 6, 2, 'Technology', 'Building a login system with password hashing', '2026-11-16', '10:30:00', '11:30:00', 'Virtual', 'Completed', 'N', 'Y', '2026-11-12 08:50:36'),
+(28, 31, 7, 2, 'Technology', 'Displaying database records in an HTML table', '2026-11-16', '12:00:00', '13:00:00', 'Virtual', 'Scheduled', 'N', 'Y', '2026-11-12 20:30:08'),
+(29, 32, 8, 2, 'Technology', 'Sending email notifications from PHP', '2026-11-18', '16:00:00', '17:00:00', 'Virtual', 'Scheduled', 'N', 'Y', '2026-11-13 08:30:51'),
+(30, 33, 5, 2, 'Technology', 'Fixing layout issues on my marketing campaign page', '2026-11-21', '10:00:00', '11:30:00', 'Virtual', 'Scheduled', 'N', 'Y', '2026-11-13 18:20:17'),
+(31, 34, 8, 3, 'General Student', 'Managing deadlines across five assignments this month', '2026-11-20', '10:00:00', '11:00:00', 'Face-2-Face', 'Pending', 'N', 'N', '2026-11-14 09:30:40'),
+(32, 35, 1, 2, 'Technology', 'Exporting survey results to a CSV file', '2026-11-26', '09:30:00', '10:30:00', 'Face-2-Face', 'Pending', 'N', 'N', '2026-11-15 10:00:12'),
+(33, 36, 8, 9, 'Technology', 'Adding a dark mode toggle with CSS and JavaScript', NULL, NULL, NULL, 'Virtual', 'Unscheduled', 'N', 'N', '2026-11-16 09:20:58'),
+(34, 37, 6, 2, 'Technology', 'Using sessions to keep users logged in', NULL, NULL, NULL, 'Virtual', 'Unscheduled', 'N', 'N', '2026-11-16 20:30:25');
+
+-- --------------------------------------------------------
+
+-- The student's rating of a completed session; at most one feedback row per session.
+CREATE TABLE `feedbacks` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `session_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `volunteer_id` int(11) NOT NULL,
+  `rating` tinyint(4) NOT NULL,
+  `comments` varchar(500) DEFAULT NULL,
+  `submitted_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_feedbacks_session` (`session_id`),
+  KEY `fk_feedbacks_user` (`user_id`),
+  KEY `fk_feedbacks_volunteer` (`volunteer_id`),
+  CONSTRAINT `fk_feedbacks_session` FOREIGN KEY (`session_id`) REFERENCES `sessions` (`id`),
+  CONSTRAINT `fk_feedbacks_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `fk_feedbacks_volunteer` FOREIGN KEY (`volunteer_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO `feedbacks` (`id`, `session_id`, `user_id`, `volunteer_id`, `rating`, `comments`, `submitted_at`) VALUES
+(1, 1, 1, 16, 5, 'Nurul explained p-values step by step using my own data. Much clearer now.', '2026-09-21 13:47:20'),
+(2, 2, 6, 2, 5, 'Huan Qi stayed until my database finally connected. Very patient.', '2026-09-28 12:20:41'),
+(3, 3, 7, 8, 4, 'Yukie was friendly and showed me how to structure the page. Wish we had a bit more time.', '2026-09-28 20:11:56'),
+(4, 5, 5, 3, 5, 'Melvin gave me a full campus tour and helped me pick my electives.', '2026-09-29 13:02:18'),
+(5, 4, 8, 16, 5, 'Clear explanations and lots of practice questions before my quiz.', '2026-09-30 18:35:09'),
+(6, 7, 8, 2, 5, 'Huan Qi explained sessions and cookies with simple examples. My login works now!', '2026-10-07 19:02:47'),
+(7, 6, 6, 8, 5, 'Found the broken file paths in ten minutes. Great help!', '2026-10-08 21:30:14'),
+(8, 8, 1, 2, 4, 'Very helpful with media queries. The session felt a little short.', '2026-10-10 15:44:38'),
+(9, 9, 7, 13, 5, 'Practised my slides with Wee Jing and felt much more confident.', '2026-10-13 20:05:26'),
+(10, 13, 6, 4, 4, 'Good examples of form validation. Would like a follow-up on regular expressions.', '2026-10-20 18:00:52'),
+(11, 12, 8, 10, 5, 'Jonas helped us normalise our tables properly. Our lecturer approved the design.', '2026-10-22 20:15:33'),
+(12, 14, 2, 16, 5, 'Nurul broke the proofs into small steps. I felt ready for the midterm.', '2026-10-23 12:40:05'),
+(13, 16, 7, 2, 5, 'The duplicate rows came from a missing JOIN condition. Thanks for spotting it!', '2026-10-26 14:25:41'),
+(14, 19, 5, 14, 5, 'Jei Wey walked me through prepared statements. My form saves data now.', '2026-10-31 16:00:19'),
+(15, 17, 1, 3, 4, 'Useful timetable template. I am actually sticking to it now.', '2026-11-04 19:30:44'),
+(16, 21, 8, 2, 5, 'Learnt how to check file types and sizes before saving uploads.', '2026-11-04 20:30:58'),
+(17, 25, 1, 2, 5, 'Search works perfectly. Huan Qi explained LIKE queries really well.', '2026-11-12 18:10:27'),
+(18, 27, 6, 2, 4, 'Clear explanation of password_hash. Would like to cover sessions next time.', '2026-11-16 13:15:36');
+
+-- --------------------------------------------------------
+
+-- The final outcome of a session (Completed/Cancelled/Rejected), kept as a permanent record even
+-- if the session row it points to changes later.
+CREATE TABLE `history` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `session_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `volunteer_id` int(11) NOT NULL,
+  `feedback_id` int(11) DEFAULT NULL,
+  `final_status` varchar(20) NOT NULL,
+  `completion_time` datetime NOT NULL DEFAULT current_timestamp(),
+  `cancellation_reason` varchar(500) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_history_session` (`session_id`),
+  KEY `fk_history_user` (`user_id`),
+  KEY `fk_history_volunteer` (`volunteer_id`),
+  KEY `fk_history_feedback` (`feedback_id`),
+  CONSTRAINT `fk_history_feedback` FOREIGN KEY (`feedback_id`) REFERENCES `feedbacks` (`id`),
+  CONSTRAINT `fk_history_session` FOREIGN KEY (`session_id`) REFERENCES `sessions` (`id`),
+  CONSTRAINT `fk_history_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `fk_history_volunteer` FOREIGN KEY (`volunteer_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO `history` (`id`, `session_id`, `user_id`, `volunteer_id`, `feedback_id`, `final_status`, `completion_time`, `cancellation_reason`) VALUES
+(1, 1, 1, 16, 1, 'Completed', '2026-09-21 11:12:34', NULL),
+(2, 2, 6, 2, 2, 'Completed', '2026-09-28 11:41:09', NULL),
+(3, 3, 7, 8, 3, 'Completed', '2026-09-28 15:20:47', NULL),
+(4, 5, 5, 3, 4, 'Completed', '2026-09-29 10:45:22', NULL),
+(5, 4, 8, 16, 5, 'Completed', '2026-09-30 11:18:05', NULL),
+(6, 7, 8, 2, 6, 'Completed', '2026-10-07 16:15:38', NULL),
+(7, 6, 6, 8, 7, 'Completed', '2026-10-08 15:09:13', NULL),
+(8, 8, 1, 2, 8, 'Completed', '2026-10-10 11:20:56', NULL),
+(9, 9, 7, 13, 9, 'Completed', '2026-10-13 17:25:30', NULL),
+(10, 11, 8, 10, NULL, 'Rejected', '2026-10-13 18:05:41', 'I have a class test at that time. Please pick another day.'),
+(11, 10, 5, 8, NULL, 'Cancelled', '2026-10-14 09:20:17', 'My group changed the project to a poster, so I no longer need a website.'),
+(12, 13, 6, 4, 10, 'Completed', '2026-10-20 15:10:52', NULL),
+(13, 15, 7, 2, NULL, 'Cancelled', '2026-10-21 20:10:04', 'Sorry, I have to attend a faculty briefing that morning.'),
+(14, 12, 8, 10, 11, 'Completed', '2026-10-22 16:40:29', NULL),
+(15, 14, 2, 16, 12, 'Completed', '2026-10-23 10:20:11', NULL),
+(16, 16, 7, 2, 13, 'Completed', '2026-10-26 12:10:45', NULL),
+(17, 18, 8, 4, NULL, 'Cancelled', '2026-10-29 22:15:36', 'I managed to fix the bug myself last night. Thank you anyway!'),
+(18, 19, 5, 14, 14, 'Completed', '2026-10-31 14:10:58', NULL),
+(19, 20, 6, 2, NULL, 'Rejected', '2026-11-02 18:20:27', 'I have a lab until 10 AM that day. Could you pick 10:30 AM or later?'),
+(20, 17, 1, 3, 15, 'Completed', '2026-11-04 14:15:03', NULL),
+(21, 21, 8, 2, 16, 'Completed', '2026-11-04 16:12:44', NULL),
+(22, 22, 6, 16, NULL, 'Completed', '2026-11-09 10:45:19', NULL),
+(23, 23, 8, 9, NULL, 'Completed', '2026-11-09 16:25:07', NULL),
+(24, 25, 1, 2, 17, 'Completed', '2026-11-12 11:15:33', NULL),
+(25, 27, 6, 2, 18, 'Completed', '2026-11-16 11:40:16', NULL);
+
+-- --------------------------------------------------------
+
+-- In-app notices shown to a user, e.g. "X accepted your request."
+CREATE TABLE `notifications` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `message` varchar(500) NOT NULL,
+  `notice_type` varchar(50) NOT NULL,
+  `is_read` char(1) NOT NULL DEFAULT 'N',
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_notifications_unread` (`user_id`,`is_read`),
+  CONSTRAINT `fk_notifications_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO `notifications` (`id`, `user_id`, `message`, `notice_type`, `is_read`, `created_at`) VALUES
+(1, 1, 'Your Academic request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'Y', '2026-09-17 21:14:08'),
+(2, 16, 'Sarah Lim requested Academic for Understanding p-values for my Psychology statistics assignment. Please click here to view and respond to the request in Upcoming Requests. [request:1]', 'Pending Request', 'Y', '2026-09-17 21:14:08'),
+(3, 1, 'Your Academic request for “Understanding p-values for my Psychology statistics assignment” has been accepted by volunteer Nurul Huda. [request:1]', 'Status Update', 'Y', '2026-09-18 08:32:10'),
+(4, 16, 'Sarah Lim requested an Academic session on Mon, 21 Sep 2026, 10:00 AM - 11:00 AM. Please accept or reject it in Session Request. [session:1]', 'Session Requested', 'Y', '2026-09-18 12:05:40'),
+(5, 1, 'Nurul Huda accepted your Academic session on Mon, 21 Sep 2026 at 10:00 AM. [session:1]', 'Session Scheduled', 'Y', '2026-09-18 19:40:12'),
+(6, 1, 'Your Academic session with Nurul Huda is completed. Please leave feedback. [session:1]', 'Feedback Reminder', 'Y', '2026-09-21 11:12:34'),
+(7, 16, 'Sarah Lim rated your Academic session 5/5. [session:1]', 'Feedback Received', 'Y', '2026-09-21 13:47:20'),
+(8, 6, 'Your Technology request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'Y', '2026-09-22 22:03:51'),
+(9, 2, 'Daniel Wong requested Technology for Setting up XAMPP and connecting PHP to MySQL. Please click here to view and respond to the request in Upcoming Requests. [request:2]', 'Pending Request', 'Y', '2026-09-22 22:03:51'),
+(10, 6, 'Your Technology request for “Setting up XAMPP and connecting PHP to MySQL” has been accepted by volunteer Low Huan Qi. [request:2]', 'Status Update', 'Y', '2026-09-23 09:15:44'),
+(11, 2, 'Daniel Wong requested a Technology session on Mon, 28 Sep 2026, 10:30 AM - 11:30 AM. Please accept or reject it in Session Request. [session:2]', 'Session Requested', 'Y', '2026-09-23 13:22:05'),
+(12, 7, 'Your Technology request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'Y', '2026-09-23 18:20:37'),
+(13, 8, 'Priya Nair requested Technology for Building my first HTML page for a lab report site. Please click here to view and respond to the request in Upcoming Requests. [request:3]', 'Pending Request', 'Y', '2026-09-23 18:20:37'),
+(14, 6, 'Low Huan Qi accepted your Technology session on Mon, 28 Sep 2026 at 10:30 AM. [session:2]', 'Session Scheduled', 'Y', '2026-09-23 20:15:47'),
+(15, 7, 'Your Technology request for “Building my first HTML page for a lab report site” has been accepted by volunteer Yukie Lian. [request:3]', 'Status Update', 'Y', '2026-09-24 10:05:21'),
+(16, 8, 'Priya Nair requested a Technology session on Mon, 28 Sep 2026, 2:00 PM - 3:00 PM. Please accept or reject it in Session Request. [session:3]', 'Session Requested', 'Y', '2026-09-24 12:48:30'),
+(17, 7, 'Yukie Lian accepted your Technology session on Mon, 28 Sep 2026 at 2:00 PM. [session:3]', 'Session Scheduled', 'Y', '2026-09-24 18:02:11'),
+(18, 8, 'Your Academic request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'Y', '2026-09-24 20:45:13'),
+(19, 16, 'Yukie Lian requested Academic for Revising probability for my Statistics quiz. Please click here to view and respond to the request in Upcoming Requests. [request:4]', 'Pending Request', 'Y', '2026-09-24 20:45:13'),
+(20, 8, 'Your Academic request for “Revising probability for my Statistics quiz” has been accepted by volunteer Nurul Huda. [request:4]', 'Status Update', 'Y', '2026-09-25 09:02:37'),
+(21, 16, 'Yukie Lian requested an Academic session on Wed, 30 Sep 2026, 10:00 AM - 11:00 AM. Please accept or reject it in Session Request. [session:4]', 'Session Requested', 'Y', '2026-09-25 11:30:16'),
+(22, 5, 'Your New Student request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'Y', '2026-09-25 11:30:42'),
+(23, 3, 'Aisyah Rahman requested New Student for Finding my way around campus and registering for electives. Please click here to view and respond to the request in Upcoming Requests. [request:5]', 'Pending Request', 'Y', '2026-09-25 11:30:42'),
+(24, 5, 'Your New Student request for “Finding my way around campus and registering for electives” has been accepted by volunteer Melvin Chan. [request:5]', 'Status Update', 'Y', '2026-09-25 16:48:02'),
+(25, 8, 'Nurul Huda accepted your Academic session on Wed, 30 Sep 2026 at 10:00 AM. [session:4]', 'Session Scheduled', 'Y', '2026-09-25 17:44:52'),
+(26, 3, 'Aisyah Rahman requested a New Student session on Tue, 29 Sep 2026, 9:30 AM - 10:30 AM. Please accept or reject it in Session Request. [session:5]', 'Session Requested', 'Y', '2026-09-25 19:05:33'),
+(27, 5, 'Melvin Chan accepted your New Student session on Tue, 29 Sep 2026 at 9:30 AM. [session:5]', 'Session Scheduled', 'Y', '2026-09-26 08:12:49'),
+(28, 6, 'Your Technology session with Low Huan Qi is completed. Please leave feedback. [session:2]', 'Feedback Reminder', 'Y', '2026-09-28 11:41:09'),
+(29, 2, 'Daniel Wong rated your Technology session 5/5. [session:2]', 'Feedback Received', 'Y', '2026-09-28 12:20:41'),
+(30, 7, 'Your Technology session with Yukie Lian is completed. Please leave feedback. [session:3]', 'Feedback Reminder', 'Y', '2026-09-28 15:20:47'),
+(31, 8, 'Priya Nair rated your Technology session 4/5. [session:3]', 'Feedback Received', 'Y', '2026-09-28 20:11:56'),
+(32, 5, 'Your New Student session with Melvin Chan is completed. Please leave feedback. [session:5]', 'Feedback Reminder', 'Y', '2026-09-29 10:45:22'),
+(33, 3, 'Aisyah Rahman rated your New Student session 5/5. [session:5]', 'Feedback Received', 'Y', '2026-09-29 13:02:18'),
+(34, 8, 'Your Academic session with Nurul Huda is completed. Please leave feedback. [session:4]', 'Feedback Reminder', 'Y', '2026-09-30 11:18:05'),
+(35, 16, 'Yukie Lian rated your Academic session 5/5. [session:4]', 'Feedback Received', 'Y', '2026-09-30 18:35:09'),
+(36, 6, 'Your Technology request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'Y', '2026-10-01 19:12:26'),
+(37, 8, 'Daniel Wong requested Technology for Fixing broken links and images on my portfolio site. Please click here to view and respond to the request in Upcoming Requests. [request:6]', 'Pending Request', 'Y', '2026-10-01 19:12:26'),
+(38, 6, 'Your Technology request for “Fixing broken links and images on my portfolio site” has been accepted by volunteer Yukie Lian. [request:6]', 'Status Update', 'Y', '2026-10-02 08:40:15'),
+(39, 8, 'Daniel Wong requested a Technology session on Thu, 8 Oct 2026, 2:00 PM - 3:00 PM. Please accept or reject it in Session Request. [session:6]', 'Session Requested', 'Y', '2026-10-02 12:30:07'),
+(40, 6, 'Yukie Lian accepted your Technology session on Thu, 8 Oct 2026 at 2:00 PM. [session:6]', 'Session Scheduled', 'Y', '2026-10-02 19:18:26'),
+(41, 8, 'Your Technology request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'Y', '2026-10-05 21:40:09'),
+(42, 2, 'Yukie Lian requested Technology for Understanding PHP sessions for my login page. Please click here to view and respond to the request in Upcoming Requests. [request:7]', 'Pending Request', 'Y', '2026-10-05 21:40:09'),
+(43, 8, 'Your Technology request for “Understanding PHP sessions for my login page” has been accepted by volunteer Low Huan Qi. [request:7]', 'Status Update', 'Y', '2026-10-06 09:12:48'),
+(44, 2, 'Yukie Lian requested a Technology session on Wed, 7 Oct 2026, 3:00 PM - 4:00 PM. Please accept or reject it in Session Request. [session:7]', 'Session Requested', 'Y', '2026-10-06 11:02:44'),
+(45, 8, 'Low Huan Qi accepted your Technology session on Wed, 7 Oct 2026 at 3:00 PM. [session:7]', 'Session Scheduled', 'Y', '2026-10-06 13:30:19'),
+(46, 1, 'Your Technology request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'Y', '2026-10-06 14:22:55'),
+(47, 2, 'Sarah Lim requested Technology for Making my survey website mobile friendly with CSS. Please click here to view and respond to the request in Upcoming Requests. [request:8]', 'Pending Request', 'Y', '2026-10-06 14:22:55'),
+(48, 1, 'Your Technology request for “Making my survey website mobile friendly with CSS” has been accepted by volunteer Low Huan Qi. [request:8]', 'Status Update', 'Y', '2026-10-06 20:10:33'),
+(49, 2, 'Sarah Lim requested a Technology session on Sat, 10 Oct 2026, 10:00 AM - 11:00 AM. Please accept or reject it in Session Request. [session:8]', 'Session Requested', 'Y', '2026-10-07 09:15:52'),
+(50, 7, 'Your General Student request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'Y', '2026-10-07 10:05:31'),
+(51, 13, 'Priya Nair requested General Student for Preparing for my first group presentation. Please click here to view and respond to the request in Upcoming Requests. [request:9]', 'Pending Request', 'Y', '2026-10-07 10:05:31'),
+(52, 1, 'Low Huan Qi accepted your Technology session on Sat, 10 Oct 2026 at 10:00 AM. [session:8]', 'Session Scheduled', 'Y', '2026-10-07 12:40:03'),
+(53, 8, 'Your Technology session with Low Huan Qi is completed. Please leave feedback. [session:7]', 'Feedback Reminder', 'Y', '2026-10-07 16:15:38'),
+(54, 7, 'Your General Student request for “Preparing for my first group presentation” has been accepted by volunteer Wee Jing. [request:9]', 'Status Update', 'Y', '2026-10-07 18:30:06'),
+(55, 2, 'Yukie Lian rated your Technology session 5/5. [session:7]', 'Feedback Received', 'Y', '2026-10-07 19:02:47'),
+(56, 13, 'Priya Nair requested a General Student session on Tue, 13 Oct 2026, 4:00 PM - 5:00 PM. Please accept or reject it in Session Request. [session:9]', 'Session Requested', 'Y', '2026-10-08 10:22:37'),
+(57, 5, 'Your Technology request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'Y', '2026-10-08 13:15:47'),
+(58, 8, 'Aisyah Rahman requested Technology for Creating a simple landing page for my marketing project. Please click here to view and respond to the request in Upcoming Requests. [request:10]', 'Pending Request', 'Y', '2026-10-08 13:15:47'),
+(59, 6, 'Your Technology session with Yukie Lian is completed. Please leave feedback. [session:6]', 'Feedback Reminder', 'Y', '2026-10-08 15:09:13'),
+(60, 7, 'Wee Jing accepted your General Student session on Tue, 13 Oct 2026 at 4:00 PM. [session:9]', 'Session Scheduled', 'Y', '2026-10-08 16:05:48'),
+(61, 5, 'Your Technology request for “Creating a simple landing page for my marketing project” has been accepted by volunteer Yukie Lian. [request:10]', 'Status Update', 'Y', '2026-10-08 21:02:19'),
+(62, 8, 'Daniel Wong rated your Technology session 5/5. [session:6]', 'Feedback Received', 'Y', '2026-10-08 21:30:14'),
+(63, 8, 'Aisyah Rahman requested a Technology session on Thu, 15 Oct 2026, 2:00 PM - 3:30 PM. Please accept or reject it in Session Request. [session:10]', 'Session Requested', 'Y', '2026-10-09 08:45:12'),
+(64, 5, 'Yukie Lian accepted your Technology session on Thu, 15 Oct 2026 at 2:00 PM. [session:10]', 'Session Scheduled', 'Y', '2026-10-09 10:00:27'),
+(65, 1, 'Your Technology session with Low Huan Qi is completed. Please leave feedback. [session:8]', 'Feedback Reminder', 'Y', '2026-10-10 11:20:56'),
+(66, 2, 'Sarah Lim rated your Technology session 4/5. [session:8]', 'Feedback Received', 'Y', '2026-10-10 15:44:38'),
+(67, 8, 'Your Technology request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'Y', '2026-10-12 20:30:18'),
+(68, 10, 'Yukie Lian requested Technology for Designing tables for my group\'s inventory database. Please click here to view and respond to the request in Upcoming Requests. [request:11]', 'Pending Request', 'Y', '2026-10-12 20:30:18'),
+(69, 8, 'Your Technology request for “Designing tables for my group\'s inventory database” has been accepted by volunteer Jonas Lian. [request:11]', 'Status Update', 'Y', '2026-10-13 09:45:52'),
+(70, 10, 'Yukie Lian requested a Technology session on Tue, 20 Oct 2026, 10:00 AM - 11:00 AM. Please accept or reject it in Session Request. [session:11]', 'Session Requested', 'Y', '2026-10-13 12:10:55'),
+(71, 7, 'Your General Student session with Wee Jing is completed. Please leave feedback. [session:9]', 'Feedback Reminder', 'Y', '2026-10-13 17:25:30'),
+(72, 8, 'Jonas Lian rejected your Technology session on Tue, 20 Oct 2026 at 10:00 AM. Reason: I have a class test at that time. Please pick another day. [session:11]', 'Session Rejected', 'Y', '2026-10-13 18:05:41'),
+(73, 13, 'Priya Nair rated your General Student session 5/5. [session:9]', 'Feedback Received', 'Y', '2026-10-13 20:05:26'),
+(74, 8, 'Your Technology request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'Y', '2026-10-14 08:50:04'),
+(75, 10, 'Yukie Lian requested Technology for Designing tables for my group\'s inventory database. Please click here to view and respond to the request in Upcoming Requests. [request:12]', 'Pending Request', 'Y', '2026-10-14 08:50:04'),
+(76, 5, 'You cancelled your Technology session with Yukie Lian. [session:10]', 'Session Cancelled', 'Y', '2026-10-14 09:20:17'),
+(77, 8, 'Aisyah Rahman cancelled your Technology session. Reason: My group changed the project to a poster, so I no longer need a website. [session:10]', 'Session Cancelled', 'Y', '2026-10-14 09:20:17'),
+(78, 8, 'Your Technology request for “Designing tables for my group\'s inventory database” has been accepted by volunteer Jonas Lian. [request:12]', 'Status Update', 'Y', '2026-10-14 12:30:27'),
+(79, 10, 'Yukie Lian requested a Technology session on Thu, 22 Oct 2026, 3:00 PM - 4:30 PM. Please accept or reject it in Session Request. [session:12]', 'Session Requested', 'Y', '2026-10-14 15:20:09'),
+(80, 6, 'Your Technology request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'Y', '2026-10-14 17:40:22'),
+(81, 4, 'Daniel Wong requested Technology for Adding JavaScript form validation to my booking form. Please click here to view and respond to the request in Upcoming Requests. [request:13]', 'Pending Request', 'Y', '2026-10-14 17:40:22'),
+(82, 8, 'Jonas Lian accepted your Technology session on Thu, 22 Oct 2026 at 3:00 PM. [session:12]', 'Session Scheduled', 'Y', '2026-10-14 21:10:34'),
+(83, 6, 'Your Technology request for “Adding JavaScript form validation to my booking form” has been accepted by volunteer Chan Zhao Lun. [request:13]', 'Status Update', 'Y', '2026-10-15 10:20:41'),
+(84, 4, 'Daniel Wong requested a Technology session on Tue, 20 Oct 2026, 2:00 PM - 3:00 PM. Please accept or reject it in Session Request. [session:13]', 'Session Requested', 'Y', '2026-10-15 14:35:21'),
+(85, 6, 'Chan Zhao Lun accepted your Technology session on Tue, 20 Oct 2026 at 2:00 PM. [session:13]', 'Session Scheduled', 'Y', '2026-10-15 19:50:16'),
+(86, 2, 'Your Academic request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'Y', '2026-10-16 22:10:35'),
+(87, 16, 'Low Huan Qi requested Academic for Help with Discrete Maths proofs before the midterm. Please click here to view and respond to the request in Upcoming Requests. [request:14]', 'Pending Request', 'Y', '2026-10-16 22:10:35'),
+(88, 2, 'Your Academic request for “Help with Discrete Maths proofs before the midterm” has been accepted by volunteer Nurul Huda. [request:14]', 'Status Update', 'Y', '2026-10-17 08:55:09'),
+(89, 16, 'Low Huan Qi requested an Academic session on Fri, 23 Oct 2026, 9:00 AM - 10:00 AM. Please accept or reject it in Session Request. [session:14]', 'Session Requested', 'Y', '2026-10-17 10:12:48'),
+(90, 2, 'Nurul Huda accepted your Academic session on Fri, 23 Oct 2026 at 9:00 AM. [session:14]', 'Session Scheduled', 'Y', '2026-10-17 13:25:30'),
+(91, 7, 'Your Technology request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'Y', '2026-10-19 11:05:49'),
+(92, 2, 'Priya Nair requested Technology for Debugging a MySQL query that returns duplicate rows. Please click here to view and respond to the request in Upcoming Requests. [request:15]', 'Pending Request', 'Y', '2026-10-19 11:05:49'),
+(93, 7, 'Your Technology request for “Debugging a MySQL query that returns duplicate rows” has been accepted by volunteer Low Huan Qi. [request:15]', 'Status Update', 'Y', '2026-10-19 19:30:14'),
+(94, 2, 'Priya Nair requested a Technology session on Thu, 22 Oct 2026, 10:00 AM - 11:00 AM. Please accept or reject it in Session Request. [session:15]', 'Session Requested', 'Y', '2026-10-20 09:40:18'),
+(95, 7, 'Low Huan Qi accepted your Technology session on Thu, 22 Oct 2026 at 10:00 AM. [session:15]', 'Session Scheduled', 'Y', '2026-10-20 12:15:44'),
+(96, 6, 'Your Technology session with Chan Zhao Lun is completed. Please leave feedback. [session:13]', 'Feedback Reminder', 'Y', '2026-10-20 15:10:52'),
+(97, 4, 'Daniel Wong rated your Technology session 4/5. [session:13]', 'Feedback Received', 'Y', '2026-10-20 18:00:52'),
+(98, 2, 'You cancelled your Technology session with Priya Nair. [session:15]', 'Session Cancelled', 'Y', '2026-10-21 20:10:04'),
+(99, 7, 'Low Huan Qi cancelled your Technology session. Reason: Sorry, I have to attend a faculty briefing that morning. [session:15]', 'Session Cancelled', 'Y', '2026-10-21 20:10:04'),
+(100, 7, 'Your Technology request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'Y', '2026-10-21 21:00:17'),
+(101, 2, 'Priya Nair requested Technology for Debugging a MySQL query that returns duplicate rows. Please click here to view and respond to the request in Upcoming Requests. [request:16]', 'Pending Request', 'Y', '2026-10-21 21:00:17'),
+(102, 7, 'Your Technology request for “Debugging a MySQL query that returns duplicate rows” has been accepted by volunteer Low Huan Qi. [request:16]', 'Status Update', 'Y', '2026-10-22 09:00:38'),
+(103, 2, 'Priya Nair requested a Technology session on Mon, 26 Oct 2026, 11:00 AM - 12:00 PM. Please accept or reject it in Session Request. [session:16]', 'Session Requested', 'Y', '2026-10-22 11:35:27'),
+(104, 8, 'Your Technology session with Jonas Lian is completed. Please leave feedback. [session:12]', 'Feedback Reminder', 'Y', '2026-10-22 16:40:29'),
+(105, 7, 'Low Huan Qi accepted your Technology session on Mon, 26 Oct 2026 at 11:00 AM. [session:16]', 'Session Scheduled', 'Y', '2026-10-22 17:20:39'),
+(106, 10, 'Yukie Lian rated your Technology session 5/5. [session:12]', 'Feedback Received', 'Y', '2026-10-22 20:15:33'),
+(107, 2, 'Your Academic session with Nurul Huda is completed. Please leave feedback. [session:14]', 'Feedback Reminder', 'Y', '2026-10-23 10:20:11'),
+(108, 16, 'Low Huan Qi rated your Academic session 5/5. [session:14]', 'Feedback Received', 'Y', '2026-10-23 12:40:05'),
+(109, 7, 'Your Technology session with Low Huan Qi is completed. Please leave feedback. [session:16]', 'Feedback Reminder', 'Y', '2026-10-26 12:10:45'),
+(110, 2, 'Priya Nair rated your Technology session 5/5. [session:16]', 'Feedback Received', 'Y', '2026-10-26 14:25:41'),
+(111, 1, 'Your General Student request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'Y', '2026-10-26 16:30:44'),
+(112, 3, 'Sarah Lim requested General Student for Planning a weekly study timetable for four subjects. Please click here to view and respond to the request in Upcoming Requests. [request:17]', 'Pending Request', 'Y', '2026-10-26 16:30:44'),
+(113, 8, 'Your Technology request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'Y', '2026-10-26 20:00:12'),
+(114, 4, 'Yukie Lian requested Technology for Debugging JavaScript errors in my quiz game. Please click here to view and respond to the request in Upcoming Requests. [request:18]', 'Pending Request', 'Y', '2026-10-26 20:00:12'),
+(115, 1, 'Your General Student request for “Planning a weekly study timetable for four subjects” has been accepted by volunteer Melvin Chan. [request:17]', 'Status Update', 'Y', '2026-10-27 09:10:55'),
+(116, 8, 'Your Technology request for “Debugging JavaScript errors in my quiz game” has been accepted by volunteer Chan Zhao Lun. [request:18]', 'Status Update', 'Y', '2026-10-27 10:30:12'),
+(117, 4, 'Yukie Lian requested a Technology session on Fri, 30 Oct 2026, 2:00 PM - 3:00 PM. Please accept or reject it in Session Request. [session:18]', 'Session Requested', 'Y', '2026-10-27 14:20:36'),
+(118, 3, 'Sarah Lim requested a General Student session on Wed, 4 Nov 2026, 1:00 PM - 2:00 PM. Please accept or reject it in Session Request. [session:17]', 'Session Requested', 'Y', '2026-10-27 15:48:10'),
+(119, 8, 'Chan Zhao Lun accepted your Technology session on Fri, 30 Oct 2026 at 2:00 PM. [session:18]', 'Session Scheduled', 'Y', '2026-10-27 18:55:01'),
+(120, 1, 'Melvin Chan accepted your General Student session on Wed, 4 Nov 2026 at 1:00 PM. [session:17]', 'Session Scheduled', 'Y', '2026-10-28 09:05:22'),
+(121, 5, 'Your Technology request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'Y', '2026-10-28 20:45:30'),
+(122, 2, 'Aisyah Rahman requested Technology for Connecting a contact form to a database. Please click here to view and respond to the request in Upcoming Requests. [request:19]', 'Pending Request', 'Y', '2026-10-28 20:45:30'),
+(123, 5, 'Your Technology request for “Connecting a contact form to a database” has been rejected by volunteer Low Huan Qi.\nPlease re-select another volunteer. [request:19]', 'Status Update', 'Y', '2026-10-29 08:30:16'),
+(124, 5, 'Your Technology request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'Y', '2026-10-29 12:00:07'),
+(125, 14, 'Aisyah Rahman requested Technology for Connecting a contact form to a database. Please click here to view and respond to the request in Upcoming Requests. [request:20]', 'Pending Request', 'Y', '2026-10-29 12:00:07'),
+(126, 5, 'Your Technology request for “Connecting a contact form to a database” has been accepted by volunteer Tan Jei Wey. [request:20]', 'Status Update', 'Y', '2026-10-29 18:40:26'),
+(127, 14, 'Aisyah Rahman requested a Technology session on Sat, 31 Oct 2026, 1:00 PM - 2:00 PM. Please accept or reject it in Session Request. [session:19]', 'Session Requested', 'Y', '2026-10-29 20:10:44'),
+(128, 8, 'You cancelled your Technology session with Chan Zhao Lun. [session:18]', 'Session Cancelled', 'Y', '2026-10-29 22:15:36'),
+(129, 4, 'Yukie Lian cancelled your Technology session. Reason: I managed to fix the bug myself last night. Thank you anyway! [session:18]', 'Session Cancelled', 'Y', '2026-10-29 22:15:36'),
+(130, 5, 'Tan Jei Wey accepted your Technology session on Sat, 31 Oct 2026 at 1:00 PM. [session:19]', 'Session Scheduled', 'Y', '2026-10-30 09:30:58'),
+(131, 5, 'Your Technology session with Tan Jei Wey is completed. Please leave feedback. [session:19]', 'Feedback Reminder', 'Y', '2026-10-31 14:10:58'),
+(132, 14, 'Aisyah Rahman rated your Technology session 5/5. [session:19]', 'Feedback Received', 'Y', '2026-10-31 16:00:19'),
+(133, 6, 'Your Technology request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'Y', '2026-11-01 20:10:33'),
+(134, 2, 'Daniel Wong requested Technology for Understanding PHP arrays and loops. Please click here to view and respond to the request in Upcoming Requests. [request:21]', 'Pending Request', 'Y', '2026-11-01 20:10:33'),
+(135, 6, 'Your Technology request for “Understanding PHP arrays and loops” has been accepted by volunteer Low Huan Qi. [request:21]', 'Status Update', 'Y', '2026-11-02 09:00:47'),
+(136, 2, 'Daniel Wong requested a Technology session on Thu, 5 Nov 2026, 9:00 AM - 10:00 AM. Please accept or reject it in Session Request. [session:20]', 'Session Requested', 'Y', '2026-11-02 11:30:19'),
+(137, 6, 'Low Huan Qi rejected your Technology session on Thu, 5 Nov 2026 at 9:00 AM. Reason: I have a lab until 10 AM that day. Could you pick 10:30 AM or later? [session:20]', 'Session Rejected', 'Y', '2026-11-02 18:20:27'),
+(138, 8, 'Your Technology request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'Y', '2026-11-02 19:20:58'),
+(139, 2, 'Yukie Lian requested Technology for Uploading profile pictures safely in PHP. Please click here to view and respond to the request in Upcoming Requests. [request:22]', 'Pending Request', 'Y', '2026-11-02 19:20:58'),
+(140, 8, 'Your Technology request for “Uploading profile pictures safely in PHP” has been accepted by volunteer Low Huan Qi. [request:22]', 'Status Update', 'Y', '2026-11-03 09:05:30'),
+(141, 2, 'Yukie Lian requested a Technology session on Wed, 4 Nov 2026, 3:00 PM - 4:00 PM. Please accept or reject it in Session Request. [session:21]', 'Session Requested', 'Y', '2026-11-03 10:45:06'),
+(142, 8, 'Low Huan Qi accepted your Technology session on Wed, 4 Nov 2026 at 3:00 PM. [session:21]', 'Session Scheduled', 'Y', '2026-11-03 14:20:31'),
+(143, 6, 'Your Academic request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'Y', '2026-11-03 21:10:41'),
+(144, 16, 'Daniel Wong requested Academic for Solving differential equations for Engineering Maths. Please click here to view and respond to the request in Upcoming Requests. [request:23]', 'Pending Request', 'Y', '2026-11-03 21:10:41'),
+(145, 6, 'Your Academic request for “Solving differential equations for Engineering Maths” has been accepted by volunteer Nurul Huda. [request:23]', 'Status Update', 'Y', '2026-11-04 09:30:18'),
+(146, 16, 'Daniel Wong requested an Academic session on Mon, 9 Nov 2026, 9:30 AM - 10:30 AM. Please accept or reject it in Session Request. [session:22]', 'Session Requested', 'Y', '2026-11-04 12:10:57'),
+(147, 1, 'Your General Student session with Melvin Chan is completed. Please leave feedback. [session:17]', 'Feedback Reminder', 'Y', '2026-11-04 14:15:03'),
+(148, 8, 'Your Technology session with Low Huan Qi is completed. Please leave feedback. [session:21]', 'Feedback Reminder', 'Y', '2026-11-04 16:12:44'),
+(149, 6, 'Nurul Huda accepted your Academic session on Mon, 9 Nov 2026 at 9:30 AM. [session:22]', 'Session Scheduled', 'Y', '2026-11-04 18:35:22'),
+(150, 3, 'Sarah Lim rated your General Student session 4/5. [session:17]', 'Feedback Received', 'Y', '2026-11-04 19:30:44'),
+(151, 2, 'Yukie Lian rated your Technology session 5/5. [session:21]', 'Feedback Received', 'Y', '2026-11-04 20:30:58'),
+(152, 8, 'Your Technology request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'Y', '2026-11-05 18:40:26'),
+(153, 9, 'Yukie Lian requested Technology for Styling my e-commerce prototype with Flexbox. Please click here to view and respond to the request in Upcoming Requests. [request:24]', 'Pending Request', 'Y', '2026-11-05 18:40:26'),
+(154, 8, 'Your Technology request for “Styling my e-commerce prototype with Flexbox” has been accepted by volunteer Avery Tan. [request:24]', 'Status Update', 'Y', '2026-11-06 10:15:03'),
+(155, 9, 'Yukie Lian requested a Technology session on Mon, 9 Nov 2026, 3:00 PM - 4:00 PM. Please accept or reject it in Session Request. [session:23]', 'Session Requested', 'Y', '2026-11-06 13:05:48'),
+(156, 8, 'Avery Tan accepted your Technology session on Mon, 9 Nov 2026 at 3:00 PM. [session:23]', 'Session Scheduled', 'Y', '2026-11-06 17:42:15'),
+(157, 6, 'Your Academic session with Nurul Huda is completed. Please leave feedback. [session:22]', 'Feedback Reminder', 'Y', '2026-11-09 10:45:19'),
+(158, 5, 'Your Technology request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'Y', '2026-11-09 11:00:52'),
+(159, 14, 'Aisyah Rahman requested Technology for Connecting my marketing site to a weather API. Please click here to view and respond to the request in Upcoming Requests. [request:25]', 'Pending Request', 'Y', '2026-11-09 11:00:52'),
+(160, 8, 'Your Technology session with Avery Tan is completed. Please leave feedback. [session:23]', 'Feedback Reminder', 'N', '2026-11-09 16:25:07'),
+(161, 2, 'Your Academic request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'Y', '2026-11-09 20:00:39'),
+(162, 16, 'Low Huan Qi requested Academic for Analysing survey results for my final year project. Please click here to view and respond to the request in Upcoming Requests. [request:26]', 'Pending Request', 'Y', '2026-11-09 20:00:39'),
+(163, 2, 'Your Academic request for “Analysing survey results for my final year project” has been accepted by volunteer Nurul Huda. [request:26]', 'Status Update', 'Y', '2026-11-10 08:40:29'),
+(164, 16, 'Low Huan Qi requested an Academic session on Wed, 25 Nov 2026, 10:00 AM - 11:00 AM. Please accept or reject it in Session Request. [session:24]', 'Session Requested', 'Y', '2026-11-10 12:30:14'),
+(165, 1, 'Your Technology request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'Y', '2026-11-10 14:20:15'),
+(166, 2, 'Sarah Lim requested Technology for Adding a search feature to my survey website. Please click here to view and respond to the request in Upcoming Requests. [request:27]', 'Pending Request', 'Y', '2026-11-10 14:20:15'),
+(167, 2, 'Nurul Huda accepted your Academic session on Wed, 25 Nov 2026 at 10:00 AM. [session:24]', 'Session Scheduled', 'Y', '2026-11-10 17:45:36'),
+(168, 8, 'Your Technology request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'Y', '2026-11-10 18:30:23'),
+(169, 11, 'Yukie Lian requested Technology for Improving the user flow of my booking app prototype. Please click here to view and respond to the request in Upcoming Requests. [request:28]', 'Pending Request', 'Y', '2026-11-10 18:30:23'),
+(170, 1, 'Your Technology request for “Adding a search feature to my survey website” has been accepted by volunteer Low Huan Qi. [request:27]', 'Status Update', 'Y', '2026-11-10 20:05:44'),
+(171, 2, 'Sarah Lim requested a Technology session on Thu, 12 Nov 2026, 10:00 AM - 11:00 AM. Please accept or reject it in Session Request. [session:25]', 'Session Requested', 'Y', '2026-11-10 21:15:29'),
+(172, 1, 'Low Huan Qi accepted your Technology session on Thu, 12 Nov 2026 at 10:00 AM. [session:25]', 'Session Scheduled', 'Y', '2026-11-11 08:20:43'),
+(173, 8, 'Your Technology request for “Improving the user flow of my booking app prototype” has been rejected by volunteer Jansis Lian.\nPlease re-select another volunteer. [request:28]', 'Status Update', 'Y', '2026-11-11 09:40:12'),
+(174, 1, 'Your General Student request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'Y', '2026-11-11 12:30:48'),
+(175, 13, 'Sarah Lim requested General Student for Practising for my final-year presentation. Please click here to view and respond to the request in Upcoming Requests. [request:29]', 'Pending Request', 'Y', '2026-11-11 12:30:48'),
+(176, 1, 'Your General Student request for “Practising for my final-year presentation” has been accepted by volunteer Wee Jing. [request:29]', 'Status Update', 'Y', '2026-11-11 19:00:21'),
+(177, 6, 'Your Technology request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'Y', '2026-11-11 21:30:09'),
+(178, 2, 'Daniel Wong requested Technology for Building a login system with password hashing. Please click here to view and respond to the request in Upcoming Requests. [request:30]', 'Pending Request', 'Y', '2026-11-11 21:30:09'),
+(179, 6, 'Your Technology request for “Building a login system with password hashing” has been accepted by volunteer Low Huan Qi. [request:30]', 'Status Update', 'Y', '2026-11-12 08:50:36'),
+(180, 13, 'Sarah Lim requested a General Student session on Thu, 19 Nov 2026, 10:00 AM - 11:00 AM. Please accept or reject it in Session Request. [session:26]', 'Session Requested', 'Y', '2026-11-12 10:05:17'),
+(181, 1, 'Your Technology session with Low Huan Qi is completed. Please leave feedback. [session:25]', 'Feedback Reminder', 'Y', '2026-11-12 11:15:33'),
+(182, 2, 'Daniel Wong requested a Technology session on Mon, 16 Nov 2026, 10:30 AM - 11:30 AM. Please accept or reject it in Session Request. [session:27]', 'Session Requested', 'Y', '2026-11-12 12:40:22'),
+(183, 1, 'Wee Jing accepted your General Student session on Thu, 19 Nov 2026 at 10:00 AM. [session:26]', 'Session Scheduled', 'Y', '2026-11-12 15:30:49'),
+(184, 7, 'Your Technology request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'Y', '2026-11-12 16:00:34'),
+(185, 2, 'Priya Nair requested Technology for Displaying database records in an HTML table. Please click here to view and respond to the request in Upcoming Requests. [request:31]', 'Pending Request', 'Y', '2026-11-12 16:00:34'),
+(186, 2, 'Sarah Lim rated your Technology session 5/5. [session:25]', 'Feedback Received', 'Y', '2026-11-12 18:10:27'),
+(187, 6, 'Low Huan Qi accepted your Technology session on Mon, 16 Nov 2026 at 10:30 AM. [session:27]', 'Session Scheduled', 'Y', '2026-11-12 19:05:08'),
+(188, 8, 'Your Technology request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'Y', '2026-11-12 19:45:16'),
+(189, 2, 'Yukie Lian requested Technology for Sending email notifications from PHP. Please click here to view and respond to the request in Upcoming Requests. [request:32]', 'Pending Request', 'Y', '2026-11-12 19:45:16'),
+(190, 7, 'Your Technology request for “Displaying database records in an HTML table” has been accepted by volunteer Low Huan Qi. [request:31]', 'Status Update', 'Y', '2026-11-12 20:30:08'),
+(191, 8, 'Your Technology request for “Sending email notifications from PHP” has been accepted by volunteer Low Huan Qi. [request:32]', 'Status Update', 'Y', '2026-11-13 08:30:51'),
+(192, 2, 'Priya Nair requested a Technology session on Mon, 16 Nov 2026, 12:00 PM - 1:00 PM. Please accept or reject it in Session Request. [session:28]', 'Session Requested', 'Y', '2026-11-13 09:10:35'),
+(193, 5, 'Your Technology request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'Y', '2026-11-13 10:30:27'),
+(194, 2, 'Aisyah Rahman requested Technology for Fixing layout issues on my marketing campaign page. Please click here to view and respond to the request in Upcoming Requests. [request:33]', 'Pending Request', 'Y', '2026-11-13 10:30:27'),
+(195, 2, 'Yukie Lian requested a Technology session on Wed, 18 Nov 2026, 4:00 PM - 5:00 PM. Please accept or reject it in Session Request. [session:29]', 'Session Requested', 'Y', '2026-11-13 11:20:46'),
+(196, 7, 'Low Huan Qi accepted your Technology session on Mon, 16 Nov 2026 at 12:00 PM. [session:28]', 'Session Scheduled', 'Y', '2026-11-13 12:00:51'),
+(197, 8, 'Low Huan Qi accepted your Technology session on Wed, 18 Nov 2026 at 4:00 PM. [session:29]', 'Session Scheduled', 'Y', '2026-11-13 18:05:27'),
+(198, 5, 'Your Technology request for “Fixing layout issues on my marketing campaign page” has been accepted by volunteer Low Huan Qi. [request:33]', 'Status Update', 'Y', '2026-11-13 18:20:17'),
+(199, 8, 'Your General Student request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'Y', '2026-11-13 21:00:45'),
+(200, 3, 'Yukie Lian requested General Student for Managing deadlines across five assignments this month. Please click here to view and respond to the request in Upcoming Requests. [request:34]', 'Pending Request', 'Y', '2026-11-13 21:00:45'),
+(201, 8, 'Your General Student request for “Managing deadlines across five assignments this month” has been accepted by volunteer Melvin Chan. [request:34]', 'Status Update', 'Y', '2026-11-14 09:30:40'),
+(202, 2, 'Aisyah Rahman requested a Technology session on Sat, 21 Nov 2026, 10:00 AM - 11:30 AM. Please accept or reject it in Session Request. [session:30]', 'Session Requested', 'Y', '2026-11-14 09:40:58'),
+(203, 5, 'Low Huan Qi accepted your Technology session on Sat, 21 Nov 2026 at 10:00 AM. [session:30]', 'Session Scheduled', 'Y', '2026-11-14 13:25:12'),
+(204, 1, 'Your Technology request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'Y', '2026-11-14 15:10:38'),
+(205, 2, 'Sarah Lim requested Technology for Exporting survey results to a CSV file. Please click here to view and respond to the request in Upcoming Requests. [request:35]', 'Pending Request', 'Y', '2026-11-14 15:10:38'),
+(206, 1, 'Your Technology request for “Exporting survey results to a CSV file” has been accepted by volunteer Low Huan Qi. [request:35]', 'Status Update', 'Y', '2026-11-15 10:00:12'),
+(207, 8, 'Your Technology request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'Y', '2026-11-15 20:40:57'),
+(208, 9, 'Yukie Lian requested Technology for Adding a dark mode toggle with CSS and JavaScript. Please click here to view and respond to the request in Upcoming Requests. [request:36]', 'Pending Request', 'Y', '2026-11-15 20:40:57'),
+(209, 8, 'Your Technology request for “Adding a dark mode toggle with CSS and JavaScript” has been accepted by volunteer Avery Tan. [request:36]', 'Status Update', 'N', '2026-11-16 09:20:58'),
+(210, 6, 'Your Technology session with Low Huan Qi is completed. Please leave feedback. [session:27]', 'Feedback Reminder', 'N', '2026-11-16 11:40:16'),
+(211, 6, 'Your Technology request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'N', '2026-11-16 13:15:22'),
+(212, 2, 'Daniel Wong requested Technology for Using sessions to keep users logged in. Please click here to view and respond to the request in Upcoming Requests. [request:37]', 'Pending Request', 'N', '2026-11-16 13:15:22'),
+(213, 2, 'Daniel Wong rated your Technology session 4/5. [session:27]', 'Feedback Received', 'N', '2026-11-16 13:15:36'),
+(214, 3, 'Yukie Lian requested a General Student session on Fri, 20 Nov 2026, 10:00 AM - 11:00 AM. Please accept or reject it in Session Request. [session:31]', 'Session Requested', 'N', '2026-11-16 20:15:33'),
+(215, 6, 'Your Technology request for “Using sessions to keep users logged in” has been accepted by volunteer Low Huan Qi. [request:37]', 'Status Update', 'N', '2026-11-16 20:30:25'),
+(216, 7, 'Your Technology request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'N', '2026-11-17 10:15:46'),
+(217, 2, 'Priya Nair requested Technology for Paginating search results in PHP. Please click here to view and respond to the request in Upcoming Requests. [request:38]', 'Pending Request', 'N', '2026-11-17 10:15:46'),
+(218, 2, 'Sarah Lim requested a Technology session on Thu, 26 Nov 2026, 9:30 AM - 10:30 AM. Please accept or reject it in Session Request. [session:32]', 'Session Requested', 'N', '2026-11-17 14:40:09'),
+(219, 8, 'Your Technology request has been sent to volunteers. Response deadline timer has started.', 'Request Submitted', 'N', '2026-11-17 19:30:03'),
+(220, 10, 'Yukie Lian requested Technology for Writing JOIN queries for my sales report page. Please click here to view and respond to the request in Upcoming Requests. [request:39]', 'Pending Request', 'N', '2026-11-17 19:30:03');

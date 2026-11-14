@@ -32,6 +32,7 @@ All local settings live in `backend/general/`. These files are excluded from Git
 | `config.local.php` | Overrides `config.php` on your machine (database login, `BASE_URL`, `$DEV_TOOLS`) |
 | `mail_config.php` | Gmail SMTP settings for emailed codes (copy `mail_config.example.php`) |
 | `google_config.php` | Google Calendar sync credentials |
+| `calendar_tokens.php` | Generated automatically the first time anyone connects Google Calendar - holds the one shared connection's refresh token. Never created or edited by hand. |
 
 ### Gmail OTP email
 
@@ -46,9 +47,7 @@ The sender and recipient can be the same account. Mail is sent over authenticate
 
 ### Google Calendar sync
 
-When `google_config.php` holds `client_id`, `client_secret`, `redirect_uri` and `organizer_user_id`, confirmed sessions are added to Google Calendar and both people get an invite. Only the organizer account connects; everyone else receives invites automatically.
-
-Set `$DEV_TOOLS = true` in `config.local.php` to show the connect panel on the Session Dashboard. Without a complete config, sync is simply off.
+When `google_config.php` holds `client_id`, `client_secret` and `redirect_uri`, every user sees a "Connect Google Calendar" button on the Session Dashboard. It's one shared connection: whoever clicks it first connects their Google account, and after that every other user just sees "Google Calendar connected" with a Disconnect button - nobody else needs to connect. Confirmed sessions are added to that one calendar and both people get an email invite either way. The refresh token is kept in `calendar_tokens.php`, not the database; disconnecting (or Google revoking access) clears it and the button goes back to "Connect" for everyone. Without a complete config, sync is simply off.
 
 ## Features and flows
 

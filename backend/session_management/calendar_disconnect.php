@@ -5,14 +5,13 @@ require __DIR__ . '/calendar_functions.php';
 
 requireLogin();
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && (int)currentUser()['id'] === calendarOrganizerId()) {
-    $userId  = (int)currentUser()['id'];
-    $refresh = findCalendarToken($conn, $userId);
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $refresh = findCalendarToken();
     if ($refresh !== null) {
         revokeCalendarToken($refresh);
-        deleteCalendarToken($conn, $userId);
+        deleteCalendarToken();
     }
 }
 
-header('Location: index.php?msg=' . urlencode('Google Calendar disconnected. New sessions will no longer be added automatically.'));
+header('Location: index.php');
 exit;

@@ -49,6 +49,6 @@ try {
     exit;
 }
 
-syncCalendarOnCancel($conn, $session);
+syncCalendarOnCancel($session);
 header('Location: index.php?done=cancelled');
 exit;

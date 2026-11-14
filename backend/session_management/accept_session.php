@@ -31,7 +31,7 @@ try {
 }
 
 // After the commit, so a slow or failing Google call can never undo the acceptance.
-$eventLink = syncCalendarOnAccept($conn, $session);
+$eventLink = syncCalendarOnAccept($session);
 if ($eventLink !== null) {
     // Handed to volunteer_requests.php through the session, so the link cannot be tampered with in the URL.
     $_SESSION['calendar_added'] = [
