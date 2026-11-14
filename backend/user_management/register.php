@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare('SELECT id FROM users WHERE email = ? LIMIT 1');
         $stmt->execute([$email]);
         if ($stmt->fetch()) {
-            $errors[] = 'This email or student ID is already registered. Try logging in instead.';
+            $errors[] = 'This email is already registered. Try logging in instead.';
         }
     }
 

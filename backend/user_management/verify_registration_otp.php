@@ -21,13 +21,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             unset($_SESSION['pending_registration']);
             $error = 'This email is already registered. Try logging in instead.';
         } else {
-            do {
-                $studentId = 'CC' . strtoupper(bin2hex(random_bytes(10)));
-                $stmt = $pdo->prepare('SELECT id FROM users WHERE student_id = ? LIMIT 1');
-                $stmt->execute([$studentId]);
-            } while ($stmt->fetch());
-            $stmt = $pdo->prepare("INSERT INTO users (student_id, email, full_name, university_name, password_hash, is_volunteer, is_active) VALUES (?, ?, ?, ?, ?, 'N', 'Y')");
-            $stmt->execute([$studentId, $pending['email'], $pending['full_name'], $pending['university_name'], $pending['password_hash']]);
+            $stmt = $pdo->prepare("INSERT INTO users (email, full_name, university_name, password_hash, is_volunteer, is_active) VALUES (?, ?, ?, ?, 'N', 'Y')");
+            $stmt->execute([$pending['email'], $pending['full_name'], $pending['university_name'], $pending['password_hash']]);
             $_SESSION['created_email'] = $pending['email'];
             unset($_SESSION['pending_registration']);
             redirect('account_created.php');

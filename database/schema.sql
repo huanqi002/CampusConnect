@@ -14,9 +14,7 @@ DROP TABLE IF EXISTS users;
 
 CREATE TABLE users (
     id                        INT AUTO_INCREMENT PRIMARY KEY,
-    student_id                VARCHAR(30)   NOT NULL,
     email                     VARCHAR(150)  NOT NULL,
-    personalemail             VARCHAR(150)  NULL,
     full_name                 VARCHAR(100)  NOT NULL,
     university_name           VARCHAR(100)  NOT NULL,
     password_hash             VARCHAR(255)  NOT NULL,
@@ -39,7 +37,6 @@ CREATE TABLE users (
     is_active                 CHAR(1)       NOT NULL DEFAULT 'N',
     created_at                DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT uq_users_email      UNIQUE (email),
-    CONSTRAINT uq_users_student_id UNIQUE (student_id),
     CONSTRAINT chk_users_volunteer CHECK (is_volunteer IN ('Y', 'N')),
     CONSTRAINT chk_users_active    CHECK (is_active IN ('Y', 'N'))
 );
@@ -163,11 +160,10 @@ CREATE TABLE calendar_tokens (
     CONSTRAINT fk_calendar_tokens_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
--- personalemail is where calendar invitations are sent (falls back to email when empty).
-INSERT INTO users (id, student_id, email, personalemail, full_name, university_name, password_hash, education, skills, support_experience, is_volunteer, is_active, created_at) VALUES
-(1, 'B123',     'b123@helplive.edu.my',     'yukielian06@hotmail.com',    'Yukie Lian',  'HELP University', '$2y$10$1Y1GcuDG6D2ofr20THDxNeLmOlsAMDeAjHWRcrbBR6kAvf.2kan6W', 'Bachelor of Psychology',          'Mathematics, Statistics, Academic writing', 'Peer tutor for first-year students.',     'Y', 'Y', '2026-10-14 14:54:22'),
-(2, 'B2300554', 'b2300554@helplive.edu.my', 'haileyhuanqi@gmail.com',    'Low Huan Qi', 'HELP University', '$2y$10$5zYWMviLaGOgYJb7a7fLpuCqN5AEyaQlzvwi9z1ZjnWpL5aj7Izz.', 'Bachelor of Computer Science',    'PHP, MySQL, JavaScript, CSS',               'Helped classmates debug web projects.',   'Y', 'Y', '2026-10-14 14:58:00'),
-(3, 'B2300003', 'melvin@helplive.edu.my',   'melvinczl666@gmail.com',     'Melvin',      'HELP University', '$2y$10$ilRV9CW9s.7DbKu7c6lwTOcsUNW70NiCn3qzyp5A8fAUlstcrX9ei', 'Bachelor of Business',            'Time management, Study planning, Presenting', 'Student mentor in the orientation program.', 'Y', 'Y', '2026-10-14 15:00:00');
+INSERT INTO users (id, email, full_name, university_name, password_hash, education, skills, support_experience, is_volunteer, is_active, created_at) VALUES
+(1, 'b123@helplive.edu.my',     'Yukie Lian',  'HELP University', '$2y$10$1Y1GcuDG6D2ofr20THDxNeLmOlsAMDeAjHWRcrbBR6kAvf.2kan6W', 'Bachelor of Psychology',          'Mathematics, Statistics, Academic writing', 'Peer tutor for first-year students.',     'Y', 'Y', '2026-10-14 14:54:22'),
+(2, 'b2300554@helplive.edu.my', 'Low Huan Qi', 'HELP University', '$2y$10$5zYWMviLaGOgYJb7a7fLpuCqN5AEyaQlzvwi9z1ZjnWpL5aj7Izz.', 'Bachelor of Computer Science',    'PHP, MySQL, JavaScript, CSS',               'Helped classmates debug web projects.',   'Y', 'Y', '2026-10-14 14:58:00'),
+(3, 'melvin@helplive.edu.my',   'Melvin',      'HELP University', '$2y$10$ilRV9CW9s.7DbKu7c6lwTOcsUNW70NiCn3qzyp5A8fAUlstcrX9ei', 'Bachelor of Business',            'Time management, Study planning, Presenting', 'Student mentor in the orientation program.', 'Y', 'Y', '2026-10-14 15:00:00');
 
 -- Volunteers: preferred day with a start and end time ----------------------
 INSERT INTO volunteers (user_id, category, preferred_day, start_time, end_time, skills, support_mode, is_available) VALUES
