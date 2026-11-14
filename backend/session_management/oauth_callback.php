@@ -5,11 +5,6 @@ require __DIR__ . '/calendar_functions.php';
 
 requireLogin();
 
-if ((int)currentUser()['id'] !== calendarOrganizerId()) {
-    header('Location: index.php?err=' . urlencode('Only the calendar organizer account can connect Google Calendar.'));
-    exit;
-}
-
 $expected = $_SESSION['calendar_oauth_state'] ?? '';
 unset($_SESSION['calendar_oauth_state']);
 
@@ -28,13 +23,7 @@ if ($refreshToken === null) {
     exit;
 }
 
-try {
-    saveCalendarToken($conn, (int)currentUser()['id'], $refreshToken);
-} catch (mysqli_sql_exception $e) {
-    error_log('Saving calendar token failed: ' . $e->getMessage());
-    header('Location: index.php?err=' . urlencode('Could not save the connection. Please try again.'));
-    exit;
-}
+saveCalendarToken($refreshToken, (int)currentUser()['id']);
 
-header('Location: index.php?msg=' . urlencode('Google Calendar connected. Confirmed sessions are now added automatically and both people are invited by email.'));
+header('Location: index.php');
 exit;

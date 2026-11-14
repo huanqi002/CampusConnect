@@ -20,13 +20,11 @@ $results = [
 ];
 $result = $results[$_GET['done'] ?? ''] ?? null;
 
-// The Google Calendar panel is for developers only ($DEV_TOOLS, set in config.local.php); regular users never see it.
-// Only the organizer account ever connects; everyone else gets calendar invites automatically.
-$calendarDev = !empty($DEV_TOOLS);
-$calendarReady = $calendarDev && googleCalendarConfig() !== null && (int) $myId === calendarOrganizerId();
-$calendarConnected = $calendarReady && isCalendarConnected($conn, (int) $myId);
-$calendarToday = $calendarReady && wasCalendarConnectedToday($conn, (int) $myId);   // connected today = working, so Connect is disabled
-$calendarHint = $calendarDev ? calendarSetupHint($conn, (int) $myId) : null;       // what is missing, e.g. no google_config.php
+// One shared Google Calendar connection for everyone: any user can connect it from here, and once it's
+// connected every other user just sees "Connected" with a Disconnect button - nobody else needs to connect.
+$calendarReady = googleCalendarConfig() !== null;
+$calendarConnected = $calendarReady && isCalendarConnected();
+$calendarHint = calendarSetupHint();   // what is missing server-side, e.g. no google_config.php; null once set up
 
 include __DIR__ . '/../general/header.php';
 ?>
@@ -45,26 +43,18 @@ include __DIR__ . '/../general/header.php';
 echo renderConfirmModal(); ?>
 
 <?php if ($calendarHint): ?>
-    <p
-        style="margin:0 0 14px;padding:9px 14px;border:1px solid #d6e2f3;border-radius:10px;background:#eef3fb;color:#34507a;font-size:12.5px">
-        <?php echo htmlspecialchars($calendarHint); ?></p>
+    <p class="calendar-hint"><?php echo htmlspecialchars($calendarHint); ?></p>
 <?php endif; ?>
 
 <?php if ($calendarReady): ?>
-    <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-bottom:14px;font-size:13px">
+    <div class="calendar-status">
         <?php if ($calendarConnected): ?>
-            <span><?php echo $calendarToday ? 'Google Calendar is working (connected today)' : 'Google Calendar was connected earlier. Connect again to refresh it.'; ?></span>
-            <form method="post" action="calendar_disconnect.php" style="margin:0">
-                <button type="submit" class="btn btn-plain">Disconnect</button>
+            <span class="calendar-status-pill"><?php echo SESSION_CARD_ICONS['calendar']; ?>Google Calendar connected</span>
+            <form method="post" action="calendar_disconnect.php">
+                <button type="submit" class="calendar-status-link">Disconnect</button>
             </form>
-        <?php endif; ?>
-        <?php if ($calendarToday): ?>
-            <span title="Already connected today. This button is available again tomorrow." style="cursor:not-allowed">
-                <span class="btn btn-plain" aria-disabled="true" style="opacity:.45;pointer-events:none">Connect Google
-                    Calendar</span>
-            </span>
         <?php else: ?>
-            <a class="btn btn-plain" href="calendar_connect.php">Connect Google Calendar</a>
+            <a class="calendar-status-link is-connect" href="calendar_connect.php">Connect Google Calendar</a>
         <?php endif; ?>
     </div>
 <?php endif; ?>

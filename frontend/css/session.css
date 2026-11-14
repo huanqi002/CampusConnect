@@ -11,6 +11,52 @@
     transform: translateY(1px);
 }
 
+/* Google Calendar hint/status line above the Session Dashboard list */
+.calendar-hint {
+    margin: 0 0 14px;
+    padding: 9px 14px;
+    border: 1px solid #d6e2f3;
+    border-radius: 10px;
+    background: #eef3fb;
+    color: #34507a;
+    font-size: 12.5px;
+}
+.calendar-status { display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-bottom: 14px; }
+.calendar-status form { margin: 0; display: flex; }
+.calendar-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: #eaf7ee;
+    color: #1e7b34;
+    font-size: 12px;
+    font-weight: 600;
+}
+.calendar-status-pill svg { flex-shrink: 0; width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.calendar-status-link {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: #6b6e78;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+}
+.calendar-status-link:hover { color: #373943; }
+.calendar-status-link.is-connect {
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: #f2f2f2;
+    color: #373943;
+    text-decoration: none;
+}
+.calendar-status-link.is-connect:hover { background: #e6e6e6; }
+
 /* Status pills on session pages: soft tint with coloured text */
 .pill-Pending     { background: #fff2e0; color: #c25e00; }
 .pill-Scheduled   { background: #c8ead1; color: #166329; }

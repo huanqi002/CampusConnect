@@ -1,9 +1,12 @@
 <?php
 
-// Google Calendar sync over plain curl (no Composer). One organizer account (organizer_user_id in google_config.php)
-// connects once; every accepted session becomes one event on its calendar, and the student and volunteer are invited
-// by email, so users never connect anything themselves.
+// Google Calendar sync over plain curl (no Composer). There is one shared Google Calendar connection for the
+// whole app: any logged-in user can click Connect on the Session Dashboard to set it up, and once it's
+// connected every other user just sees "Connected" with a Disconnect button - nobody else needs to connect.
+// Every accepted session becomes one event on that shared calendar, and both the student and volunteer are
+// invited by email either way.
 // Needs functions.php (sessionCalendarDetails). Credentials live in general/google_config.php (not in Git).
+// The refresh token lives in general/calendar_tokens.php (not in Git, not in the database) - see loadCalendarToken().
 // Calendar problems are logged and never stop a booking, accept or cancel.
 
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
@@ -12,7 +15,7 @@ const GOOGLE_REVOKE_URL = 'https://oauth2.googleapis.com/revoke';
 const GOOGLE_EVENTS_URL = 'https://www.googleapis.com/calendar/v3/calendars/primary/events';
 const GOOGLE_SCOPE = 'https://www.googleapis.com/auth/calendar.events';
 
-// ['client_id', 'client_secret', 'redirect_uri', 'organizer_user_id'], or null when google_config.php is missing or incomplete.
+// ['client_id', 'client_secret', 'redirect_uri'], or null when google_config.php is missing or incomplete.
 function googleCalendarConfig(): ?array
 {
     static $config = false;
@@ -20,7 +23,7 @@ function googleCalendarConfig(): ?array
         $file = __DIR__ . '/../general/google_config.php';
         $config = is_file($file) ? require $file : null;
         if (
-            !is_array($config) || empty($config['client_id']) || empty($config['client_secret']) || empty($config['redirect_uri']) || empty($config['organizer_user_id'])
+            !is_array($config) || empty($config['client_id']) || empty($config['client_secret']) || empty($config['redirect_uri'])
             || str_starts_with((string) $config['client_secret'], 'PASTE')
         ) {
             $config = null;
@@ -29,9 +32,8 @@ function googleCalendarConfig(): ?array
     return $config;
 }
 
-// Why calendar sync is not working on this machine, in plain words, or null when nothing is wrong for this user.
-// Shown on the Session Dashboard so a teammate can see what is missing instead of guessing.
-function calendarSetupHint(mysqli $conn, int $userId): ?string
+// Why calendar sync is not available, in plain words, or null when the server-side setup is complete.
+function calendarSetupHint(): ?string
 {
     $file = __DIR__ . '/../general/google_config.php';
     if (!is_file($file)) {
@@ -39,21 +41,13 @@ function calendarSetupHint(mysqli $conn, int $userId): ?string
     }
     $config = require $file;
     $missing = [];
-    foreach (['client_id', 'client_secret', 'redirect_uri', 'organizer_user_id'] as $key) {
+    foreach (['client_id', 'client_secret', 'redirect_uri'] as $key) {
         $value = is_array($config) ? ($config[$key] ?? '') : '';
         if (empty($value) || (is_string($value) && str_starts_with($value, 'PASTE'))) {
             $missing[] = $key;
         }
     }
-    if ($missing !== []) {
-        return 'Google Calendar sync is off: google_config.php is missing ' . implode(', ', $missing) . '.';
-    }
-
-    $organizerId = calendarOrganizerId();
-    if ($userId !== $organizerId && !isCalendarConnected($conn, $organizerId)) {
-        return "Google Calendar sync is waiting for the organizer (user #$organizerId) to log in and click Connect Google Calendar.";
-    }
-    return null;
+    return $missing !== [] ? 'Google Calendar sync is off: google_config.php is missing ' . implode(', ', $missing) . '.' : null;
 }
 
 // One HTTP call. Returns [status code, decoded JSON body or []]; status 0 means the request itself failed.
@@ -114,51 +108,39 @@ function googleCalendarExchangeCode(string $code): ?string
     return $status === 200 && !empty($data['refresh_token']) ? $data['refresh_token'] : null;
 }
 
-function saveCalendarToken(mysqli $conn, int $userId, string $refreshToken): void
+// The one shared connection: ['refresh_token' => ..., 'connected_at' => 'Y-m-d H:i:s', 'connected_by' => userId],
+// or null when nobody has connected. Lives in a file, never in Git, never in the database.
+const CALENDAR_TOKEN_FILE = __DIR__ . '/../general/calendar_tokens.php';
+
+function loadCalendarToken(): ?array
 {
-    $stmt = $conn->prepare("INSERT INTO calendar_tokens (user_id, refresh_token) VALUES (?, ?)
-                             ON DUPLICATE KEY UPDATE refresh_token = VALUES(refresh_token), connected_at = NOW()");
-    $stmt->bind_param('is', $userId, $refreshToken);
-    $stmt->execute();
+    $token = is_file(CALENDAR_TOKEN_FILE) ? (require CALENDAR_TOKEN_FILE) : null;
+    return is_array($token) ? $token : null;
 }
 
-function findCalendarToken(mysqli $conn, int $userId): ?string
+function writeCalendarToken(?array $token): void
 {
-    try {
-        $stmt = $conn->prepare("SELECT refresh_token FROM calendar_tokens WHERE user_id = ?");
-        $stmt->bind_param('i', $userId);
-        $stmt->execute();
-        return $stmt->get_result()->fetch_column() ?: null;
-    } catch (mysqli_sql_exception $e) {   // table not created yet
-        return null;
-    }
+    file_put_contents(CALENDAR_TOKEN_FILE, "<?php\nreturn " . var_export($token, true) . ";\n", LOCK_EX);
 }
 
-function deleteCalendarToken(mysqli $conn, int $userId): void
+function saveCalendarToken(string $refreshToken, int $connectedBy): void
 {
-    $stmt = $conn->prepare("DELETE FROM calendar_tokens WHERE user_id = ?");
-    $stmt->bind_param('i', $userId);
-    $stmt->execute();
+    writeCalendarToken(['refresh_token' => $refreshToken, 'connected_at' => date('Y-m-d H:i:s'), 'connected_by' => $connectedBy]);
 }
 
-function isCalendarConnected(mysqli $conn, int $userId): bool
+function findCalendarToken(): ?string
 {
-    return googleCalendarConfig() !== null && findCalendarToken($conn, $userId) !== null;
+    return loadCalendarToken()['refresh_token'] ?? null;
 }
 
-// True when this user's Google connection was made today (by the database's date). No row at all, or a connection made
-// on an earlier day, gives false, and the Connect button is enabled again; today's connection means the calendar is working.
-function wasCalendarConnectedToday(mysqli $conn, int $userId): bool
+function deleteCalendarToken(): void
 {
-    try {
-        $stmt = $conn->prepare("SELECT DATE(connected_at) = CURDATE() FROM calendar_tokens WHERE user_id = ?");
-        $stmt->bind_param('i', $userId);
-        $stmt->execute();
-        $row = $stmt->get_result()->fetch_row();
-        return $row !== null && (int) $row[0] === 1;
-    } catch (mysqli_sql_exception $e) {   // table not created yet
-        return false;
-    }
+    writeCalendarToken(null);
+}
+
+function isCalendarConnected(): bool
+{
+    return googleCalendarConfig() !== null && findCalendarToken() !== null;
 }
 
 function revokeCalendarToken(string $refreshToken): void
@@ -166,11 +148,13 @@ function revokeCalendarToken(string $refreshToken): void
     googleFormPost(GOOGLE_REVOKE_URL, ['token' => $refreshToken]);
 }
 
-// Short-lived access token for the user's calendar, or null when they are not connected or Google refuses.
-function googleAccessToken(mysqli $conn, int $userId): ?string
+// Short-lived access token for the shared calendar, or null when nobody is connected or Google refuses.
+// A revoked/expired refresh token (invalid_grant) is deleted here, so isCalendarConnected() goes back to false
+// on its own and the Session Dashboard offers the Connect button again - no separate "expiry check" needed.
+function googleAccessToken(): ?string
 {
     $config = googleCalendarConfig();
-    $refresh = $config !== null ? findCalendarToken($conn, $userId) : null;
+    $refresh = $config !== null ? findCalendarToken() : null;
     if ($refresh === null) {
         return null;
     }
@@ -180,17 +164,10 @@ function googleAccessToken(mysqli $conn, int $userId): ?string
         'refresh_token' => $refresh,
         'grant_type' => 'refresh_token',
     ]);
-    if ($status === 400 && ($data['error'] ?? '') === 'invalid_grant') {   // user revoked access in their Google account
-        deleteCalendarToken($conn, $userId);
+    if ($status === 400 && ($data['error'] ?? '') === 'invalid_grant') {   // whoever connected revoked access in their Google account
+        deleteCalendarToken();
     }
     return $status === 200 ? ($data['access_token'] ?? null) : null;
-}
-
-// The user whose Google calendar owns every event, or null when calendar sync is not set up.
-function calendarOrganizerId(): ?int
-{
-    $config = googleCalendarConfig();
-    return $config !== null ? (int) $config['organizer_user_id'] : null;
 }
 
 function googleEventPayload(array $event, array $session): string
@@ -231,20 +208,14 @@ function calendarEventId(array $session): string
     return 'ccsession' . (int) $session['id'];
 }
 
-// Access token for the organizer's calendar, or null when sync is off or the organizer has not connected.
-function organizerAccessToken(mysqli $conn): ?string
-{
-    $organizerId = calendarOrganizerId();
-    return $organizerId !== null ? googleAccessToken($conn, $organizerId) : null;
-}
-
-// Creates the event and invites both people. Returns the event's Google Calendar link, or null when it could not be created.
-// Event ids are built from the session id, so after a database reset (session ids start again at 1) the id may already exist
-// on the calendar, even as a deleted/cancelled event. Google answers 409 then, and the event is brought back and updated instead.
-function createCalendarEvent(mysqli $conn, array $session): ?string
+// Creates the event on the shared calendar and invites both people. Returns the event's Google Calendar link,
+// or null when nobody is connected or the call failed. Event ids are built from the session id, so after a
+// database reset (session ids start again at 1) the id may already exist on the calendar, even as a
+// deleted/cancelled event. Google answers 409 then, and the event is brought back and updated instead.
+function createCalendarEvent(array $session): ?string
 {
     $event = sessionCalendarDetails($session);
-    $token = $event !== null ? organizerAccessToken($conn) : null;
+    $token = $event !== null ? googleAccessToken() : null;
     if ($token === null) {
         return null;
     }
@@ -257,10 +228,10 @@ function createCalendarEvent(mysqli $conn, array $session): ?string
 }
 
 // Moves/renames the event after the session changed. Returns true when Google accepted it.
-function updateCalendarEvent(mysqli $conn, array $session): bool
+function updateCalendarEvent(array $session): bool
 {
     $event = sessionCalendarDetails($session);
-    $token = $event !== null ? organizerAccessToken($conn) : null;
+    $token = $event !== null ? googleAccessToken() : null;
     if ($token === null) {
         return false;
     }
@@ -269,9 +240,9 @@ function updateCalendarEvent(mysqli $conn, array $session): bool
 }
 
 // Deletes the event. An event that is already gone (404/410) counts as deleted.
-function deleteCalendarEvent(mysqli $conn, array $session): bool
+function deleteCalendarEvent(array $session): bool
 {
-    $token = organizerAccessToken($conn);
+    $token = googleAccessToken();
     if ($token === null) {
         return false;
     }
@@ -281,10 +252,10 @@ function deleteCalendarEvent(mysqli $conn, array $session): bool
 
 // Runs one calendar action and returns its result, or $failed when it throws.
 // A Google problem is logged and never stops the booking.
-function runCalendarSync(mysqli $conn, array $session, callable $action, string $label, mixed $failed): mixed
+function runCalendarSync(array $session, callable $action, string $label, mixed $failed): mixed
 {
     try {
-        return $action($conn, $session);
+        return $action($session);
     } catch (Throwable $e) {
         error_log("Calendar sync ($label) failed: " . $e->getMessage());
         return $failed;
@@ -292,19 +263,19 @@ function runCalendarSync(mysqli $conn, array $session, callable $action, string 
 }
 
 // Call after a session becomes Scheduled. Returns the event link, '' if it already existed, null on failure.
-function syncCalendarOnAccept(mysqli $conn, array $session): ?string
+function syncCalendarOnAccept(array $session): ?string
 {
-    return runCalendarSync($conn, $session, 'createCalendarEvent', 'create', null);
+    return runCalendarSync($session, 'createCalendarEvent', 'create', null);
 }
 
 // Call after a Scheduled session's time or details changed. $session must hold the new values.
-function syncCalendarOnUpdate(mysqli $conn, array $session): bool
+function syncCalendarOnUpdate(array $session): bool
 {
-    return runCalendarSync($conn, $session, 'updateCalendarEvent', 'update', false);
+    return runCalendarSync($session, 'updateCalendarEvent', 'update', false);
 }
 
 // Call after a session is cancelled.
-function syncCalendarOnCancel(mysqli $conn, array $session): bool
+function syncCalendarOnCancel(array $session): bool
 {
-    return runCalendarSync($conn, $session, 'deleteCalendarEvent', 'delete', false);
+    return runCalendarSync($session, 'deleteCalendarEvent', 'delete', false);
 }
