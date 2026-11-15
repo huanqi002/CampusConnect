@@ -73,7 +73,7 @@ function splitNotificationMessage(string $message): array
 function listNotifications(mysqli $conn, int $userId, ?string $role = null): mysqli_result
 {
     [$roleFilter, $types] = notificationRoleFilter($role);
-    $stmt = $conn->prepare("SELECT * FROM notifications WHERE user_id = ?" . $roleFilter . " ORDER BY created_at DESC, id DESC");
+    $stmt = $conn->prepare("SELECT * FROM notifications WHERE user_id = ?" . $roleFilter . " ORDER BY (created_at > NOW()) ASC, created_at DESC, id DESC");
     bindNotificationQueryParams($stmt, $userId, $role, $types);
     $stmt->execute();
     return $stmt->get_result();

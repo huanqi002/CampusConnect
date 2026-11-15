@@ -44,7 +44,11 @@ function noticeStyle(string $type): array
 // "Just now", "12 min ago", otherwise the clock time ("4:47 PM").
 function noticeTime(string $createdAt): string
 {
-    $seconds = time() - strtotime($createdAt);
+    $timestamp = strtotime($createdAt);
+    $seconds = time() - $timestamp;
+    if ($seconds < 0) {
+        return date('D, j M Y, g:i A', $timestamp);
+    }
     if ($seconds < 60) {
         return 'Just now';
     }

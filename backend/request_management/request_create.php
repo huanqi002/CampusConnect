@@ -228,6 +228,11 @@ include __DIR__ . '/../general/header.php';
         background: #ffffff;
     }
 
+    .field-row select.is-invalid,
+    .description-group textarea.is-invalid {
+        border-color: #c62828;
+    }
+
     /* Description */
     .description-group {
         margin-top: 22px;
@@ -599,7 +604,7 @@ include __DIR__ . '/../general/header.php';
         <div class="form-card">
 
             <div class="field-row">
-                <label for="category">Categories:</label>
+                <label for="category">Category:</label>
 
                 <select name="category" id="category" required>
                     <option value="">-- Select a category --</option>
@@ -661,7 +666,8 @@ include __DIR__ . '/../general/header.php';
                             <option value="">-- Select a time --</option>
                             <?php foreach ($timeOptionRows as [$value, $display]): ?>
                                 <option value="<?= $value ?>" <?= $formStartTime === $value ? 'selected' : '' ?>>
-                                    <?= $display ?></option>
+                                    <?= $display ?>
+                                </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -757,6 +763,7 @@ include __DIR__ . '/../general/header.php';
     const message = document.getElementById('validationMessage');
     const matchingFields = document.getElementById('matchingFields');
     const submitButton = document.getElementById('submitButton');
+    let validationAttempted = false;
 
     const preferredDay = document.getElementById('preferred_day');
     const startTime = document.getElementById('start_time');
@@ -777,6 +784,7 @@ include __DIR__ . '/../general/header.php';
         submitButton.disabled = true;
 
         showValidation('', '');
+        updateMissingFieldStyles();
 
         volunteerList.innerHTML =
             '<p class="empty-message">' +
@@ -804,20 +812,39 @@ include __DIR__ . '/../general/header.php';
         skills.value = '';
     }
 
+    function updateMissingFieldStyles() {
+        const categoryMissing = category.value === '';
+        const descriptionMissing = description.value.trim() === '';
+        category.classList.toggle('is-invalid', validationAttempted && categoryMissing);
+        description.classList.toggle('is-invalid', validationAttempted && descriptionMissing);
+    }
+
     // Validate category and description when OK is clicked.
     okButton.addEventListener('click', function () {
         matchingFields.disabled = true;
         submitButton.disabled = true;
+        validationAttempted = true;
 
-        if (category.value === '') {
-            showValidation('Please select a category.', 'error');
-            category.focus();
-            return;
-        }
+        updateMissingFieldStyles();
 
-        if (description.value.trim() === '') {
-            showValidation('Please type some description.', 'error');
-            description.focus();
+        const categoryMissing = category.value === '';
+        const descriptionMissing = description.value.trim() === '';
+        if (categoryMissing || descriptionMissing) {
+            showValidation(
+                categoryMissing && descriptionMissing
+                    ? 'Please select a category and enter some description.'
+                    : categoryMissing
+                        ? 'Please select a category.'
+                        : 'Please enter some description.',
+                'error'
+            );
+
+            if (category.value === '') {
+                category.focus();
+            } else {
+                description.focus();
+            }
+
             return;
         }
 

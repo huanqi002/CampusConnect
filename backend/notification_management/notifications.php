@@ -30,7 +30,18 @@ if ($sessionIds !== []) {
     }
 }
 
-function noticeHref(array $n, array $linkedSessions, int $myId, ?string $role): ?string
+$requestIds = array_values(array_unique(array_filter(array_map(static fn(array $n): int => (int)($n['request_id'] ?? 0), $notifications))));
+$linkedRequests = [];
+if ($requestIds !== []) {
+    $stmt = $conn->prepare('SELECT id, status, volunteer_id FROM requests WHERE id IN (' . implode(',', array_fill(0, count($requestIds), '?')) . ')');
+    $stmt->bind_param(str_repeat('i', count($requestIds)), ...$requestIds);
+    $stmt->execute();
+    foreach ($stmt->get_result() as $row) {
+        $linkedRequests[(int)$row['id']] = $row;
+    }
+}
+
+function noticeHref(array $n, array $linkedSessions, array $linkedRequests, int $myId, ?string $role): ?string
 {
     $session = $linkedSessions[(int)($n['session_id'] ?? 0)] ?? null;
     // Detail pages only open a session from the side of the current role (student or volunteer),
@@ -52,9 +63,7 @@ function noticeHref(array $n, array $linkedSessions, int $myId, ?string $role): 
     // Older notices without a request tag fall back to their role's request list.
     return match ($n['notice_type']) {
         'Pending Request'                       => $role === 'volunteer'
-            ? (!empty($n['request_id'])
-                ? '../request_management/upcoming_request_details.php?id=' . (int)$n['request_id']
-                : '../request_management/upcoming_request.php')
+            ? pendingRequestNoticeHref($n, $linkedRequests, $myId)
             : null,
         'Request Response', 'Status Update'     => $role === 'student'
             ? (!empty($n['request_id'])
@@ -69,9 +78,26 @@ function noticeHref(array $n, array $linkedSessions, int $myId, ?string $role): 
     };
 }
 
+function pendingRequestNoticeHref(array $n, array $linkedRequests, int $myId): string
+{
+    $requestId = (int)($n['request_id'] ?? 0);
+    if ($requestId <= 0) {
+        return '../request_management/upcoming_request.php';
+    }
+
+    $request = $linkedRequests[$requestId] ?? null;
+    if ($request && (int)$request['volunteer_id'] === $myId && strtolower($request['status']) === 'pending') {
+        return '../request_management/upcoming_request_details.php?id=' . $requestId;
+    }
+
+    return '../request_management/upcoming_request.php?err=' . urlencode(
+        'That request is no longer waiting for your response. Here are your current pending requests.'
+    );
+}
+
 $unread = count(array_filter($notifications, static fn(array $n): bool => $n['is_read'] === 'N'));
 
-// Group by day, newest first (listNotifications already sorts newest first).
+// Group in the sorted order so today's notices stay ahead of future-dated seed notices.
 $groups = [];
 foreach ($notifications as $n) {
     $groups[noticeDayLabel($n['created_at'])][] = $n;
@@ -275,29 +301,29 @@ echo renderNotificationSummary($conn, (int) $myId, currentUser()['role']);
         <div class="notice-list">
             <?php foreach ($items as $n):
                 [$iconPaths, $tone] = noticeStyle($n['notice_type']);
-                $href = noticeHref($n, $linkedSessions, $myId, $role);
+                $href = noticeHref($n, $linkedSessions, $linkedRequests, $myId, $role);
                 $isActionable = $href !== null; ?>
                 <article
                     class="notice notice-<?php echo $tone; ?><?php echo $n['is_read'] === 'N' ? ' is-new' : ''; ?><?php echo $isActionable ? ' is-actionable' : ''; ?>">
                     <span class="notice-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><?php echo $iconPaths; ?></svg></span>
                     <?php if ($isActionable): ?>
                         <a class="notice-body notice-link" href="<?php echo htmlspecialchars($href); ?>">
-                        <?php else: ?>
-                            <div class="notice-body">
-                            <?php endif; ?>
-                            <div class="notice-meta">
-                                <span class="notice-type"><?php echo htmlspecialchars($n['notice_type']); ?></span>
-                                <time class="notice-time" datetime="<?php echo htmlspecialchars($n['created_at']); ?>"
-                                    title="<?php echo htmlspecialchars(formatDateTime($n['created_at'])); ?>"><?php echo htmlspecialchars(noticeTime($n['created_at'])); ?></time>
-                            </div>
-                            <p class="notice-text"><?php echo nl2br(htmlspecialchars($n['message'])); ?></p>
-                            <?php if ($isActionable): ?>
+                    <?php else: ?>
+                        <div class="notice-body">
+                    <?php endif; ?>
+                        <div class="notice-meta">
+                            <span class="notice-type"><?php echo htmlspecialchars($n['notice_type']); ?></span>
+                            <time class="notice-time" datetime="<?php echo htmlspecialchars($n['created_at']); ?>"
+                                title="<?php echo htmlspecialchars(formatDateTime($n['created_at'])); ?>"><?php echo htmlspecialchars(noticeTime($n['created_at'])); ?></time>
+                        </div>
+                        <p class="notice-text"><?php echo nl2br(htmlspecialchars($n['message'])); ?></p>
+                    <?php if ($isActionable): ?>
                         </a>
                     <?php else: ?>
-                </div>
-            <?php endif; ?>
-            </article>
-        <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </article>
+            <?php endforeach; ?>
         </div>
     <?php endforeach; ?>
 <?php endif; ?>
