@@ -91,7 +91,7 @@ CREATE TABLE `volunteers` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO `volunteers` (`id`, `user_id`, `category`, `preferred_day`, `start_time`, `end_time`, `skills`, `support_mode`, `is_available`, `created_at`) VALUES
-(1, 2, 'Technology', 'Monday', '10:00:00', '13:00:00', 'PHP, MySQL, JavaScript, CSS', 'Virtual', 'Y', '2026-09-01 21:05:12'),
+(1, 2, 'Technology', 'Monday', '10:00:00', '13:00:00', 'PHP, MySQL, JavaScript, CSS, HTML', 'Virtual', 'Y', '2026-09-01 21:05:12'),
 (2, 2, 'Technology', 'Wednesday', '14:00:00', '17:00:00', 'PHP, MySQL, JavaScript, CSS', 'Virtual', 'Y', '2026-09-01 21:05:12'),
 (3, 2, 'Technology', 'Thursday', '09:00:00', '12:00:00', 'PHP, MySQL, JavaScript, CSS', 'Face-2-Face', 'Y', '2026-09-01 21:05:12'),
 (4, 2, 'Technology', 'Saturday', '10:00:00', '13:00:00', 'PHP, MySQL, JavaScript, CSS', 'Virtual', 'Y', '2026-09-01 21:05:12'),
@@ -108,7 +108,7 @@ INSERT INTO `volunteers` (`id`, `user_id`, `category`, `preferred_day`, `start_t
 (15, 10, 'Technology', 'Thursday', '15:00:00', '18:00:00', 'Database Design, MySQL, SQL', 'Virtual', 'Y', '2026-09-11 15:52:44'),
 (16, 11, 'Technology', 'Wednesday', '09:00:00', '11:00:00', 'Web Development, UI/UX', 'Face-2-Face', 'Y', '2026-09-14 10:21:37'),
 (17, 11, 'Technology', 'Friday', '13:00:00', '16:00:00', 'Web Development, UI/UX', 'Virtual', 'Y', '2026-09-14 10:21:37'),
-(18, 12, 'Technology', 'Monday', '09:00:00', '11:00:00', 'Software Testing, WordPress', 'Virtual', 'Y', '2026-09-16 17:45:02'),
+(18, 12, 'Technology', 'Monday', '09:00:00', '11:00:00', 'Software Testing, WordPress, HTML', 'Virtual', 'Y', '2026-09-16 17:45:02'),
 (19, 12, 'Technology', 'Saturday', '09:00:00', '12:00:00', 'Software Testing, WordPress', 'Virtual', 'Y', '2026-09-16 17:45:02'),
 (20, 13, 'General Student', 'Tuesday', '16:00:00', '18:00:00', 'Leadership, Public speaking, Presentation skills', 'Face-2-Face', 'Y', '2026-09-18 13:05:19'),
 (21, 13, 'General Student', 'Thursday', '10:00:00', '12:00:00', 'Leadership, Public speaking, Presentation skills', 'Virtual', 'Y', '2026-09-18 13:05:19'),
@@ -116,7 +116,10 @@ INSERT INTO `volunteers` (`id`, `user_id`, `category`, `preferred_day`, `start_t
 (23, 14, 'Technology', 'Saturday', '13:00:00', '15:00:00', 'API Integration, PHP, JavaScript', 'Virtual', 'Y', '2026-09-21 20:28:51'),
 (24, 16, 'Academic', 'Monday', '09:00:00', '12:00:00', 'Mathematics, Statistics, Academic writing', 'Virtual', 'Y', '2026-09-07 09:20:36'),
 (25, 16, 'Academic', 'Wednesday', '09:00:00', '12:00:00', 'Mathematics, Statistics, Academic writing', 'Face-2-Face', 'Y', '2026-09-07 09:20:36'),
-(26, 16, 'Academic', 'Friday', '09:00:00', '11:00:00', 'Mathematics, Statistics, Academic writing', 'Virtual', 'Y', '2026-09-07 09:20:36');
+(26, 16, 'Academic', 'Friday', '09:00:00', '11:00:00', 'Mathematics, Statistics, Academic writing', 'Virtual', 'Y', '2026-09-07 09:20:36'),
+(27, 4, 'Technology', 'Monday', '09:00:00', '12:00:00', 'PHP, HTML, CSS, JavaScript', 'Virtual', 'Y', '2026-09-22 20:00:00'),
+(28, 10, 'Technology', 'Monday', '09:00:00', '12:00:00', 'Database Design, MySQL, SQL, HTML', 'Virtual', 'Y', '2026-09-22 20:00:00'),
+(29, 14, 'Technology', 'Monday', '09:00:00', '12:00:00', 'API Integration, PHP, JavaScript, HTML', 'Virtual', 'Y', '2026-09-22 20:00:00');
 
 -- --------------------------------------------------------
 
