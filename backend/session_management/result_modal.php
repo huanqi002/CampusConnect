@@ -10,6 +10,9 @@ const RESULT_MODAL_ICONS = [
         . '<circle cx="30" cy="30" r="8" fill="#2ebd59" stroke="#fff" stroke-width="2"/>'
         . '<path d="M26.5 30l2.5 2.5 4.5-5" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>'
         . '</svg>',
+    'rated' => '<svg class="modal-icon" viewBox="0 0 40 40" aria-hidden="true">'
+        . '<path d="M20 3.5l5 10.6 11.5 1.5-8.4 8 2.1 11.4L20 29.5 9.8 35l2.1-11.4-8.4-8 11.5-1.5z" fill="#f5b301" stroke="#e09b00" stroke-width="1.5" stroke-linejoin="round"/>'
+        . '</svg>',
     'check' => '<svg class="modal-icon" viewBox="0 0 40 40" aria-hidden="true">'
         . '<circle cx="20" cy="20" r="17" fill="#1aa33a"/>'
         . '<path d="M12 20.5l5.5 5.5L28.5 14" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>'

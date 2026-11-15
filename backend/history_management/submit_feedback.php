@@ -35,7 +35,7 @@ try {
     $feedbackId = insertFeedback($conn, $session, $rating, $comments);
     attachFeedbackToHistory($conn, $sessionId, $feedbackId);
     $conn->commit();
-    header('Location: history.php?msg=' . urlencode('Thank you! Your feedback has been saved.'));
+    header('Location: history.php?rated=1');
 } catch (Exception $e) {
     $conn->rollback();
     header('Location: feedback.php?session_id=' . $sessionId . '&err=' . urlencode('Something went wrong. Please try again.'));

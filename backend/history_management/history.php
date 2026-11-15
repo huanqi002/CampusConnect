@@ -4,6 +4,7 @@ require __DIR__ . '/../general/auth.php';
 require __DIR__ . '/../general/card_template.php';
 require __DIR__ . '/../general/format.php';
 require __DIR__ . '/../session_management/session_card.php';
+require __DIR__ . '/../session_management/result_modal.php';
 require __DIR__ . '/functions.php';
 
 requireLogin();
@@ -22,6 +23,10 @@ include __DIR__ . '/../general/header.php';
 <?php if (isset($_GET['err'])): ?>
 <div class="message message-error"><?php echo htmlspecialchars($_GET['err']); ?></div>
 <?php endif; ?>
+
+<?php if (isset($_GET['rated'])) {
+    echo renderResultModal('rated', 'Thank You!', 'Your feedback has been submitted successfully.');
+} ?>
 
 <?php if ($entries->num_rows === 0): ?>
 <p class="empty-state">No completed or cancelled sessions yet.</p>
